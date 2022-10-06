@@ -1,0 +1,140 @@
+title: Sample
+rows:
+- panels:
+  - title: time
+    type: stat
+    targets:
+    - expr: time()
+      unit: dateTimeAsLocal
+  - title: apiserver%
+    type: stat
+    targets:
+    - expr: 100 * up{job="kubernetes-apiservers"}
+      thresholds:
+      - values: [80,100]
+        invert: true
+  - title: k8s version
+    type: stat
+    targets:
+    - expr: kubernetes_build_info{job="kubernetes-apiservers"}
+      legend: "{{git_version}}"
+- panels:
+  - title: node
+    type: piechart
+    targets:
+    - expr: sum(kube_node_status_condition{status='true'}) by (condition) > 0
+      legend: "{{condition}}"
+  - title: namespace
+    type: piechart
+    targets:
+    - expr: sum(kube_namespace_status_phase) by (phase) > 0
+      legend: "{{phase}}"
+  - title: pod
+    type: piechart
+    targets:
+    - expr: sum(kube_pod_status_phase{namespace=~"$namespace",nodename=~"$node"}) by (phase) > 0
+      legend: "{{phase}}"
+  - title: job
+    type: piechart
+    targets:
+    - expr: sum(kube_job_status_active{namespace=~"$namespace"}) > 0
+      legend: "Active"
+    - expr: sum(kube_job_status_failed{namespace=~"$namespace"}) > 0
+      legend: "Failed"
+    - expr: sum(kube_job_status_succeeded{namespace=~"$namespace"}) > 0
+      legend: "Succeeded"
+  - title: pvc
+    type: piechart
+    targets:
+    - expr: sum(kube_persistentvolumeclaim_status_phase{namespace=~"$namespace"}) by (phase) > 0
+      legend: "{{phase}}"
+  - title: pv
+    type: piechart
+    targets:
+    - expr: sum(kube_persistentvolume_status_phase) by (phase) > 0
+      legend: "{{phase}}"
+- panels:
+  - title: node load
+    type: time_series
+    targets:
+    - expr: node_load1
+      legend: "{{nodename}}"
+  - title: node cpu%
+    type: time_series
+    targets:
+    - expr: 100 * sum(label_replace(rate(node_cpu_seconds_total{mode!="idle",mode!="iowait"}[3m]),"node","$1","nodename","(.+)")) by (node) / sum(kube_node_status_allocatable{resource="cpu"}) by (node)
+      legend: "{{node}}"
+    chartOptions:
+      yMax: 100
+  - title: node mem%
+    type: time_series
+    targets:
+    - expr: 100 * (1 - ( node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes ))
+      legend: "{{nodename}}"
+    chartOptions:
+      yMax: 100
+  - title: node pods
+    type: time_series
+    targets:
+    - expr: sum(kubelet_running_pods) by (instance)
+      legend: "{{instance}}"
+    chartOptions:
+      yMax: 120
+- panels:
+  - title: node receive (Ki/m)
+    type: time_series
+    targets:
+    - expr: sum(rate(node_network_receive_bytes_total[1m])) by (nodename) / 1024
+      legend: "{{nodename}}"
+  - title: node transmit (Ki/m)
+    type: time_series
+    targets:
+    - expr: sum(rate(node_network_transmit_bytes_total[1m])) by (nodename) / 1024
+      legend: "{{nodename}}"
+  - title: node disk read (Ki/m)
+    type: time_series
+    targets:
+    - expr: sum(rate(node_disk_read_bytes_total[1m])) by (nodename) / 1024
+      legend: "{{nodename}}"
+  - title: node disk write (Ki/m)
+    type: time_series
+    targets:
+    - expr: sum(rate(node_disk_written_bytes_total[1m])) by (nodename) / 1024
+      legend: "{{nodename}}"
+  - title: node root fs%
+    type: time_series
+    targets:
+    - expr: 100 * sum( 1-(node_filesystem_avail_bytes{fstype="xfs",mountpoint="/"} / node_filesystem_size_bytes{fstype="xfs",mountpoint="/"}) ) by (nodename)
+      legend: "{{nodename}}"
+    chartOptions:
+      yMax: 100
+- panels:
+  - title: pvc%
+    type: time_series
+    targets:
+    - expr: 100 * max( 1 - kubelet_volume_stats_available_bytes / kubelet_volume_stats_capacity_bytes) by (namespace, persistentvolumeclaim)
+      legend: "{{namespace}}/{{persistentvolumeclaim}}"
+    chartOptions:
+      yMax: 100
+  - title: pvc inodes%
+    type: time_series
+    targets:
+    - expr: kubelet_volume_stats_inodes_used / kubelet_volume_stats_inodes * 100
+      legend: "{{namespace}}/{{persistentvolumeclaim}}"
+    chartOptions:
+      yMax: 100
+  - title: pod cpu(mcores)
+    type: time_series
+    targets:
+    - expr: sum(rate(container_cpu_usage_seconds_total{namespace=~"$namespace", instance=~"$node", container!=""}[5m])) by (namespace, pod) * 1000
+      legend: "{{namespace}}/{{pod}}"
+  - title: pod mem(Mi)
+    type: time_series
+    targets:
+    - expr: sum(container_memory_working_set_bytes{namespace=~"$namespace", instance=~"$node", container!=""}) by (namespace, pod) / 1024 / 1024
+      legend: "{{namespace}}/{{pod}}"
+- panels:
+  - title: event
+    type: logs
+    targets:
+    - expr: pod{namespace="kube-system",pod="eventrouter-.*"}

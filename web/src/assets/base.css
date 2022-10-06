@@ -1,0 +1,109 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+    border-color: #ccc;
+}
+
+.dark * {
+    border-color: #555;
+}
+
+.text-shadow {
+    text-shadow: 0 0 2px #000;
+}
+
+.dark .text-shadow {
+    text-shadow: 0 0 2px #fff;
+}
+
+.border-x-group {
+    @apply border border-r-0;
+}
+
+.border-x-group:first-of-type {
+    @apply rounded-l;
+}
+
+.border-x-group:last-of-type {
+    @apply border-r rounded-r;
+}
+
+.border-y-group {
+    @apply border-t;
+}
+
+.border-x-group:last-of-type {
+    @apply border-b;
+}
+
+
+.h-rounded-group:last-of-type {
+    @apply rounded-r;
+}
+
+.v-rounded-group:first-of-type {
+    @apply rounded-t;
+}
+
+.v-rounded-group:last-of-type {
+    @apply rounded-b;
+}
+
+.scrollbar-thumb-rounded::-webkit-scrollbar-thumb {
+    border-radius: 9em;
+}
+
+.scrollbar-track-rounded::-webkit-scrollbar-track {
+    border-radius: 9em;
+}
+
+.piechart-wrapper canvas {
+    max-height: 180px;
+}
+
+.is-loading {
+    background: linear-gradient(to right,
+            rgba(255, 255, 255, 0) 0%,
+            rgba(255, 255, 255, 0.5) 50%,
+            rgba(255, 255, 255, 0) 100%);
+    background-size: 75% 100%;
+    animation-duration: 2000ms;
+    animation-name: headerShine;
+    animation-iteration-count: infinite;
+    background-repeat: no-repeat;
+    animation-timing-function: ease;
+    background-position: 0 0;
+    background-blend-mode: overlay;
+    background-color: #ddd;
+}
+
+.dark .is-loading {
+    background-color: #222;
+}
+
+@keyframes headerShine {
+    0% {
+        background-position: -300% 0;
+    }
+
+    100% {
+        background-position: 500% 0;
+    }
+}
+
+.highlight-base {
+    @apply relative z-[1];
+}
+.highlight-base::before {
+    content: "";
+    @apply bg-gradient-to-r from-slate-100 to-yellow-100 absolute top-0 left-0 w-full h-full opacity-0 z-[-1] transition-opacity duration-500;
+}
+.dark .highlight-base::before {
+    @apply bg-gradient-to-r from-slate-800 to-teal-800
+}
+
+.highlight::before {
+    @apply opacity-100;
+}

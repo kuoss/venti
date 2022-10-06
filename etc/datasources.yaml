@@ -1,0 +1,6 @@
+queryTimeOut: 30
+datasources:
+- type: Prometheus
+  host: prometheus
+- type: Lethe
+  host: lethe

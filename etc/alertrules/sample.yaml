@@ -1,0 +1,16 @@
+groups:
+- name: sample
+  datasource: Prometheus
+  commonLabels:
+    severity: silence
+  rules:
+  - alert: S01-Monday
+    expr: day_of_week() == 1 and hour() < 2
+    for: 0m
+    annotations:
+      summary: "Monday"
+  - alert: S02-NewNamespace
+    expr: time() - kube_namespace_created < 120
+    for: 0m
+    annotations:
+      summary: "{{ $labels.namespace }}"

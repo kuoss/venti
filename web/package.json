@@ -1,0 +1,44 @@
+{
+  "name": "venti",
+  "version": "0.0.0",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview --port 5050",
+    "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs --fix --ignore-path .gitignore"
+  },
+  "dependencies": {
+    "@mdi/font": "^6.6.96",
+    "vue": "^3.2.31",
+    "vue-router": "^4.0.16"
+  },
+  "devDependencies": {
+    "@heroicons/vue": "^1.0.6",
+    "@rushstack/eslint-patch": "^1.1.0",
+    "@vitejs/plugin-vue": "^2.3.1",
+    "@vue/eslint-config-prettier": "^7.0.0",
+    "@vuepic/vue-datepicker": "^3.2.1",
+    "autoprefixer": "^10.4.4",
+    "axios": "^0.26.1",
+    "chart.js": "^3.7.1",
+    "click-outside-vue3": "^4.0.1",
+    "color-hash": "^2.0.1",
+    "eslint": "^8.5.0",
+    "eslint-plugin-vue": "^8.2.0",
+    "hash-sum": "^2.0.0",
+    "js-yaml": "^4.1.0",
+    "lodash": "^4.17.21",
+    "nightwind": "^1.1.12",
+    "pinia": "^2.0.13",
+    "postcss": "^8.4.12",
+    "prettier": "^2.5.1",
+    "tailwind-scrollbar": "^1.3.1",
+    "tailwindcss": "^3.0.24",
+    "uplot": "^1.6.19",
+    "uplot-vue": "^1.1.1",
+    "vite": "^2.9.12",
+    "vue-axios": "^3.4.1",
+    "vue-chartjs": "^4.0.6",
+    "vue3-popper": "^1.4.2"
+  }
+}
