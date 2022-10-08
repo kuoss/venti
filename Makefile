@@ -18,17 +18,5 @@ stage: web-build
 #go-build:
 #	go mod download -x && go build -ldflags '$(LDFLAGS)' -o /app/venti
 
-git-push:
-	git add -A; git commit -am ${VENTI_VERSION}; git push
-
-#docker-build-base1:
-#	docker build -t venti:base1 -f Dockerfile.base1_alpine .
-
-#docker-build-base2:
-#	docker build -t venti:base2 -f Dockerfile.base2_golang .
-
-#docker-build-base3:
-#	docker build -t venti:base3 -f Dockerfile.base3_vue .
-
 docker-build:
 	docker build -t ${IMAGE_REPO}/venti:${VENTI_VERSION} --build-arg VENTI_VERSION=${VENTI_VERSION} . && docker push ${IMAGE_REPO}/venti:${VENTI_VERSION} 
