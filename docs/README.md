@@ -10,7 +10,7 @@ users:
   isAdmin: true
 ```
 
-Changing Credentials
+Changing Initial Credentials
 ==================
 
 Step 1. Create a bcrypt hash
