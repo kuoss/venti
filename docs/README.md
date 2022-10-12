@@ -14,7 +14,7 @@ users:
 Changing Initial Credentials
 ==================
 
-Step 1. Create a bcrypt hash
+Step 1. Create a bcrypt hash value
 ```shell
 $ htpasswd -nbBC 12 "" topsecret | tr -d :
 $2y$12$KTbZnVgxAIUmnu5W2bRGmuJ/in8A9sHLt2je2lxOriq8TJP0vMk1y
