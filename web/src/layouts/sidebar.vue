@@ -25,9 +25,10 @@ import { useDashboardStore } from "@/stores/dashboard";
           class="block hover:bg-slate-600 dark:hover:bg-slate-600 px-8 py-2"
           to="/logs"
         >Logs</RouterLink>
+
         <div
           class="block px-8 text-slate-400 dark:text-slate-400 py-2"
-        >Dashboards ({{ dashboards.length }})</div>
+        >Dashboards ({{ (dashboards || []).length }})</div>
         <div v-for="dashboard in dashboards">
           <RouterLink
             class="block hover:bg-slate-600 dark:hover:bg-slate-600 px-12 py-2"

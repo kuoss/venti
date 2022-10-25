@@ -21,9 +21,9 @@ export default ({ mode }) => {
     server: {
       hmr: {
         overlay: false,
-        protocol: 'wss',
+        protocol: 'ws',
         host: process.env.VITE_SERVER_HMR_HOST,
-        clientPort: 443,
+        clientPort: 80,
       },
       host: true,
       proxy: {
