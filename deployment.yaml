@@ -1,0 +1,54 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: venti
+spec:
+  ports:
+  - port: 8080
+    protocol: TCP
+  selector:
+    app: venti
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: venti
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: venti
+  template:
+    metadata:
+      labels:
+        app: venti
+    spec:
+      terminationGracePeriodSeconds: 0
+      serviceAccountName: venti
+      containers:
+      - name: venti
+        image: venti
+        volumeMounts:
+        - name: vol-config
+          mountPath: /app/etc
+        - name: vol-common-dashboards
+          mountPath: /app/etc/dashboards/common
+        - name: vol-user-dashboards
+          mountPath: /app/etc/dashboards/user
+        - name: vol-alertrules
+          mountPath: /app/etc/alertrules
+      volumes:
+      - name: vol-config
+        configMap:
+          name: venti-config
+      - name: vol-common-dashboards
+        configMap:
+          name: venti-common-dashboards
+      - name: vol-user-dashboards
+        configMap:
+          name: venti-user-dashboards
+          optional: true
+      - name: vol-alertrules
+        configMap:
+          name: venti-alertrules
+          optional: true

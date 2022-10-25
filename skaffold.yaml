@@ -1,0 +1,16 @@
+apiVersion: skaffold/v3
+kind: Config
+metadata:
+  name: venti
+build:
+  artifacts:
+  - image: venti
+    docker:
+      dockerfile: Dockerfile
+manifests:
+  rawYaml:
+  - deployment.yaml
+portForward:
+- resourceType: service
+  resourceName: venti
+  port: 8080
