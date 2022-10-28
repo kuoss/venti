@@ -21,15 +21,15 @@ export default ({ mode }) => {
     // CASE            port    hmr.clientPort hmr.protocol
     // ingress-http    (80)    80             ws
     // ingress-https   (443)   443            wss
-    // auto-forwarded  9090    (9090)         ws
+    // auto-forwarded  5173    (5173)         ws
     server: {
-      port: 9090,
       hmr: {
         overlay: false,
         protocol: 'ws',
         host: process.env.VITE_SERVER_HMR_HOST,
       },
       host: true,
+      port: 5173,
       proxy: {
         '/user': {
           target: 'http://localhost:8080',
