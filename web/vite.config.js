@@ -18,12 +18,16 @@ export default ({ mode }) => {
         '@': fileURLToPath(new URL('./src', import.meta.url)),
       },
     },
+    // CASE            port    hmr.clientPort hmr.protocol
+    // ingress-http    (80)    80             ws
+    // ingress-https   (443)   443            wss
+    // auto-forwarded  9090    (9090)         ws
     server: {
+      port: 9090,
       hmr: {
         overlay: false,
         protocol: 'ws',
         host: process.env.VITE_SERVER_HMR_HOST,
-        clientPort: 80,
       },
       host: true,
       proxy: {
