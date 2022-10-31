@@ -294,6 +294,7 @@ export default {
       this.execute()
     },
     renderChart() {
+      console.log('renderChart')
       const temp = this.result.map(x => x.values)
       const timestamps = Array.from(new Set(temp.map(a => a.map(b => b[0])).flat())).sort()
       let seriesData = temp.map(a => {
@@ -322,12 +323,14 @@ export default {
       metrics.forEach(x => {
         delete x.__name__
         const entries = Object.entries(x)
-        console.log('renderChart')
+        
         entries.forEach((a) => {
           this.keyDict[a[0]] = this.keyDict[a[0]] || { show: false, values: [] }
+          console.log('a[1]')
           this.keyDict[a[0]].values.push(a[1])
           this.keyDict[a[0]].values = this.keyDict[a[0]].values.filter((v, i, s) => s.indexOf(v) === i)
         })
+        console.log('v[1]')
         x = '{' + entries.map(v => `${v[0]}="${v[1]}"`).join(',') + '}'
 
         newSeries.push({
@@ -336,6 +339,7 @@ export default {
           points: { size: 1 },
         })
       })
+      console.log('loop end')
       // this.chartOptions.axes[1].values = (self, ticks) => ticks.map(rawValue => rawValue / Math.pow(1000, c) + ['', 'k', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y'][c])
       this.chartOptions = {
         ...this.chartOptions,
