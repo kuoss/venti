@@ -27,7 +27,7 @@ import RunButton from "@/components/RunButton.vue"
         <div class="relative w-full">
           <input type="search"
             class="flex-1 relative flex-auto min-w-0 block w-full px-3 py-1.5 text-base font-normal text-gray-700 bg-white bg-clip-padding border border-solid border-gray-300 rounded transition ease-in-out m-0 focus:text-gray-700 focus:bg-white focus:border-blue-600 focus:outline-none"
-            placeholder="Expression" aria-label="Expression" aria-describedby="button-addon3" v-model="expr"
+            placeholder="Expression" aria-label="Expression" aria-describedby="button-addon3" v-model.lazy="expr"
             @keyup="searchKeyUp" />
           <ul class="absolute bg-white border max-h-[70vh] overflow-y-auto z-20" v-if="searchMode && expr">
             <li class="flex gap-3 hover:bg-gray-200 cursor-pointer" v-for="item in items"
