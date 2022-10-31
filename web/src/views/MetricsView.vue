@@ -258,10 +258,12 @@ export default {
       }
       const timeRange = await useTimeStore().toTimeRangeForQuery(this.range)
       let lastRange = timeRange.map(x => useTimeStore().timestamp2ymdhis(x))
+      console.log('updateTimeRange - lastRange[1]')
       if (lastRange[0].slice(0, 10) == lastRange[1].slice(0, 10)) lastRange[1] = lastRange[1].slice(11)
       this.lastExecuted = { expr: this.expr, range: lastRange }
       this.loading = true
       try {
+        console.log('updateTimeRange - timeRange[1]')
         const response = await this.axios.get('/api/prometheus/query_range', {
           params: {
             expr: this.expr,
@@ -296,6 +298,7 @@ export default {
       const timestamps = Array.from(new Set(temp.map(a => a.map(b => b[0])).flat())).sort()
       let seriesData = temp.map(a => {
         let newA = []
+
         timestamps.forEach(t => {
           const newPoint = a.filter(b => t == b[0])
           if (newPoint.length != 1 || isNaN(parseFloat(newPoint[0][1]))) {
@@ -319,6 +322,7 @@ export default {
       metrics.forEach(x => {
         delete x.__name__
         const entries = Object.entries(x)
+        console.log('renderChart')
         entries.forEach((a) => {
           this.keyDict[a[0]] = this.keyDict[a[0]] || { show: false, values: [] }
           this.keyDict[a[0]].values.push(a[1])
