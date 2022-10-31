@@ -13,4 +13,4 @@ groups:
     expr: time() - kube_namespace_created < 120
     for: 0m
     annotations:
-      summary: "{{ $labels.namespace }}"
+      summary: "{{ $labels.namespace }} {{ $value }}"

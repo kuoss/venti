@@ -6,25 +6,25 @@ ChartJS.register(ArcElement)
 </script>
 
 <template>
-    <div v-if="chartData">
-        <div class="piechart-wrapper p-2">
-            <pie :chart-data="chartData" :chart-options="chartOptions"></pie>
-        </div>
-        <table class="border-t border-common w-full">
-            <tr class="border-b border-common" v-for="(label, idx) in chartData.labels">
-                <td>
-                    <span class="px-2" :style="'color:' + chartData.datasets[0].backgroundColor[idx]">●</span>
-                    {{ label }}
-                </td>
-                <td :class="{ 'opacity-50': chartData.datasets[0].data[idx] < 1 }" class="px-2 text-right">{{
-                        chartData.datasets[0].data[idx]
-                }}</td>
-            </tr>
-        </table>
+    <div v-if="!isLoading && isNoData" class="h-[150px] grid grid-cols-1 content-center">
+        <div class="text-center text-lg">No data</div>
     </div>
-    <div v-else-if="emptyQueryResult">
-        <div class="m-3 p-3 rounded-full bg-gray-100 text-gray-500 text-center">
-        Empty query result
+    <div v-else>
+        <div v-if="chartData">
+            <div class="piechart-wrapper p-2">
+                <pie :chart-data="chartData" :chart-options="chartOptions"></pie>
+            </div>
+            <table class="border-t border-common w-full">
+                <tr class="border-b border-common" v-for="(label, idx) in chartData.labels">
+                    <td>
+                        <span class="px-2" :style="'color:' + chartData.datasets[0].backgroundColor[idx]">●</span>
+                        {{ label }}
+                    </td>
+                    <td :class="{ 'opacity-50': chartData.datasets[0].data[idx] < 1 }" class="px-2 text-right">{{
+                            chartData.datasets[0].data[idx]
+                    }}</td>
+                </tr>
+            </table>
         </div>
     </div>
 </template>
@@ -47,7 +47,7 @@ export default {
     },
     data() {
         return {
-            emptyQueryResult: false,
+            isNoData: false,
             total: "-",
             chartData: null,
             chartOptions: { maintainAspectRatio: false, elements: { arc: { borderWidth: 0.5 } } },
@@ -93,7 +93,7 @@ export default {
                 const labels = data.map(x => x.label)
                 const values = data.map(x => x.value)
                 if (values.length < 1) {
-                    this.emptyQueryResult = true
+                    this.isNoData = true
                 }
                 else {
                     this.total = values.reduce((a, b) => a + b)
