@@ -13,22 +13,24 @@ ChartJS.register(ArcElement)
         <table class="border-t border-common w-full">
             <tr class="border-b border-common" v-for="(label, idx) in chartData.labels">
                 <td>
-                    <span
-                        class="px-2"
-                        :style="'color:' + chartData.datasets[0].backgroundColor[idx]"
-                    >●</span>
+                    <span class="px-2" :style="'color:' + chartData.datasets[0].backgroundColor[idx]">●</span>
                     {{ label }}
                 </td>
-                <td
-                    :class="{ 'opacity-50': chartData.datasets[0].data[idx] < 1 }"
-                    class="px-2 text-right"
-                >{{ chartData.datasets[0].data[idx] }}</td>
+                <td :class="{ 'opacity-50': chartData.datasets[0].data[idx] < 1 }" class="px-2 text-right">{{
+                        chartData.datasets[0].data[idx]
+                }}</td>
             </tr>
         </table>
+    </div>
+    <div v-else-if="emptyQueryResult">
+        <div class="m-3 p-3 rounded-full bg-gray-100 text-gray-500 text-center">
+        Empty query result
+        </div>
     </div>
 </template>
 
 <style>
+
 </style>
 
 <script>
@@ -45,6 +47,7 @@ export default {
     },
     data() {
         return {
+            emptyQueryResult: false,
             total: "-",
             chartData: null,
             chartOptions: { maintainAspectRatio: false, elements: { arc: { borderWidth: 0.5 } } },
@@ -89,15 +92,20 @@ export default {
                 }
                 const labels = data.map(x => x.label)
                 const values = data.map(x => x.value)
-                this.total = values.reduce((a, b) => a + b)
-                this.chartData = {
-                    labels: labels,
-                    datasets: [
-                        {
-                            data: values,
-                            backgroundColor: this.getColorsForLabels(labels),
-                        }
-                    ]
+                if (values.length < 1) {
+                    this.emptyQueryResult = true
+                }
+                else {
+                    this.total = values.reduce((a, b) => a + b)
+                    this.chartData = {
+                        labels: labels,
+                        datasets: [
+                            {
+                                data: values,
+                                backgroundColor: this.getColorsForLabels(labels),
+                            }
+                        ]
+                    }
                 }
             } catch (error) { console.error(error) }
             this.$emit('setIsLoading', false)

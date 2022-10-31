@@ -63,7 +63,7 @@ func loadDatasourcesConfig() {
 }
 
 func loadDashboards() {
-	filepaths, err := filepath.Glob("etc/dashboards/*/*.yaml")
+	filepaths, err := filepath.Glob("etc/dashboards/*.yaml")
 	if err != nil {
 		log.Fatal(err)
 	}

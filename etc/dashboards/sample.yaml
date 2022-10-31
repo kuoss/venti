@@ -32,7 +32,7 @@ rows:
   - title: pod
     type: piechart
     targets:
-    - expr: sum(kube_pod_status_phase{namespace=~"$namespace",nodename=~"$node"}) by (phase) > 0
+    - expr: sum(kube_pod_status_phase{namespace=~"$namespace",node=~"$node"}) by (phase) > 0
       legend: "{{phase}}"
   - title: job
     type: piechart
@@ -58,11 +58,11 @@ rows:
     type: time_series
     targets:
     - expr: node_load1
-      legend: "{{nodename}}"
+      legend: "{{node}}"
   - title: node cpu%
     type: time_series
     targets:
-    - expr: 100 * sum(label_replace(rate(node_cpu_seconds_total{mode!="idle",mode!="iowait"}[3m]),"node","$1","nodename","(.+)")) by (node) / sum(kube_node_status_allocatable{resource="cpu"}) by (node)
+    - expr: 100 * sum(rate(node_cpu_seconds_total{mode!="idle",mode!="iowait"}[3m])) by (node) / sum(kube_node_status_allocatable{resource="cpu"}) by (node)
       legend: "{{node}}"
     chartOptions:
       yMax: 100
@@ -70,7 +70,7 @@ rows:
     type: time_series
     targets:
     - expr: 100 * (1 - ( node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes ))
-      legend: "{{nodename}}"
+      legend: "{{node}}"
     chartOptions:
       yMax: 100
   - title: node pods
@@ -84,28 +84,28 @@ rows:
   - title: node receive (Ki/m)
     type: time_series
     targets:
-    - expr: sum(rate(node_network_receive_bytes_total[1m])) by (nodename) / 1024
-      legend: "{{nodename}}"
+    - expr: sum(rate(node_network_receive_bytes_total[3m])) by (node) / 1024
+      legend: "{{node}}"
   - title: node transmit (Ki/m)
     type: time_series
     targets:
-    - expr: sum(rate(node_network_transmit_bytes_total[1m])) by (nodename) / 1024
-      legend: "{{nodename}}"
+    - expr: sum(rate(node_network_transmit_bytes_total[3m])) by (node) / 1024
+      legend: "{{node}}"
   - title: node disk read (Ki/m)
     type: time_series
     targets:
-    - expr: sum(rate(node_disk_read_bytes_total[1m])) by (nodename) / 1024
-      legend: "{{nodename}}"
+    - expr: sum(rate(node_disk_read_bytes_total[3m])) by (node) / 1024
+      legend: "{{node}}"
   - title: node disk write (Ki/m)
     type: time_series
     targets:
-    - expr: sum(rate(node_disk_written_bytes_total[1m])) by (nodename) / 1024
-      legend: "{{nodename}}"
+    - expr: sum(rate(node_disk_written_bytes_total[3m])) by (node) / 1024
+      legend: "{{node}}"
   - title: node root fs%
     type: time_series
     targets:
-    - expr: 100 * sum( 1-(node_filesystem_avail_bytes{fstype="xfs",mountpoint="/"} / node_filesystem_size_bytes{fstype="xfs",mountpoint="/"}) ) by (nodename)
-      legend: "{{nodename}}"
+    - expr: 100 * sum( 1-(node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) ) by (node)
+      legend: "{{node}}"
     chartOptions:
       yMax: 100
 - panels:
