@@ -4,6 +4,11 @@ groups:
   commonLabels:
     severity: silence
   rules:
+  - alert: S00-AlwaysOn
+    expr: vector(1234)
+    for: 0m
+    annotations:
+      summary: "AlwaysOn value={{ $value }}"
   - alert: S01-Monday
     expr: day_of_week() == 1 and hour() < 2
     for: 0m
@@ -13,4 +18,4 @@ groups:
     expr: time() - kube_namespace_created < 120
     for: 0m
     annotations:
-      summary: "{{ $labels.namespace }} {{ $value }}"
+      summary: "labels={{ $labels }} namespace={{ $labels.namespace }} value={{ $value }}"

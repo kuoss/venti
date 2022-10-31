@@ -3,7 +3,6 @@ package server
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"html/template"
 	"log"
 	"net/http"
@@ -117,18 +116,23 @@ func alertTask() {
 	fireAlerts(firingAlerts)
 }
 
-func renderTemplate(tmplString string, labels map[string]string) (string, error) {
-	tmplString = strings.ReplaceAll(tmplString, "$labels.", ".")
+func renderTemplate(tmplString string, labels map[string]string, value string) string {
+	result := tmplString
+	result = strings.ReplaceAll(result, "$value", value)
+	result = strings.ReplaceAll(result, "$labels.", ".")
+	result = strings.ReplaceAll(result, "$labels", ".")
 	var buf bytes.Buffer
-	t, err := template.New("t1").Parse(tmplString)
+	t, err := template.New("t1").Parse(result)
 	if err != nil {
-		return "", errors.New("template parse error")
+		log.Printf("warn: cannot render: %s", tmplString)
+		return result
 	}
 	err = t.Execute(&buf, labels)
 	if err != nil {
-		return "", errors.New("template execute error")
+		log.Printf("warn: cannot render: %s", tmplString)
+		return result
 	}
-	return buf.String(), nil
+	return buf.String()
 }
 
 func renderAlerts(rule AlertRule, result QueryResult) []Alert {
@@ -146,7 +150,6 @@ func renderAlerts(rule AlertRule, result QueryResult) []Alert {
 		}}
 	}
 	alerts := []Alert{}
-	var err error
 	for _, smpl := range result.Data.Result {
 		// deep copy alert
 		alert := Alert{Status: "firing", Labels: map[string]string{}, Annotations: map[string]string{}}
@@ -156,11 +159,8 @@ func renderAlerts(rule AlertRule, result QueryResult) []Alert {
 		for k, v := range rule.Annotations {
 			alert.Annotations[k] = v
 		}
-		alert.Annotations["summary"], err = renderTemplate(alert.Annotations["summary"], smpl.Metric)
-		if err != nil {
-			log.Printf("cannot render summary: %s", err)
-			continue
-		}
+		alert.Annotations["summary"] = renderTemplate(alert.Annotations["summary"], smpl.Metric, smpl.Vaue[1].(string))
+		// log.Println(alert.Annotations["summary"])
 		alerts = append(alerts, alert)
 	}
 	return alerts
