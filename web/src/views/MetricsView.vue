@@ -390,8 +390,8 @@ export default {
     useTimeStore().timerManager = 'MetricsView'
     this.fetchMetadata()
     if (this.$route.query?.query) {
-      this.expr = '' + this.$route.query.query
-      setTimeout(this.execute, 500)
+      // this.expr = '' + this.$route.query.query
+      // setTimeout(this.execute, 500)
     }
     window.addEventListener("resize", this.chartResize)
   },
