@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"io/fs"
 	"log"
 	"os"
 	"path/filepath"
@@ -37,7 +38,7 @@ func loadUsersConfig() {
 	if err := yaml.Unmarshal(yamlBytes, &config.EtcUsersConfig); err != nil {
 		log.Fatal(err)
 	}
-	log.Println("users config file loaded.")
+	log.Println("Users config file loaded.")
 }
 
 func loadDatasourcesConfig() {
@@ -59,14 +60,30 @@ func loadDatasourcesConfig() {
 			config.DatasourcesConfig.Datasources[i].Port = 9090
 		}
 	}
-	log.Println("datasources config file loaded.")
+	log.Println("Datasources config file loaded.")
+}
+
+func glob(root string, fn func(string) bool) []string {
+	var matches []string
+	filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
+		if fn(path) {
+			matches = append(matches, path)
+		}
+		return nil
+	})
+	return matches
 }
 
 func loadDashboards() {
-	filepaths, err := filepath.Glob("etc/dashboards/**/*.yaml")
-	if err != nil {
-		log.Fatal(err)
-	}
+	log.Println("Loading dashboards...")
+	// filepaths, err := filepath.Glob("etc/dashboards/**/*.yaml")
+	filepaths := glob("etc/dashboards", func(path string) bool {
+		return filepath.Ext(path) == ".yaml"
+	})
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	log.Printf("filepaths===%#v", filepaths)
 
 	var dashboard Dashboard
 	for _, filepath := range filepaths {
@@ -78,7 +95,7 @@ func loadDashboards() {
 			log.Fatal(err)
 		}
 		config.Dashboards = append(config.Dashboards, dashboard)
-		log.Println("dashboard config file '" + filepath + "' loaded.")
+		log.Println("Dashboard config file '" + filepath + "' loaded.")
 	}
 }
 
@@ -100,7 +117,7 @@ func loadAlertRuleGroups() {
 		}
 
 		alertRuleGroups = append(alertRuleGroups, alertRuleGroupList.Groups...)
-		log.Println("alert rule file '" + filepath + "' loaded.")
+		log.Println("Alert rule file '" + filepath + "' loaded.")
 	}
 
 	// attach common labels to rules
