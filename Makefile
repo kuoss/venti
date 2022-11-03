@@ -18,6 +18,7 @@ web-watch:
 go-air:
 	sleep 15 && air
 
+# on codespace
 stage:
 	skaffold dev --namespace=kube-system --default-repo=ghcr.io/kuoss
 
