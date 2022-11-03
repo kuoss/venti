@@ -23,6 +23,10 @@ import { useDashboardStore } from "@/stores/dashboard";
         >Metrics</RouterLink>
         <RouterLink
           class="block hover:bg-slate-600 dark:hover:bg-slate-600 px-8 py-2"
+          to="/metrics2"
+        >Metrics2</RouterLink>
+        <RouterLink
+          class="block hover:bg-slate-600 dark:hover:bg-slate-600 px-8 py-2"
           to="/logs"
         >Logs</RouterLink>
 

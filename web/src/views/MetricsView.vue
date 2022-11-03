@@ -25,9 +25,10 @@ import RunButton from "@/components/RunButton.vue"
     <div class="flex-1 py-4 px-4">
       <div class="pb-4">
         <div class="relative w-full">
+          <span>expr: {{ expr }}</span>
           <input type="search"
             class="flex-1 relative flex-auto min-w-0 block w-full px-3 py-1.5 text-base font-normal text-gray-700 bg-white bg-clip-padding border border-solid border-gray-300 rounded transition ease-in-out m-0 focus:text-gray-700 focus:bg-white focus:border-blue-600 focus:outline-none"
-            placeholder="Expression" aria-label="Expression" aria-describedby="button-addon3" v-model.lazy="expr"
+            placeholder="Expression" aria-label="Expression" aria-describedby="button-addon3" v-model="expr"
             @keyup="searchKeyUp" />
           <ul class="absolute bg-white border max-h-[70vh] overflow-y-auto z-20" v-if="searchMode && expr">
             <li class="flex gap-3 hover:bg-gray-200 cursor-pointer" v-for="item in items"
@@ -39,7 +40,7 @@ import RunButton from "@/components/RunButton.vue"
         </div>
       </div>
       <div class="break-all">
-        <div v-if="result.length < 1">
+        <div v-if="result && result.length < 1">
           <div class="rounded bg-slate-200 text-center p-8">Empty query result</div>
         </div>
         <div v-else>
@@ -232,15 +233,15 @@ export default {
       this.searchMode = true
     },
     addLabel(not, key, value) {
-      console.log('addLabel')
-      console.log('this.expr=', this.expr)
-      const where = `${key}${not}="${value}"`
-      const idx = this.expr.indexOf('}')
-      if (idx < 0) {
-        this.expr += `{${where}}`
-        return
-      }
-      this.expr = this.expr.slice(0, -1) + `,${where}` + this.expr.slice(-1)
+      // console.log('addLabel')
+      // console.log('this.expr=', this.expr)
+      // const where = `${key}${not}="${value}"`
+      // const idx = this.expr.indexOf('}')
+      // if (idx < 0) {
+      //   this.expr += `{${where}}`
+      //   return
+      // }
+      // this.expr = this.expr.slice(0, -1) + `,${where}` + this.expr.slice(-1)
     },
     changeInterval(i) {
       this.intervalSeconds = i
@@ -401,10 +402,10 @@ export default {
       // this.expr = '' + this.$route.query.query
       // setTimeout(this.execute, 500)
     }
-    window.addEventListener("resize", this.chartResize)
+    // window.addEventListener("resize", this.chartResize)
   },
   unmounted() {
-    window.removeEventListener("resize", this.chartResize)
+    // window.removeEventListener("resize", this.chartResize)
   },
 }
 </script>

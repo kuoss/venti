@@ -35,6 +35,12 @@ const router = createRouter({
       meta: { requireAuth: true, layout: 'sidebar' },
     },
     {
+      path: '/metrics2',
+      name: 'metrics2',
+      component: () => import('@/views/MetricsView2.vue'),
+      meta: { requireAuth: true, layout: 'sidebar' },
+    },
+    {
       path: '/logs',
       name: 'logs',
       component: () => import('@/views/LogsView.vue'),
