@@ -34,7 +34,7 @@
         </div>
       </div>
       <div class="break-all">
-        <div v-if="result && result.length < 1">
+        <div v-if="result.length < 1">
           <div class="rounded bg-slate-200 text-center p-8">Empty query result</div>
         </div>
         <div v-else>
@@ -143,8 +143,6 @@ export default {
   },
   computed: {
     items() {
-      console.log('items')
-      console.log('this.expr=', this.expr)
       const keyword = this.expr
       if (!keyword || keyword.length < 1) return []
       return Object.entries(this.metadata).filter(x => x[0].indexOf(keyword) >= 0).map(x => {
@@ -230,15 +228,13 @@ export default {
       this.searchMode = true
     },
     addLabel(not, key, value) {
-      // console.log('addLabel')
-      // console.log('this.expr=', this.expr)
-      // const where = `${key}${not}="${value}"`
-      // const idx = this.expr.indexOf('}')
-      // if (idx < 0) {
-      //   this.expr += `{${where}}`
-      //   return
-      // }
-      // this.expr = this.expr.slice(0, -1) + `,${where}` + this.expr.slice(-1)
+      const where = `${key}${not}="${value}"`
+      const idx = this.expr.indexOf('}')
+      if (idx < 0) {
+        this.expr += `{${where}}`
+        return
+      }
+      this.expr = this.expr.slice(0, -1) + `,${where}` + this.expr.slice(-1)
     },
     changeInterval(i) {
       this.intervalSeconds = i
@@ -248,20 +244,16 @@ export default {
       this.range = r
     },
     async execute() {
-      console.log('execute')
-      console.log('this.expr=', this.expr)
       if (this.expr.length < 1) {
         console.error('emtpy expr')
         return
       }
       const timeRange = await useTimeStore().toTimeRangeForQuery(this.range)
       let lastRange = timeRange.map(x => useTimeStore().timestamp2ymdhis(x))
-      console.log('updateTimeRange - lastRange[1]')
       if (lastRange[0].slice(0, 10) == lastRange[1].slice(0, 10)) lastRange[1] = lastRange[1].slice(11)
       this.lastExecuted = { expr: this.expr, range: lastRange }
       this.loading = true
       try {
-        console.log('updateTimeRange - timeRange[1]')
         const response = await this.axios.get('/api/prometheus/query_range', {
           params: {
             expr: this.expr,
@@ -292,7 +284,6 @@ export default {
       this.execute()
     },
     renderChart() {
-      console.log('renderChart')
       const temp = this.result.map(x => x.values)
       const timestamps = Array.from(new Set(temp.map(a => a.map(b => b[0])).flat())).sort()
       let seriesData = temp.map(a => {
@@ -324,11 +315,9 @@ export default {
         
         entries.forEach((a) => {
           this.keyDict[a[0]] = this.keyDict[a[0]] || { show: false, values: [] }
-          console.log('a[1]')
           this.keyDict[a[0]].values.push(a[1])
           this.keyDict[a[0]].values = this.keyDict[a[0]].values.filter((v, i, s) => s.indexOf(v) === i)
         })
-        console.log('v[1]')
         x = '{' + entries.map(v => `${v[0]}="${v[1]}"`).join(',') + '}'
 
         newSeries.push({
@@ -337,7 +326,6 @@ export default {
           points: { size: 1 },
         })
       })
-      console.log('loop end')
       // this.chartOptions.axes[1].values = (self, ticks) => ticks.map(rawValue => rawValue / Math.pow(1000, c) + ['', 'k', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y'][c])
       this.chartOptions = {
         ...this.chartOptions,
@@ -351,8 +339,6 @@ export default {
       this.metricInfo = m
     },
     applyMetric(m) {
-      console.log('applyMetric')
-      console.log('this.expr=', this.expr)
       this.metricInfo.selected = null
       this.expr = m.name
     },
@@ -390,19 +376,16 @@ export default {
     },
   },
   mounted() {
-    console.log('mounted')
-    console.log('this.expr=', this.expr)
-      
     useTimeStore().timerManager = 'MetricsView'
     this.fetchMetadata()
     if (this.$route.query?.query) {
-      // this.expr = '' + this.$route.query.query
-      // setTimeout(this.execute, 500)
+      this.expr = '' + this.$route.query.query
+      setTimeout(this.execute, 500)
     }
-    // window.addEventListener("resize", this.chartResize)
+    window.addEventListener("resize", this.chartResize)
   },
   unmounted() {
-    // window.removeEventListener("resize", this.chartResize)
+    window.removeEventListener("resize", this.chartResize)
   },
 }
 </script>
