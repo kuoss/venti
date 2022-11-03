@@ -1,9 +1,3 @@
-<script setup>
-import { useTimeStore } from "@/stores/time"
-import TimeRangePicker from "@/components/TimeRangePicker.vue"
-import RunButton from "@/components/RunButton.vue"
-</script>
-
 <template>
   <header class="fixed right-0 w-full bg-white border-b border-common shadow z-30 p-2 pl-52"
     :class="{ 'is-loading': loading }">
@@ -25,9 +19,10 @@ import RunButton from "@/components/RunButton.vue"
     <div class="flex-1 py-4 px-4">
       <div class="pb-4">
         <div class="relative w-full">
+          <span>expr: {{ expr }}</span>
           <input type="search"
             class="flex-1 relative flex-auto min-w-0 block w-full px-3 py-1.5 text-base font-normal text-gray-700 bg-white bg-clip-padding border border-solid border-gray-300 rounded transition ease-in-out m-0 focus:text-gray-700 focus:bg-white focus:border-blue-600 focus:outline-none"
-            placeholder="Expression" aria-label="Expression" aria-describedby="button-addon3" v-model.lazy="expr"
+            placeholder="Expression" aria-label="Expression" aria-describedby="button-addon3" v-model="expr"
             @keyup="searchKeyUp" />
           <ul class="absolute bg-white border max-h-[70vh] overflow-y-auto z-20" v-if="searchMode && expr">
             <li class="flex gap-3 hover:bg-gray-200 cursor-pointer" v-for="item in items"
@@ -134,6 +129,9 @@ import RunButton from "@/components/RunButton.vue"
 </template>
 
 <script>
+import { useTimeStore } from "@/stores/time"
+import TimeRangePicker from "@/components/TimeRangePicker.vue"
+import RunButton from "@/components/RunButton.vue"
 import UplotVue from 'uplot-vue'
 import 'uplot/dist/uPlot.min.css'
 
@@ -145,8 +143,6 @@ export default {
   },
   computed: {
     items() {
-      console.log('items')
-      console.log('this.expr=', this.expr)
       const keyword = this.expr
       if (!keyword || keyword.length < 1) return []
       return Object.entries(this.metadata).filter(x => x[0].indexOf(keyword) >= 0).map(x => {
@@ -232,8 +228,6 @@ export default {
       this.searchMode = true
     },
     addLabel(not, key, value) {
-      console.log('addLabel')
-      console.log('this.expr=', this.expr)
       const where = `${key}${not}="${value}"`
       const idx = this.expr.indexOf('}')
       if (idx < 0) {
@@ -250,20 +244,16 @@ export default {
       this.range = r
     },
     async execute() {
-      console.log('execute')
-      console.log('this.expr=', this.expr)
       if (this.expr.length < 1) {
         console.error('emtpy expr')
         return
       }
       const timeRange = await useTimeStore().toTimeRangeForQuery(this.range)
       let lastRange = timeRange.map(x => useTimeStore().timestamp2ymdhis(x))
-      console.log('updateTimeRange - lastRange[1]')
       if (lastRange[0].slice(0, 10) == lastRange[1].slice(0, 10)) lastRange[1] = lastRange[1].slice(11)
       this.lastExecuted = { expr: this.expr, range: lastRange }
       this.loading = true
       try {
-        console.log('updateTimeRange - timeRange[1]')
         const response = await this.axios.get('/api/prometheus/query_range', {
           params: {
             expr: this.expr,
@@ -294,7 +284,6 @@ export default {
       this.execute()
     },
     renderChart() {
-      console.log('renderChart')
       const temp = this.result.map(x => x.values)
       const timestamps = Array.from(new Set(temp.map(a => a.map(b => b[0])).flat())).sort()
       let seriesData = temp.map(a => {
@@ -326,11 +315,9 @@ export default {
         
         entries.forEach((a) => {
           this.keyDict[a[0]] = this.keyDict[a[0]] || { show: false, values: [] }
-          console.log('a[1]')
           this.keyDict[a[0]].values.push(a[1])
           this.keyDict[a[0]].values = this.keyDict[a[0]].values.filter((v, i, s) => s.indexOf(v) === i)
         })
-        console.log('v[1]')
         x = '{' + entries.map(v => `${v[0]}="${v[1]}"`).join(',') + '}'
 
         newSeries.push({
@@ -339,7 +326,6 @@ export default {
           points: { size: 1 },
         })
       })
-      console.log('loop end')
       // this.chartOptions.axes[1].values = (self, ticks) => ticks.map(rawValue => rawValue / Math.pow(1000, c) + ['', 'k', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y'][c])
       this.chartOptions = {
         ...this.chartOptions,
@@ -353,8 +339,6 @@ export default {
       this.metricInfo = m
     },
     applyMetric(m) {
-      console.log('applyMetric')
-      console.log('this.expr=', this.expr)
       this.metricInfo.selected = null
       this.expr = m.name
     },
@@ -392,14 +376,11 @@ export default {
     },
   },
   mounted() {
-    console.log('mounted')
-    console.log('this.expr=', this.expr)
-      
     useTimeStore().timerManager = 'MetricsView'
     this.fetchMetadata()
     if (this.$route.query?.query) {
-      // this.expr = '' + this.$route.query.query
-      // setTimeout(this.execute, 500)
+      this.expr = '' + this.$route.query.query
+      setTimeout(this.execute, 500)
     }
     window.addEventListener("resize", this.chartResize)
   },
