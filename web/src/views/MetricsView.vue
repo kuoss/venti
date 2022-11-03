@@ -1,9 +1,3 @@
-<script setup>
-import { useTimeStore } from "@/stores/time"
-import TimeRangePicker from "@/components/TimeRangePicker.vue"
-import RunButton from "@/components/RunButton.vue"
-</script>
-
 <template>
   <header class="fixed right-0 w-full bg-white border-b border-common shadow z-30 p-2 pl-52"
     :class="{ 'is-loading': loading }">
@@ -135,6 +129,9 @@ import RunButton from "@/components/RunButton.vue"
 </template>
 
 <script>
+import { useTimeStore } from "@/stores/time"
+import TimeRangePicker from "@/components/TimeRangePicker.vue"
+import RunButton from "@/components/RunButton.vue"
 import UplotVue from 'uplot-vue'
 import 'uplot/dist/uPlot.min.css'
 

@@ -4,17 +4,19 @@ IMAGE_REPO=ghcr.io/kuoss
 LDFLAGS += -X "main.ventiVersion=$(VENTI_VERSION)"
 MAKEFLAGS += -j2
 
-web-build:
-	cd web && VITE_SERVER_HMR_HOST=localhost npm run build
-
+# dev server(5173)
+dev: go-dev web-dev
+go-dev:
+	API_ONLY=1 VENTI_VERSION=${VENTI_VERSION} air
 web-dev:
 	cd web && VITE_SERVER_HMR_HOST=localhost npm run dev --clearScreen=false
 
-go-dev:
-	API_ONLY=1 VENTI_VERSION=${VENTI_VERSION} air
-
-dev: go-dev web-dev
-
+# gin server(8080)
+watch: go-air web-watch
+web-watch:
+	cd web && npm run watch
+go-air:
+	sleep 15 && air
 
 stage:
 	skaffold dev --namespace=kube-system --default-repo=ghcr.io/kuoss
