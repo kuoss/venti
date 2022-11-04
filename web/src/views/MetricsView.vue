@@ -19,7 +19,6 @@
     <div class="flex-1 py-4 px-4">
       <div class="pb-4">
         <div class="relative w-full">
-          <span>expr: {{ expr }}</span>
           <input type="search"
             class="flex-1 relative flex-auto min-w-0 block w-full px-3 py-1.5 text-base font-normal text-gray-700 bg-white bg-clip-padding border border-solid border-gray-300 rounded transition ease-in-out m-0 focus:text-gray-700 focus:bg-white focus:border-blue-600 focus:outline-none"
             placeholder="Expression" aria-label="Expression" aria-describedby="button-addon3" v-model="expr"
@@ -44,7 +43,7 @@
 
           <div class="mt-4 py-1 font-bold">
             <span v-if="result && result.length > 0">{{ result.length }} rows</span>
-            <div class="float-right" v-if="cursorTime">{{ useTimeStore().timestamp2ymdhis(cursorTime) }}</div>
+            <div class="float-right" v-if="cursorTime">{{ timeStore.timestamp2ymdhis(cursorTime) }}</div>
           </div>
           <div class="overflow-x-auto overflow-y-auto margin-l-[5em] max-h-[50vh]"
             :style="{ width: tableWitdh + 'px' }">
@@ -129,9 +128,9 @@
 </template>
 
 <script>
-import { useTimeStore } from "@/stores/time"
-import TimeRangePicker from "@/components/TimeRangePicker.vue"
-import RunButton from "@/components/RunButton.vue"
+import { useTimeStore } from '@/stores/time'
+import TimeRangePicker from '@/components/TimeRangePicker.vue'
+import RunButton from '@/components/RunButton.vue'
 import UplotVue from 'uplot-vue'
 import 'uplot/dist/uPlot.min.css'
 
@@ -153,6 +152,7 @@ export default {
   },
   data() {
     return {
+      timeStore: useTimeStore(),
       searchMode: false,
       cursorIdx: null,
       cursorTime: null,
@@ -248,8 +248,8 @@ export default {
         console.error('emtpy expr')
         return
       }
-      const timeRange = await useTimeStore().toTimeRangeForQuery(this.range)
-      let lastRange = timeRange.map(x => useTimeStore().timestamp2ymdhis(x))
+      const timeRange = await this.timeStore.toTimeRangeForQuery(this.range)
+      let lastRange = timeRange.map(x => this.timeStore.timestamp2ymdhis(x))
       if (lastRange[0].slice(0, 10) == lastRange[1].slice(0, 10)) lastRange[1] = lastRange[1].slice(11)
       this.lastExecuted = { expr: this.expr, range: lastRange }
       this.loading = true
@@ -280,7 +280,7 @@ export default {
       }
     },
     timerHandler() {
-      if (useTimeStore().timerManager != 'MetricsView' || this.intervalSeconds == 0) return
+      if (this.timeStore.timerManager != 'MetricsView' || this.intervalSeconds == 0) return
       this.execute()
     },
     renderChart() {
@@ -330,7 +330,7 @@ export default {
       this.chartOptions = {
         ...this.chartOptions,
         series: newSeries,
-        scales: useTimeStore().scales,
+        scales: this.timeStore.scales,
       }
       this.chartData = [timestamps, ...seriesData]
       this.chartResize()
@@ -376,7 +376,7 @@ export default {
     },
   },
   mounted() {
-    useTimeStore().timerManager = 'MetricsView'
+    this.timeStore.timerManager = 'MetricsView'
     this.fetchMetadata()
     if (this.$route.query?.query) {
       this.expr = '' + this.$route.query.query
