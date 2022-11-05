@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"gopkg.in/yaml.v3"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -78,7 +79,7 @@ func loadDashboards() {
 	log.Println("Loading dashboards...")
 	// filepaths, err := filepath.Glob("etc/dashboards/**/*.yaml")
 	filepaths := glob("etc/dashboards", func(path string) bool {
-		return filepath.Ext(path) == ".yaml"
+		return !strings.Contains(path, "/..") && filepath.Ext(path) == ".yaml"
 	})
 	// if err != nil {
 	// 	log.Fatal(err)
