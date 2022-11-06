@@ -1,4 +1,4 @@
-VENTI_VERSION=v0.1.12
+VENTI_VERSION=v0.1.13
 IMAGE_REPO=ghcr.io/kuoss
 
 LDFLAGS += -X "main.ventiVersion=$(VENTI_VERSION)"
