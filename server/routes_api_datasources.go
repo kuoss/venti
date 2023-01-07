@@ -27,7 +27,7 @@ func routesAPIDatasources(api *gin.RouterGroup) {
 		for _, ds := range datasources {
 			var err error
 			var body string
-			client := http.Client{Timeout: 2 * time.Second}
+			client := http.Client{Timeout: 2000 * time.Second}
 			resp, err := client.Get(fmt.Sprintf("http://%s:%d/api/v1/targets?state=active", ds.Host, ds.Port))
 			if err != nil {
 				body = `{"status":"error","errorType":"timeout"}`
