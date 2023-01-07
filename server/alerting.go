@@ -20,8 +20,7 @@ const (
 	ValueTypeScalar ValueType = "scalar"
 	ValueTypeMatrix ValueType = "matrix"
 	ValueTypeString ValueType = "string"
-
-	ValueTypeLogs ValueType = "logs"
+	ValueTypeLogs   ValueType = "logs"
 )
 
 type Sample struct {
@@ -79,7 +78,7 @@ func alertLogTaskLoop() {
 	for {
 		log.Println("alert Log task at", time.Now())
 		alertLogTask()
-		time.Sleep(time.Duration(30) * time.Second)
+		time.Sleep(time.Duration(60) * time.Second)
 	}
 }
 
@@ -87,11 +86,12 @@ func alertLogTask() {
 	alertRuleGroups := GetAlertRuleGroups()
 	firingAlerts := []Alert{}
 	for groupIndex, group := range alertRuleGroups {
+		if group.DatasourceType != DatasourceTypeLethe {
+			continue
+		}
 		for ruleIndex, rule := range group.Rules {
 			now := time.Now()
-			if group.DatasourceType != DatasourceTypeLethe {
-				continue
-			}
+
 			time.Sleep(time.Duration(1500) * time.Millisecond)
 
 			resultString, err := RunHTTPLetheQuery(HTTPQuery{
@@ -109,14 +109,12 @@ func alertLogTask() {
 			}
 
 			if len(logResult.Data.Result) < 1 {
-				fmt.Println("result empty. inactivating")
 				// NORMAL
 				config.AlertRuleGroups[groupIndex].Rules[ruleIndex].State = AlertStateInactive
 				config.AlertRuleGroups[groupIndex].Rules[ruleIndex].ActiveAt = time.Time{}
 				continue
 			}
 			if reflect.ValueOf(rule.ActiveAt).IsZero() {
-				fmt.Println("result empty. inactivating")
 				config.AlertRuleGroups[groupIndex].Rules[ruleIndex].ActiveAt = now
 			}
 			// pending
@@ -125,6 +123,9 @@ func alertLogTask() {
 				config.AlertRuleGroups[groupIndex].Rules[ruleIndex].State = AlertStatePending
 				continue
 			}
+			fmt.Printf("logReuslt: %+v\n", logResult)
+			fmt.Printf("alert rule: %+v\n", rule)
+
 			// firing: add to firing alerts
 			config.AlertRuleGroups[groupIndex].Rules[ruleIndex].State = AlertStateFiring
 
@@ -159,14 +160,15 @@ func alertTask() {
 	firingAlerts := []Alert{}
 	for i, group := range alertRuleGroups {
 		datasourceType := group.DatasourceType
+		if datasourceType == DatasourceTypeLethe {
+			continue
+		}
 		for j, rule := range group.Rules {
 			time.Sleep(time.Duration(500) * time.Millisecond)
 			now := time.Now()
+			//todo refactoring
 			switch datasourceType {
 			case DatasourceTypeLethe:
-				resultString, err = RunHTTPLetheQuery(HTTPQuery{
-					Query: rule.Expr,
-				})
 				continue
 
 			case DatasourceTypePrometheus:
@@ -205,9 +207,7 @@ func alertTask() {
 			}
 			// firing: add to firing alerts
 			config.AlertRuleGroups[i].Rules[j].State = AlertStateFiring
-
 			firingAlerts = append(firingAlerts, renderAlerts(rule, queryResult)...)
-
 		}
 	}
 	fireAlerts(firingAlerts)
@@ -257,7 +257,6 @@ func renderAlerts(rule AlertRule, result QueryResult) []Alert {
 			Annotations: rule.Annotations,
 		}}
 	}
-
 	alerts := []Alert{}
 	for _, smpl := range result.Data.Result {
 		// deep copy alert
