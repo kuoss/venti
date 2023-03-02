@@ -27,3 +27,10 @@ stage:
 
 docker-build:
 	docker build -t ${IMAGE_REPO}/venti:${VENTI_VERSION} --build-arg VENTI_VERSION=${VENTI_VERSION} . && docker push ${IMAGE_REPO}/venti:${VENTI_VERSION} 
+
+
+licenses:
+	# go install github.com/google/go-licenses@latest
+	go-licenses report github.com/kuoss/venti | tee docs/licenses.csv;\
+	go-licenses check github.com/kuoss/venti && echo OK
+
