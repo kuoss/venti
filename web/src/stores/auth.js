@@ -9,34 +9,34 @@ export const useAuthStore = defineStore('auth', {
     }),
     actions: {
         async login(credentials) {
-            const response = (await axios.post('user/login', credentials)).data
-            if (response) {
-                const token = `Bearer ${response.token}`
+            let formData = new FormData()
+            formData.append('username', credentials.username)
+            formData.append('password', credentials.password)
+
+            const response = await fetch("/user/login", { body: formData, method: "post" })
+            const data = await response.json()
+            if (data) {
+                const token = `Bearer ${data.token}`
                 localStorage.setItem('token', token)
-                localStorage.setItem('userID', response.userID)
-                localStorage.setItem('username', response.username)
+                localStorage.setItem('userID', data.userID)
+                localStorage.setItem('username', data.username)
                 axios.defaults.headers.common['Authorization'] = token
-                axios.defaults.headers.common['UserID'] = response.userID
-                axios.defaults.headers.common['Username'] = response.username
-                this.userID = response.userID
-                this.username = response.username
+                axios.defaults.headers.common['UserID'] = data.userID
+                axios.defaults.headers.common['Username'] = data.username
+                this.userID = data.userID
+                this.username = data.username
                 this.loggedIn = true
-                // console.log('logged in')
-                // await this.fetchUser()
             }
         },
         async logout() {
-            const response = (await axios.post('user/logout')).data
-            if (response) {
+            const response = await fetch("/user/logout", { method: "post" })
+            const data = await response.json()
+            if (data) {
                 localStorage.removeItem('token')
                 localStorage.removeItem('userID')
                 localStorage.removeItem('username')
                 this.$reset()
             }
         },
-        // async fetchUser() {
-        //     this.user = (await axios.get('api/me')).data
-        //     this.loggedIn = true
-        // },
     },
 })

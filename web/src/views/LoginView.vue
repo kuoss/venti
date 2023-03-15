@@ -50,3 +50,11 @@ const onSubmit = () => {
 };
 onBeforeUnmount(() => error.$reset());
 </script>
+
+<script>
+export default {
+    mounted() {
+        console.log('mounted...')
+    }
+}
+</script>

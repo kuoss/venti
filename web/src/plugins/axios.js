@@ -5,7 +5,7 @@ import axios from 'axios';
 axios.defaults.baseURL = import.meta.env.AXIOS_BASE_URL
 axios.defaults.headers.common['Authorization'] = localStorage.getItem('token')
 axios.defaults.headers.common['UserID'] = localStorage.getItem('userID')
-// axios.defaults.withCredentials = true
+axios.defaults.withCredentials = true
 
 axios.interceptors.request.use(
     function (config) {

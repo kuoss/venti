@@ -26,12 +26,14 @@ export const useFilterStore = defineStore('filter', {
         async loadData() {
             this.status.loading = true
             try {
-                const response = await axios.get('/api/prometheus/namespaces')
-                const namespaces = response.data.data.result.map(x => x.metric.namespace)
+                const response = await fetch('/api/prometheus/namespaces')
+                const data = await response.json()
+                this.namespaces = data.result.map(x => x.metric.namespace)
                 this.namespaces = ['All namespaces', ...namespaces]
 
-                const response2 = await axios.get('/api/prometheus/nodes')
-                const nodes = response2.data.data.result.map(x => x.metric.node)
+                const response2 = await fetch('/api/prometheus/nodes')
+                const data2 = await response2.json()
+                this.nodes = data2.result.map(x => x.metric.node)
                 this.nodes = ['All nodes', ...nodes]
 
                 this.status.loaded = true

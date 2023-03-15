@@ -40,9 +40,9 @@ export const useTimeStore = defineStore('time', {
         },
         async updateNow() {
             try {
-                const response = await axios.get('/api/prometheus/time')
-                const now = response.data.data.result[0]
-                this.now = now
+                const response = await fetch('/api/prometheus/time')
+                const data = await response.json()
+                this.now = data.result[0]
             } catch (error) {
                 console.error(error)
             }

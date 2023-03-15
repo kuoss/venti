@@ -79,8 +79,9 @@ export default {
     async init() {
       this.dashboards = await useDashboardStore().getDashboards()
       try {
-        const response = await this.axios.get('api/config/version')
-        this.version = response.data
+        const response = await fetch('api/config/version')
+        const data = await response.json()
+        this.version = data
       } catch (error) {
         console.error(error)
       }

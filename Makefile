@@ -5,14 +5,14 @@ LDFLAGS += -X "main.ventiVersion=$(VENTI_VERSION)"
 MAKEFLAGS += -j2
 
 # dev server(5173)
-dev: go-dev web-dev
+run-dev: go-dev web-dev
 go-dev:
 	API_ONLY=1 VENTI_VERSION=${VENTI_VERSION} air
 web-dev:
 	cd web && VITE_SERVER_HMR_HOST=localhost npm run dev --clearScreen=false
 
 # gin server(8080)
-watch: go-air web-watch
+run-pre: go-air web-watch
 web-watch:
 	cd web && npm run watch
 go-air:

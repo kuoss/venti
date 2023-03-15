@@ -19,8 +19,8 @@ export const useDashboardStore = defineStore('dashboard', {
         async loadData() {
             this.status.loading = true
             try {
-                const response = await axios.get('api/config/dashboards')
-                this.dashboards = response.data
+                const response = await fetch('/api/config/dashboards')
+                this.dashboards = await response.json()
                 this.status.loaded = true
             } catch (error) {
                 console.error(error)

@@ -13,31 +13,34 @@ import (
 )
 
 func login(c *gin.Context) {
-	var form LoginForm
-	if err := c.ShouldBind(&form); err != nil {
-		c.JSON(422, gin.H{
+	username := c.PostForm("username")
+	password := c.PostForm("password")
+	if username == "" || password == "" {
+		c.JSON(200, gin.H{
 			"errors": map[string]string{
 				"common": "The username or password is invalid.",
 			},
 		})
 		return
 	}
+	
 	var user User
-	err := db.First(&user, "username = ?", "admin").Error
+	err := db.First(&user, "username = ?", username).Error
 	if err == nil {
-		if checkPassword(form.Password, user.Hash) {
+		if checkPassword(password, user.Hash) {
 			token := issueToken(user)
-			log.Printf("User '%s' logged in successfully.", user.Username)
+			log.Printf("User '%s' logged in successfully.\n", user.Username)
 			c.JSON(200, gin.H{
 				"message":  "You are logged in.",
 				"token":    token,
 				"userID":   user.ID,
 				"username": user.Username,
 			})
+			log.Println("User login ok.")
 			return
 		}
 	}
-	log.Printf("User login failed.")
+	log.Println("User login failed.")
 	c.JSON(422, gin.H{
 		"status":    "error",
 		"errorType": "authentication_failed",
