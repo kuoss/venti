@@ -1,13 +1,7 @@
 module.exports = {
-  content: [
-    "./index.html",
-    "./src/**/*.{vue,js,ts,jsx,tsx}",
-  ],
-  darkMode: 'class',
-  plugins: [
-    require('nightwind'),
-    require('tailwind-scrollbar'),
-  ],
+  content: ["./index.html", "./src/**/*.{vue,js,ts,jsx,tsx}"],
+  darkMode: "class",
+  plugins: [require("nightwind"), require("tailwind-scrollbar")],
   theme: {
     extend: {
       // animation: {
@@ -22,4 +16,4 @@ module.exports = {
       // }
     },
   },
-}
+};

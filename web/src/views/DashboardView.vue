@@ -1,13 +1,13 @@
 <script setup>
-import Dropdown from "@/components/Dropdown.vue"
-import Panel from '@/components/Panel.vue'
-import RunButton from "@/components/RunButton.vue"
-import SidePanel from '@/components/SidePanel.vue'
-import TimeRangePicker from "@/components/TimeRangePicker.vue"
+import Dropdown from "@/components/Dropdown.vue";
+import Panel from "@/components/Panel.vue";
+import RunButton from "@/components/RunButton.vue";
+import SidePanel from "@/components/SidePanel.vue";
+import TimeRangePicker from "@/components/TimeRangePicker.vue";
 
 import { useDashboardStore } from "@/stores/dashboard";
 import { useFilterStore } from "@/stores/filter";
-import { useSidePanelStore } from '@/stores/sidePanel'
+import { useSidePanelStore } from "@/stores/sidePanel";
 import { useTimeStore } from "@/stores/time";
 </script>
 
@@ -58,11 +58,28 @@ import { useTimeStore } from "@/stores/time";
         <div
           v-for="(row, i) in dashboard.rows"
           class="pb-3 grid gap-3"
-          :class="['flex', ['', 'grid-cols-1', 'grid-cols-2', 'grid-cols-3', 'grid-cols-4', 'grid-cols-5', 'grid-cols-6', 'grid-cols-7', 'grid-cols-8', 'grid-cols-9', 'grid-cols-10', 'grid-cols-11', 'grid-cols-12',][row.panels.length]]"
+          :class="[
+            'flex',
+            [
+              '',
+              'grid-cols-1',
+              'grid-cols-2',
+              'grid-cols-3',
+              'grid-cols-4',
+              'grid-cols-5',
+              'grid-cols-6',
+              'grid-cols-7',
+              'grid-cols-8',
+              'grid-cols-9',
+              'grid-cols-10',
+              'grid-cols-11',
+              'grid-cols-12',
+            ][row.panels.length],
+          ]"
         >
           <div class="flex-1 bg-white border" v-for="(panel, j) in row.panels">
             <Panel
-              :position="`${i+1}${j+1}`"
+              :position="`${i + 1}${j + 1}`"
               :count="count"
               :panelConfig="panel"
               :panelWidth="clientWidth / row.panels.length"
@@ -91,72 +108,81 @@ export default {
       nodes: [],
       clientWidth: 100,
       rows: [],
-    }
+    };
   },
   methods: {
     updateTimeRange(r) {
-      this.range = r
+      this.range = r;
     },
     async execute() {
-      this.timeRange = await useTimeStore().toTimeRangeForQuery(this.range)
-      this.count++
+      this.timeRange = await useTimeStore().toTimeRangeForQuery(this.range);
+      this.count++;
       if (this.intervalSeconds > 0) {
-        setTimeout(() => this.timerHandler(), this.intervalSeconds * 1000)
+        setTimeout(() => this.timerHandler(), this.intervalSeconds * 1000);
       }
     },
     timerHandler() {
-      if (useTimeStore().timerManager != 'DashboardView' || this.intervalSeconds == 0) return
-      this.execute()
+      if (
+        useTimeStore().timerManager != "DashboardView" ||
+        this.intervalSeconds == 0
+      )
+        return;
+      this.execute();
     },
     changeInterval(i) {
-      this.intervalSeconds = i
-      this.execute()
+      this.intervalSeconds = i;
+      this.execute();
     },
     onDropdownOpen(uid) {
-      this.currentDropdown = uid
+      this.currentDropdown = uid;
     },
     selectNamespace(ns) {
-      useFilterStore().selectedNamespace = ns
-      this.execute()
+      useFilterStore().selectedNamespace = ns;
+      this.execute();
     },
     selectNode(node) {
-      useFilterStore().selectedNode = node
-      this.execute()
+      useFilterStore().selectedNode = node;
+      this.execute();
     },
     mousemove(e) {
-      this.legendPosition = [e.clientX + 50, e.clientY + 50]
+      this.legendPosition = [e.clientX + 50, e.clientY + 50];
     },
     resize() {
       // wait for browser rendering
-      setTimeout(() => { this.clientWidth = this.$refs.root.clientWidth }, 80)
+      setTimeout(() => {
+        this.clientWidth = this.$refs.root.clientWidth;
+      }, 80);
     },
     async init() {
-      this.namespaces = await useFilterStore().getNamespaces()
-      this.nodes = await useFilterStore().getNodes()
-      this.dashboards = await useDashboardStore().getDashboards()
-      this.renderDashboard()
-      this.execute()
-      this.resize()
+      this.namespaces = await useFilterStore().getNamespaces();
+      this.nodes = await useFilterStore().getNodes();
+      this.dashboards = await useDashboardStore().getDashboards();
+      this.renderDashboard();
+      this.execute();
+      this.resize();
     },
     renderDashboard() {
       this.dashboards.forEach((d) => {
         if (d.title == this.$route.params.name) {
-          this.dashboard = d
-          useSidePanelStore().updateDashboardInfo(d)
+          this.dashboard = d;
+          useSidePanelStore().updateDashboardInfo(d);
         }
-      })
+      });
     },
   },
   mounted() {
-    useTimeStore().timerManager = 'DashboardView'
+    useTimeStore().timerManager = "DashboardView";
     this.$watch(
-      () => this.$route.params, () => { this.renderDashboard() },
-    )
-    window.addEventListener("resize", this.resize)
-    this.init()
+      () => this.$route.params,
+      () => {
+        this.renderDashboard();
+      }
+    );
+    window.addEventListener("resize", this.resize);
+    this.init();
   },
   unmounted() {
-    window.removeEventListener("resize", this.resize)
+    window.removeEventListener("resize", this.resize);
   },
-}
+};
 </script>

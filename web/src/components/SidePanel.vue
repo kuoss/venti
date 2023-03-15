@@ -1,9 +1,9 @@
 <script setup>
-import { useSidePanelStore } from '@/stores/sidePanel'
-import { XIcon } from '@heroicons/vue/solid'
-import ButtonClipboard from '@/components/ButtonClipboard.vue'
-import yaml from 'js-yaml'
-   </script>
+import { useSidePanelStore } from "@/stores/sidePanel";
+import { XIcon } from "@heroicons/vue/solid";
+import ButtonClipboard from "@/components/ButtonClipboard.vue";
+import yaml from "js-yaml";
+</script>
 
 <template>
   <div :style="{ width: width }" v-if="show">
@@ -22,11 +22,15 @@ import yaml from 'js-yaml'
         <div class="flex-1 h-full">
           <div v-if="type == 'DataTable'">
             <div class="font-bold text-center p-1">{{ dataTable.title }}</div>
-            <div class="float-right px-2">{{ $util.dateTimeAsLocal(dataTable.time) }}</div>
+            <div class="float-right px-2">
+              {{ $util.dateTimeAsLocal(dataTable.time) }}
+            </div>
             <div class="px-2">{{ dataTable.rows.length }} rows</div>
           </div>
           <div class="flex justify-center py-2" v-else>
-            <span class="font-bold text-center p-1">{{ dashboardInfo.dashboardConfig.title }}</span>
+            <span class="font-bold text-center p-1">{{
+              dashboardInfo.dashboardConfig.title
+            }}</span>
             <span class="ml-2">
               <ButtonClipboard
                 text="Dashboard"
@@ -46,9 +50,13 @@ import yaml from 'js-yaml'
           <div v-if="type == 'DataTable'">
             <table class="w-full" v-if="dataTable.time">
               <tr v-for="row in dataTable.rows">
-                <td class="pl-2" :style="{ 'color': $util.string2color(row[0]) }">■</td>
+                <td class="pl-2" :style="{ color: $util.string2color(row[0]) }">
+                  ■
+                </td>
                 <td class="break-all">{{ row[0] }}</td>
-                <td class="pr-3 text-right">{{ Number.parseFloat(row[1]).toFixed(1) }}</td>
+                <td class="pr-3 text-right">
+                  {{ Number.parseFloat(row[1]).toFixed(1) }}
+                </td>
               </tr>
             </table>
           </div>
@@ -59,7 +67,9 @@ import yaml from 'js-yaml'
             <table class="w-full font-mono">
               <tr class="align-top">
                 <td class="w-6 text-center"></td>
-                <td class="bg-slate-100 whitespace-pre-wrap">title: {{ dashboardInfo.dashboardConfig.title + '\nrows:' }}</td>
+                <td class="bg-slate-100 whitespace-pre-wrap">
+                  title: {{ dashboardInfo.dashboardConfig.title + "\nrows:" }}
+                </td>
               </tr>
               <template v-for="(row, i) in dashboardInfo.dashboardConfig.rows">
                 <tr class="border-b align-top">
@@ -68,21 +78,33 @@ import yaml from 'js-yaml'
                 </tr>
                 <tr class="border-b align-top" v-for="(panel, j) in row.panels">
                   <td class="text-center">
-                    <div class="p-1 bg-cyan-100" style="user-select: none">{{ i + 1 }}{{ j + 1 }}</div>
+                    <div class="p-1 bg-cyan-100" style="user-select: none">
+                      {{ i + 1 }}{{ j + 1 }}
+                    </div>
                   </td>
                   <td
                     :ref="`ref${i + 1}${j + 1}`"
                     class="bg-slate-100 highlight-base transition-colors duration-[5000ms]"
                   >
                     <div class="float-right my-1 mr-3">
-                      <ButtonClipboard :value="yamlPanel(panel)" buttonClass="hover:bg-slate-300" />
+                      <ButtonClipboard
+                        :value="yamlPanel(panel)"
+                        buttonClass="hover:bg-slate-300"
+                      />
                     </div>
-                    <pre class="whitespace-pre-wrap">  - title: {{ panel.title }}</pre>
-                    <pre class="whitespace-pre-wrap">    type: {{ panel.type }}</pre>
+                    <pre class="whitespace-pre-wrap">
+  - title: {{ panel.title }}</pre
+                    >
+                    <pre class="whitespace-pre-wrap">
+    type: {{ panel.type }}</pre
+                    >
                     <template v-if="panel.targets">
                       <pre class="whitespace-pre-wrap">    targets:</pre>
                       <template v-for="target in panel.targets">
-                        <pre class="whitespace-pre-wrap" v-html="yamlTarget(target, panel.type)"></pre>
+                        <pre
+                          class="whitespace-pre-wrap"
+                          v-html="yamlTarget(target, panel.type)"
+                        ></pre>
                       </template>
                     </template>
                     <pre
@@ -106,78 +128,118 @@ export default {
   data() {
     return {
       show: false,
-      type: '',
+      type: "",
       dataTable: {},
       panelInfo: {},
       dashboardInfo: {},
       currentPosition: null,
-    }
+    };
   },
   computed: {
     width() {
       switch (this.type) {
-        case 'DataTable': return '300px'
+        case "DataTable":
+          return "300px";
       }
-      return '600px'
+      return "600px";
     },
     title() {
       switch (this.type) {
-        case 'DataTable': return this.dataTable.title
-        case 'DashboardInfo': return this.dashboardInfo.dashboardConfig.title
-        case 'PanelInfo': return this.panelInfo.panelConfig.title
+        case "DataTable":
+          return this.dataTable.title;
+        case "DashboardInfo":
+          return this.dashboardInfo.dashboardConfig.title;
+        case "PanelInfo":
+          return this.panelInfo.panelConfig.title;
       }
     },
   },
   methods: {
-    dumpYAML(j, flowLevel) { return yaml.dump(j, { noArrayIndent: true, flowLevel: flowLevel }).replaceAll('>-', '|').replaceAll('>', '|') },
-    yamlDashboard(j) { return this.dumpYAML(j, 5) },
-    yamlPanel(j) { return this.indentText(this.dumpYAML([j], 4), 2) },
-    yamlTarget(j, type) {
-      let x = this.cloneObject(j)
-      const expr = x.expr
-      const path = (type == 'logs') ? 'logs' : 'metrics'
-      x.expr = 'DuMmYeXpR'
-      x = this.dumpYAML([x], 3)
-      x = x.replace('DuMmYeXpR', `<span class="text-cyan-500"><a class="hover:underline" href="/#/${path}?query=${encodeURIComponent(expr)}">${yaml.dump(expr).replaceAll('>-', '|').replaceAll('>', '|').replaceAll("\n", "\n  ").trimRight()}</a></span>`)
-      return this.indentText(x, 4).replaceAll('$node', '<span class="text-yellow-500 font-bold">$node</span>').replaceAll('$namespace', '<span class="text-green-500 font-bold">$namespace</span>')
+    dumpYAML(j, flowLevel) {
+      return yaml
+        .dump(j, { noArrayIndent: true, flowLevel: flowLevel })
+        .replaceAll(">-", "|")
+        .replaceAll(">", "|");
     },
-    yamlChartOptions(j) { return "  chartOptions:\n" + this.indentText(this.dumpYAML(j), 4) },
+    yamlDashboard(j) {
+      return this.dumpYAML(j, 5);
+    },
+    yamlPanel(j) {
+      return this.indentText(this.dumpYAML([j], 4), 2);
+    },
+    yamlTarget(j, type) {
+      let x = this.cloneObject(j);
+      const expr = x.expr;
+      const path = type == "logs" ? "logs" : "metrics";
+      x.expr = "DuMmYeXpR";
+      x = this.dumpYAML([x], 3);
+      x = x.replace(
+        "DuMmYeXpR",
+        `<span class="text-cyan-500"><a class="hover:underline" href="/#/${path}?query=${encodeURIComponent(
+          expr
+        )}">${yaml
+          .dump(expr)
+          .replaceAll(">-", "|")
+          .replaceAll(">", "|")
+          .replaceAll("\n", "\n  ")
+          .trimRight()}</a></span>`
+      );
+      return this.indentText(x, 4)
+        .replaceAll(
+          "$node",
+          '<span class="text-yellow-500 font-bold">$node</span>'
+        )
+        .replaceAll(
+          "$namespace",
+          '<span class="text-green-500 font-bold">$namespace</span>'
+        );
+    },
+    yamlChartOptions(j) {
+      return "  chartOptions:\n" + this.indentText(this.dumpYAML(j), 4);
+    },
     indentText(t, level) {
-      return t.split("\n").map(x => ' '.repeat(level) + x).join("\n").trimRight()
+      return t
+        .split("\n")
+        .map((x) => " ".repeat(level) + x)
+        .join("\n")
+        .trimRight();
     },
     cloneObject(o) {
-      return JSON.parse(JSON.stringify(o))
+      return JSON.parse(JSON.stringify(o));
     },
     goToPanelConfig(position, retries = 0) {
-      if (this.type != 'DashboardInfo') {
-        console.log('this.type=', this.type)
-        return
+      if (this.type != "DashboardInfo") {
+        console.log("this.type=", this.type);
+        return;
       }
-      const el = this.$refs[`ref${position}`]
-      if (!el || !el[0] || !el[0]?.classList) return
-      el[0].scrollIntoView()
-      el[0].classList.add('highlight')
+      const el = this.$refs[`ref${position}`];
+      if (!el || !el[0] || !el[0]?.classList) return;
+      el[0].scrollIntoView();
+      el[0].classList.add("highlight");
       setTimeout(() => {
-        if (!el || !el[0] || !el[0]?.classList) return
-        el[0].classList.remove('highlight')
-      }, 5000)
+        if (!el || !el[0] || !el[0]?.classList) return;
+        el[0].classList.remove("highlight");
+      }, 5000);
     },
   },
   mounted() {
     useSidePanelStore().$subscribe((mutation, state) => {
-      const needResize = (this.show != state.show) || (this.type != state.type)
-      this.show = state.show
-      this.type = state.type
-      this.dataTable = state.dataTable
-      this.panelInfo = state.panelInfo
-      this.dashboardInfo = state.dashboardInfo
-      if (state.currentPosition && this.currentPosition != state.currentPosition) {
+      const needResize = this.show != state.show || this.type != state.type;
+      this.show = state.show;
+      this.type = state.type;
+      this.dataTable = state.dataTable;
+      this.panelInfo = state.panelInfo;
+      this.dashboardInfo = state.dashboardInfo;
+      if (
+        state.currentPosition &&
+        this.currentPosition != state.currentPosition
+      ) {
         // console.log('SidePanel.vue: mounted: $subscribe: state=', state)
-        this.goToPanelConfig(state.currentPosition)
+        this.goToPanelConfig(state.currentPosition);
       }
-      this.currentPosition = state.currentPosition
-      if (needResize) this.$emit('resize')
-    })
-  }
-}
+      this.currentPosition = state.currentPosition;
+      if (needResize) this.$emit("resize");
+    });
+  },
+};
 </script>

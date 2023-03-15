@@ -11,55 +11,72 @@ import { useDashboardStore } from "@/stores/dashboard";
     >
       <div class="py-4 text-center mx-auto">
         <a href="#" class="mx-auto">
-          <img class="inline" src="@/assets/venti-logo.svg" width="20" height="20" />
+          <img
+            class="inline"
+            src="@/assets/venti-logo.svg"
+            width="20"
+            height="20"
+          />
           <span class="ml-2 text-lg">venti</span>
         </a>
-        <div class="text-xs text-center opacity-25">{{version}}</div>
+        <div class="text-xs text-center opacity-25">{{ version }}</div>
       </div>
       <div class="py-5">
         <RouterLink
           class="block hover:bg-slate-600 dark:hover:bg-slate-600 px-8 py-2"
           to="/metrics"
-        >Metrics</RouterLink>
+          >Metrics</RouterLink
+        >
         <RouterLink
           class="block hover:bg-slate-600 dark:hover:bg-slate-600 px-8 py-2"
           to="/logs"
-        >Logs</RouterLink>
+          >Logs</RouterLink
+        >
 
-        <div
-          class="block px-8 text-slate-400 dark:text-slate-400 py-2"
-        >Dashboards ({{ (dashboards || []).length }})</div>
+        <div class="block px-8 text-slate-400 dark:text-slate-400 py-2">
+          Dashboards ({{ (dashboards || []).length }})
+        </div>
         <div v-for="dashboard in dashboards">
           <RouterLink
             class="block hover:bg-slate-600 dark:hover:bg-slate-600 px-12 py-2"
             :to="'/dashboard/' + dashboard.title"
-          >{{ dashboard.title }}</RouterLink>
+            >{{ dashboard.title }}</RouterLink
+          >
         </div>
         <RouterLink
           class="block hover:bg-slate-600 dark:hover:bg-slate-600 px-8 py-2"
           to="/alert"
-        >Alert</RouterLink>
+          >Alert</RouterLink
+        >
         <RouterLink
           class="block hover:bg-slate-600 dark:hover:bg-slate-600 px-8 py-2"
           to="/datasource"
-        >Datasource</RouterLink>
+          >Datasource</RouterLink
+        >
       </div>
       <div class="text-center text-slate-100 dark:text-slate-100 py-1">
         <button
           @click="useConfigStore().setDark(false)"
           class="h-rounded-group py-2 px-4 bg-slate-600 dark:bg-slate-600 border border-slate-700 dark:border-slate-700 hover:bg-slate-800 dark:hover:bg-slate-800"
-        >light</button>
+        >
+          light
+        </button>
         <button
           @click="useConfigStore().setDark(true)"
           class="h-rounded-group py-2 px-4 bg-slate-600 dark:bg-slate-600 border border-slate-700 dark:border-slate-700 hover:bg-slate-800 dark:hover:bg-slate-800"
-        >dark</button>
+        >
+          dark
+        </button>
       </div>
       <RouterLink
         class="block hover:bg-slate-600 dark:hover:bg-slate-600 px-8 py-4"
         to="/logout"
-      >Logout</RouterLink>
+        >Logout</RouterLink
+      >
     </aside>
-    <main class="main flex flex-col flex-grow transition-all duration-150 ease-in">
+    <main
+      class="main flex flex-col flex-grow transition-all duration-150 ease-in"
+    >
       <div class="w-full flex flex-grow">
         <RouterView :key="$route.fullPath" />
       </div>
@@ -72,23 +89,23 @@ export default {
   data() {
     return {
       dashboards: [],
-      version: '',
-    }
+      version: "",
+    };
   },
   methods: {
     async init() {
-      this.dashboards = await useDashboardStore().getDashboards()
+      this.dashboards = await useDashboardStore().getDashboards();
       try {
-        const response = await fetch('api/config/version')
-        const data = await response.json()
-        this.version = data
+        const response = await fetch("api/config/version");
+        const data = await response.json();
+        this.version = data;
       } catch (error) {
-        console.error(error)
+        console.error(error);
       }
     },
   },
   mounted() {
-    this.init()
+    this.init();
   },
-}
+};
 </script>
