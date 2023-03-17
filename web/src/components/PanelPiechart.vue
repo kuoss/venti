@@ -95,17 +95,16 @@ export default {
       if (this.timeRange.length < 2) return;
       this.$emit("setIsLoading", true);
       try {
-        let data = [];
+        let dds = [];
         for (const target of this.panelConfig.targets) {
-          const response = await this.axios.get("/api/prometheus/query", {
-            params: {
-              expr: useFilterStore().renderExpr(target.expr),
-              time: this.timeRange[1],
-            },
-          });
-          data = [
-            ...data,
-            ...response.data.data.result.map((x) => ({
+          const response = await fetch('/api/prometheus/query?' + new URLSearchParams({
+            query: useFilterStore().renderExpr(target.expr),
+            time: this.timeRange[1],
+          }));
+          const data = await response.json();
+          dds = [
+            ...dds,
+            ...data.data.result.map((x) => ({
               label: target.legend.replace(
                 /\{\{(.*?)\}\}/g,
                 (i, m) => x.metric[m]
@@ -114,8 +113,8 @@ export default {
             })),
           ].sort((a, b) => (1 * a.value > 1 * b.value ? -1 : 1));
         }
-        const labels = data.map((x) => x.label);
-        const values = data.map((x) => x.value);
+        const labels = dds.map((x) => x.label);
+        const values = dds.map((x) => x.value);
         if (values.length < 1) {
           this.isNoData = true;
         } else {

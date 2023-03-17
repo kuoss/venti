@@ -89,14 +89,14 @@ export default {
   data() {
     return {
       dashboards: [],
-      version: "",
+      version: '',
     };
   },
   methods: {
     async init() {
       this.dashboards = await useDashboardStore().getDashboards();
       try {
-        const response = await fetch("api/config/version");
+        const response = await fetch('/api/config/version');
         const data = await response.json();
         this.version = data;
       } catch (error) {

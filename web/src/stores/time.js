@@ -1,5 +1,5 @@
 import { defineStore } from "pinia";
-import axios from "axios";
+// import axios from "axios";
 
 export const useTimeStore = defineStore("time", {
   state: () => ({
@@ -51,7 +51,7 @@ export const useTimeStore = defineStore("time", {
       try {
         const response = await fetch("/api/prometheus/time");
         const data = await response.json();
-        this.now = data.result[0];
+        this.now = data.data.result[0];
       } catch (error) {
         console.error(error);
       }

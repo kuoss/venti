@@ -1,3 +1,354 @@
+<script>
+import { useTimeStore } from "@/stores/time";
+import TimeRangePicker from "@/components/TimeRangePicker.vue";
+import RunButton from "@/components/RunButton.vue";
+import UplotVue from "uplot-vue";
+import "uplot/dist/uPlot.min.css";
+
+export default {
+  components: {
+    RunButton,
+    TimeRangePicker,
+    uplotvue: UplotVue,
+  },
+  computed: {
+    items() {
+      const keyword = this.expr;
+      if (!keyword || keyword.length < 1) return [];
+      return Object.entries(this.metadata)
+        .filter((x) => x[0].indexOf(keyword) >= 0)
+        .map((x) => {
+          x.push(
+            x[0].replaceAll(
+              keyword,
+              `<span class="text-blue-600 font-bold">${keyword}</span>`
+            )
+          );
+          return x;
+        });
+    },
+  },
+  data() {
+    return {
+      timeStore: useTimeStore(),
+      searchMode: false,
+      cursorIdx: null,
+      cursorTime: null,
+      errorResponse: null,
+      busy: false,
+      loading: false,
+      intervalSeconds: 0,
+      range: [],
+      lastExecuted: null,
+      metadata: {},
+      metaDict: {},
+      metricInfo: null,
+      queryType: "raw",
+      expr: `container_memory_working_set_bytes{namespace="kube-system"}`,
+      keys: [],
+      keyDict: {},
+      result: [],
+      tab: 0,
+      time: null,
+      chartData: [],
+      chartOptions: {
+        axes: [
+          {
+            stroke: "#888",
+            grid: { stroke: "#8885", width: 1 },
+            ticks: { stroke: "#8885", width: 1 },
+            values: [
+              [
+                3600 * 24 * 365,
+                "{YYYY}",
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                1,
+              ],
+              [
+                3600 * 24 * 28,
+                "{MM}",
+                "\n{YYYY}",
+                null,
+                null,
+                null,
+                null,
+                null,
+                1,
+              ],
+              [
+                3600 * 24,
+                "{MM}-{DD}",
+                "\n{YYYY}",
+                null,
+                null,
+                null,
+                null,
+                null,
+                1,
+              ],
+              [
+                3600,
+                "{HH}:00",
+                "\n{YYYY}-{MM}-{DD}",
+                null,
+                "\n{MM}-{DD}",
+                null,
+                null,
+                null,
+                1,
+              ],
+              [
+                60,
+                "{HH}:{mm}",
+                "\n{YYYY}-{MM}-{DD}",
+                null,
+                "\n{MM}-{DD}",
+                null,
+                null,
+                null,
+                1,
+              ],
+              [
+                1,
+                "{HH}:{mm}:{ss}",
+                "\n{YYYY}-{MM}-{DD}",
+                null,
+                "\n{MM}-{DD}",
+                null,
+                null,
+                null,
+                1,
+              ],
+            ],
+          },
+          {
+            stroke: "#888",
+            grid: { stroke: "#8885", width: 1 },
+            ticks: { stroke: "#8885", width: 1 },
+            size(self, values, axisIdx, cycleNum) {
+              const axis = self.axes[axisIdx];
+              if (cycleNum > 1) return axis._size;
+              let axisSize = axis.ticks.size + axis.gap;
+              let longestVal = (values ?? []).reduce(
+                (acc, val) => (val.length > acc.length ? val : acc),
+                ""
+              );
+              if (longestVal != "") {
+                self.ctx.font = axis.font[0];
+                axisSize +=
+                  self.ctx.measureText(longestVal).width / devicePixelRatio;
+              }
+              return Math.ceil(axisSize);
+            },
+          },
+        ],
+        width: 400,
+        height: 280,
+        legend: { show: false },
+        cursor: { points: false },
+        scales: { x: { time: true }, y: { auto: true } },
+        select: { show: false },
+        series: [],
+        plugins: [this.tooltipPlugin()],
+      },
+    };
+  },
+  methods: {
+    searchKeyUp(e) {
+      if (e.keyCode == 13) {
+        this.searchMode = false;
+        this.execute();
+        return;
+      }
+      this.searchMode = true;
+    },
+    addLabel(not, key, value) {
+      const where = `${key}${not}="${value}"`;
+      const idx = this.expr.indexOf("}");
+      if (idx < 0) {
+        this.expr += `{${where}}`;
+        return;
+      }
+      this.expr = this.expr.slice(0, -1) + `,${where}` + this.expr.slice(-1);
+    },
+    changeInterval(i) {
+      this.intervalSeconds = i;
+      this.execute();
+    },
+    updateTimeRange(r) {
+      this.range = r;
+    },
+    async execute() {
+      if (this.expr.length < 1) {
+        console.error("emtpy expr");
+        return;
+      }
+      const timeRange = await this.timeStore.toTimeRangeForQuery(this.range);
+      console.log('timeRange=', timeRange)
+      let lastRange = timeRange.map((x) => this.timeStore.timestamp2ymdhis(x));
+      if (lastRange[0].slice(0, 10) == lastRange[1].slice(0, 10))
+        lastRange[1] = lastRange[1].slice(11);
+      this.lastExecuted = { expr: this.expr, range: lastRange };
+      this.loading = true;
+      try {
+        const response = await fetch('/api/prometheus/query_range?' + new URLSearchParams({
+            query: this.expr,
+            start: timeRange[0],
+            end: timeRange[1],
+            step: (timeRange[1] - timeRange[0]) / 120,
+        }));
+        const data = await response.json();
+        this.loading = false;
+        this.result = data.data.result;
+        this.keys = this.result
+          .map((x) => Object.keys(x.metric))
+          .flat()
+          .filter((v, i, s) => s.indexOf(v) === i)
+          .sort()
+          .slice(1, 99);
+        this.renderChart();
+        if (this.intervalSeconds > 0) {
+          this.busy = true;
+          setTimeout(() => this.timerHandler(), this.intervalSeconds * 1000);
+        } else {
+          this.busy = false;
+        }
+        this.errorResponse = null;
+      } catch (error) {
+        this.loading = false;
+        this.errorResponse = error.response;
+      }
+    },
+    timerHandler() {
+      if (
+        this.timeStore.timerManager != "MetricsView" ||
+        this.intervalSeconds == 0
+      )
+        return;
+      this.execute();
+    },
+    renderChart() {
+      const temp = this.result.map((x) => x.values);
+      const timestamps = Array.from(
+        new Set(temp.map((a) => a.map((b) => b[0])).flat())
+      ).sort();
+      let seriesData = temp.map((a) => {
+        let newA = [];
+
+        timestamps.forEach((t) => {
+          const newPoint = a.filter((b) => t == b[0]);
+          if (newPoint.length != 1 || isNaN(parseFloat(newPoint[0][1]))) {
+            newA.push(null);
+            return;
+          }
+          newA.push(parseFloat(newPoint[0][1]));
+        });
+        return newA;
+      });
+      let m = Math.max(...seriesData.flat());
+      let c = 0;
+      while (m > 1000) {
+        m /= 1000;
+        c++;
+      }
+      const metrics = this.result.map((x) => x.metric);
+      let newSeries = [];
+      newSeries.push({});
+      this.keyDict = {};
+      metrics.forEach((x) => {
+        delete x.__name__;
+        const entries = Object.entries(x);
+
+        entries.forEach((a) => {
+          this.keyDict[a[0]] = this.keyDict[a[0]] || {
+            show: false,
+            values: [],
+          };
+          this.keyDict[a[0]].values.push(a[1]);
+          this.keyDict[a[0]].values = this.keyDict[a[0]].values.filter(
+            (v, i, s) => s.indexOf(v) === i
+          );
+        });
+        x = "{" + entries.map((v) => `${v[0]}="${v[1]}"`).join(",") + "}";
+
+        newSeries.push({
+          label: x,
+          stroke: this.$util.string2color(x),
+          points: { size: 1 },
+        });
+      });
+      // this.chartOptions.axes[1].values = (self, ticks) => ticks.map(rawValue => rawValue / Math.pow(1000, c) + ['', 'k', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y'][c])
+      this.chartOptions = {
+        ...this.chartOptions,
+        series: newSeries,
+        scales: this.timeStore.scales,
+      };
+      this.chartData = [timestamps, ...seriesData];
+      this.chartResize();
+    },
+    selectMetric(m) {
+      this.metricInfo = m;
+    },
+    applyMetric(m) {
+      this.metricInfo.selected = null;
+      this.expr = m.name;
+    },
+    clickOutside() {
+      this.selectMetric(null);
+    },
+    async fetchMetadata() {
+      try {
+        const response = await fetch("/api/prometheus/metadata");
+        const data = await response.json();
+        this.metadata = data.data;
+        this.metaDict = Object.keys(this.metadata).reduce((a, k) => {
+          const p = k.slice(0, k.indexOf("_"));
+          a[p] = a[p] || { showMetrics: false };
+          a[p].metrics = a[p].metrics || [];
+          a[p].metrics.push({ name: k, data: this.metadata[k] });
+          return a;
+        }, {});
+      } catch (error) {
+        console.error(error);
+      }
+    },
+    chartResize() {
+      const width = document.body.clientWidth - 545;
+      this.chartOptions = { ...this.chartOptions, width: width };
+      this.tableWitdh = width;
+    },
+    tooltipPlugin() {
+      return {
+        hooks: {
+          setCursor: (u) => {
+            if (!u.cursor.idx) return;
+            this.cursorIdx = u.cursor.idx;
+            this.cursorTime = u.data[0][u.cursor.idx];
+          },
+        },
+      };
+    },
+  },
+  mounted() {
+    this.timeStore.timerManager = "MetricsView";
+    this.fetchMetadata();
+    if (this.$route.query?.query) {
+      this.expr = "" + this.$route.query.query;
+      setTimeout(this.execute, 500);
+    }
+    window.addEventListener("resize", this.chartResize);
+  },
+  unmounted() {
+    window.removeEventListener("resize", this.chartResize);
+  },
+};
+</script>
+
 <template>
   <header
     class="fixed right-0 w-full bg-white border-b border-common shadow z-30 p-2 pl-52"
@@ -219,356 +570,6 @@
     </div>
   </div>
 </template>
-
-<script>
-import { useTimeStore } from "@/stores/time";
-import TimeRangePicker from "@/components/TimeRangePicker.vue";
-import RunButton from "@/components/RunButton.vue";
-import UplotVue from "uplot-vue";
-import "uplot/dist/uPlot.min.css";
-
-export default {
-  components: {
-    RunButton,
-    TimeRangePicker,
-    uplotvue: UplotVue,
-  },
-  computed: {
-    items() {
-      const keyword = this.expr;
-      if (!keyword || keyword.length < 1) return [];
-      return Object.entries(this.metadata)
-        .filter((x) => x[0].indexOf(keyword) >= 0)
-        .map((x) => {
-          x.push(
-            x[0].replaceAll(
-              keyword,
-              `<span class="text-blue-600 font-bold">${keyword}</span>`
-            )
-          );
-          return x;
-        });
-    },
-  },
-  data() {
-    return {
-      timeStore: useTimeStore(),
-      searchMode: false,
-      cursorIdx: null,
-      cursorTime: null,
-      errorResponse: null,
-      busy: false,
-      loading: false,
-      intervalSeconds: 0,
-      range: [],
-      lastExecuted: null,
-      metadata: {},
-      metaDict: {},
-      metricInfo: null,
-      queryType: "raw",
-      expr: `container_memory_working_set_bytes{namespace="kube-system"}`,
-      keys: [],
-      keyDict: {},
-      result: [],
-      tab: 0,
-      time: null,
-      chartData: [],
-      chartOptions: {
-        axes: [
-          {
-            stroke: "#888",
-            grid: { stroke: "#8885", width: 1 },
-            ticks: { stroke: "#8885", width: 1 },
-            values: [
-              [
-                3600 * 24 * 365,
-                "{YYYY}",
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                1,
-              ],
-              [
-                3600 * 24 * 28,
-                "{MM}",
-                "\n{YYYY}",
-                null,
-                null,
-                null,
-                null,
-                null,
-                1,
-              ],
-              [
-                3600 * 24,
-                "{MM}-{DD}",
-                "\n{YYYY}",
-                null,
-                null,
-                null,
-                null,
-                null,
-                1,
-              ],
-              [
-                3600,
-                "{HH}:00",
-                "\n{YYYY}-{MM}-{DD}",
-                null,
-                "\n{MM}-{DD}",
-                null,
-                null,
-                null,
-                1,
-              ],
-              [
-                60,
-                "{HH}:{mm}",
-                "\n{YYYY}-{MM}-{DD}",
-                null,
-                "\n{MM}-{DD}",
-                null,
-                null,
-                null,
-                1,
-              ],
-              [
-                1,
-                "{HH}:{mm}:{ss}",
-                "\n{YYYY}-{MM}-{DD}",
-                null,
-                "\n{MM}-{DD}",
-                null,
-                null,
-                null,
-                1,
-              ],
-            ],
-          },
-          {
-            stroke: "#888",
-            grid: { stroke: "#8885", width: 1 },
-            ticks: { stroke: "#8885", width: 1 },
-            size(self, values, axisIdx, cycleNum) {
-              const axis = self.axes[axisIdx];
-              if (cycleNum > 1) return axis._size;
-              let axisSize = axis.ticks.size + axis.gap;
-              let longestVal = (values ?? []).reduce(
-                (acc, val) => (val.length > acc.length ? val : acc),
-                ""
-              );
-              if (longestVal != "") {
-                self.ctx.font = axis.font[0];
-                axisSize +=
-                  self.ctx.measureText(longestVal).width / devicePixelRatio;
-              }
-              return Math.ceil(axisSize);
-            },
-          },
-        ],
-        width: 400,
-        height: 280,
-        legend: { show: false },
-        cursor: { points: false },
-        scales: { x: { time: true }, y: { auto: true } },
-        select: { show: false },
-        series: [],
-        plugins: [this.tooltipPlugin()],
-      },
-    };
-  },
-  methods: {
-    searchKeyUp(e) {
-      if (e.keyCode == 13) {
-        this.searchMode = false;
-        this.execute();
-        return;
-      }
-      this.searchMode = true;
-    },
-    addLabel(not, key, value) {
-      const where = `${key}${not}="${value}"`;
-      const idx = this.expr.indexOf("}");
-      if (idx < 0) {
-        this.expr += `{${where}}`;
-        return;
-      }
-      this.expr = this.expr.slice(0, -1) + `,${where}` + this.expr.slice(-1);
-    },
-    changeInterval(i) {
-      this.intervalSeconds = i;
-      this.execute();
-    },
-    updateTimeRange(r) {
-      this.range = r;
-    },
-    async execute() {
-      if (this.expr.length < 1) {
-        console.error("emtpy expr");
-        return;
-      }
-      const timeRange = await this.timeStore.toTimeRangeForQuery(this.range);
-      let lastRange = timeRange.map((x) => this.timeStore.timestamp2ymdhis(x));
-      if (lastRange[0].slice(0, 10) == lastRange[1].slice(0, 10))
-        lastRange[1] = lastRange[1].slice(11);
-      this.lastExecuted = { expr: this.expr, range: lastRange };
-      this.loading = true;
-      try {
-        const response = await this.axios.get("/api/prometheus/query_range", {
-          params: {
-            expr: this.expr,
-            start: timeRange[0],
-            end: timeRange[1],
-            step: (timeRange[1] - timeRange[0]) / 120,
-          },
-        });
-        this.loading = false;
-        this.result = response.data.data.result;
-        this.keys = this.result
-          .map((x) => Object.keys(x.metric))
-          .flat()
-          .filter((v, i, s) => s.indexOf(v) === i)
-          .sort()
-          .slice(1, 99);
-        this.renderChart();
-        if (this.intervalSeconds > 0) {
-          this.busy = true;
-          setTimeout(() => this.timerHandler(), this.intervalSeconds * 1000);
-        } else {
-          this.busy = false;
-        }
-        this.errorResponse = null;
-      } catch (error) {
-        this.loading = false;
-        this.errorResponse = error.response;
-      }
-    },
-    timerHandler() {
-      if (
-        this.timeStore.timerManager != "MetricsView" ||
-        this.intervalSeconds == 0
-      )
-        return;
-      this.execute();
-    },
-    renderChart() {
-      const temp = this.result.map((x) => x.values);
-      const timestamps = Array.from(
-        new Set(temp.map((a) => a.map((b) => b[0])).flat())
-      ).sort();
-      let seriesData = temp.map((a) => {
-        let newA = [];
-
-        timestamps.forEach((t) => {
-          const newPoint = a.filter((b) => t == b[0]);
-          if (newPoint.length != 1 || isNaN(parseFloat(newPoint[0][1]))) {
-            newA.push(null);
-            return;
-          }
-          newA.push(parseFloat(newPoint[0][1]));
-        });
-        return newA;
-      });
-      let m = Math.max(...seriesData.flat());
-      let c = 0;
-      while (m > 1000) {
-        m /= 1000;
-        c++;
-      }
-      const metrics = this.result.map((x) => x.metric);
-      let newSeries = [];
-      newSeries.push({});
-      this.keyDict = {};
-      metrics.forEach((x) => {
-        delete x.__name__;
-        const entries = Object.entries(x);
-
-        entries.forEach((a) => {
-          this.keyDict[a[0]] = this.keyDict[a[0]] || {
-            show: false,
-            values: [],
-          };
-          this.keyDict[a[0]].values.push(a[1]);
-          this.keyDict[a[0]].values = this.keyDict[a[0]].values.filter(
-            (v, i, s) => s.indexOf(v) === i
-          );
-        });
-        x = "{" + entries.map((v) => `${v[0]}="${v[1]}"`).join(",") + "}";
-
-        newSeries.push({
-          label: x,
-          stroke: this.$util.string2color(x),
-          points: { size: 1 },
-        });
-      });
-      // this.chartOptions.axes[1].values = (self, ticks) => ticks.map(rawValue => rawValue / Math.pow(1000, c) + ['', 'k', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y'][c])
-      this.chartOptions = {
-        ...this.chartOptions,
-        series: newSeries,
-        scales: this.timeStore.scales,
-      };
-      this.chartData = [timestamps, ...seriesData];
-      this.chartResize();
-    },
-    selectMetric(m) {
-      this.metricInfo = m;
-    },
-    applyMetric(m) {
-      this.metricInfo.selected = null;
-      this.expr = m.name;
-    },
-    clickOutside() {
-      this.selectMetric(null);
-    },
-    async fetchMetadata() {
-      try {
-        const response = await this.axios.get("/api/prometheus/metadata");
-        this.metadata = response.data.data;
-        this.metaDict = Object.keys(this.metadata).reduce((a, k) => {
-          const p = k.slice(0, k.indexOf("_"));
-          a[p] = a[p] || { showMetrics: false };
-          a[p].metrics = a[p].metrics || [];
-          a[p].metrics.push({ name: k, data: this.metadata[k] });
-          return a;
-        }, {});
-      } catch (error) {
-        console.error(error);
-      }
-    },
-    chartResize() {
-      const width = document.body.clientWidth - 545;
-      this.chartOptions = { ...this.chartOptions, width: width };
-      this.tableWitdh = width;
-    },
-    tooltipPlugin() {
-      return {
-        hooks: {
-          setCursor: (u) => {
-            if (!u.cursor.idx) return;
-            this.cursorIdx = u.cursor.idx;
-            this.cursorTime = u.data[0][u.cursor.idx];
-          },
-        },
-      };
-    },
-  },
-  mounted() {
-    this.timeStore.timerManager = "MetricsView";
-    this.fetchMetadata();
-    if (this.$route.query?.query) {
-      this.expr = "" + this.$route.query.query;
-      setTimeout(this.execute, 500);
-    }
-    window.addEventListener("resize", this.chartResize);
-  },
-  unmounted() {
-    window.removeEventListener("resize", this.chartResize);
-  },
-};
-</script>
 
 <style scope>
 .headcol-before:before {

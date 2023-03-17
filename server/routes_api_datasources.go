@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"log"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -27,8 +28,18 @@ func routesAPIDatasources(api *gin.RouterGroup) {
 		for _, ds := range datasources {
 			var err error
 			var body string
+			apiURL := fmt.Sprintf("%s/api/v1/targets?state=active", ds.URL)
+			log.Println(apiURL)
+			req, err := http.NewRequest("GET", apiURL, nil)
+			if err != nil {
+				bodies = append(bodies, `{"status":"error","errorType":"NewRequest"}`)
+				continue
+			}
+			if(ds.BasicAuth) {
+				req.SetBasicAuth(ds.BasicAuthUser, ds.BasicAuthPassword)
+			}
 			client := http.Client{Timeout: 2 * time.Second}
-			resp, err := client.Get(fmt.Sprintf("http://%s:%d/api/v1/targets?state=active", ds.Host, ds.Port))
+			resp, err := client.Do(req)
 			if err != nil {
 				body = `{"status":"error","errorType":"timeout"}`
 			} else {
@@ -36,7 +47,11 @@ func routesAPIDatasources(api *gin.RouterGroup) {
 				if err != nil {
 					body = `{"status":"error","errorType":"internal"}`
 				} else {
-					body = string(bodyBytes)
+					if resp.StatusCode != http.StatusOK {
+						body = fmt.Sprintf(`{"status":"error","errorType":"%s"}`, resp.Status)
+					} else {
+						body = string(bodyBytes)
+					}
 				}
 			}
 			bodies = append(bodies, body)

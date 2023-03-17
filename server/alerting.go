@@ -60,8 +60,6 @@ func alertTaskLoop() {
 }
 
 func alertTask() {
-	var resultString string
-	var err error
 	alertRuleGroups := GetAlertRuleGroups()
 	firingAlerts := []Alert{}
 	for i, group := range alertRuleGroups {
@@ -69,21 +67,15 @@ func alertTask() {
 		for j, rule := range group.Rules {
 			time.Sleep(time.Duration(500) * time.Millisecond)
 			now := time.Now()
-			switch datasourceType {
-			case DatasourceTypeLethe:
-				resultString, err = RunHTTPLetheQuery(HTTPQuery{
-					Query: rule.Expr,
-				})
-			case DatasourceTypePrometheus:
-				resultString, err = RunHTTPPrometheusQuery(HTTPQuery{
-					Query: rule.Expr,
-				})
+			instanctQuery := InstantQuery{
+				DatasourceType: datasourceType,
+				Expr: rule.Expr,
 			}
+			resultString, err := instanctQuery.execute()
 			if err != nil {
 				log.Printf("error on query: err=%s, expr=%s\n", err, rule.Expr)
 				continue
 			}
-			// log.Println(resultString)
 			var queryResult QueryResult
 			err = json.Unmarshal([]byte(resultString), &queryResult)
 			if err != nil {

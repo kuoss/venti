@@ -144,15 +144,15 @@ export default {
       const target = this.panelConfig.targets[0];
       this.$emit("setIsLoading", true);
       try {
-        const response = await this.axios.get("/api/prometheus/query_range", {
-          params: {
-            expr: useFilterStore().renderExpr(this.expr),
+        const response = await fetch('/api/prometheus/query_range?' + new URLSearchParams({
+            query: useFilterStore().renderExpr(this.expr),
             start: this.timeRange[0],
             end: this.timeRange[1],
             step: (this.timeRange[1] - this.timeRange[0]) / 120,
-          },
-        });
-        const result = response.data.data.result;
+        }));
+        const data = await response.json();
+        
+        const result = data.data.result;
         if (result.length < 1) {
           this.isNoData = true;
           return;

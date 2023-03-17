@@ -1,17 +1,17 @@
 package server
 
 import (
-	"context"
 	"io/fs"
+	"fmt"
 	"log"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"gopkg.in/yaml.v3"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
+	// metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	// "k8s.io/client-go/kubernetes"
+	// "k8s.io/client-go/rest"
 )
 
 var (
@@ -50,17 +50,7 @@ func loadDatasourcesConfig() {
 	if err := yaml.Unmarshal(yamlBytes, &config.DatasourcesConfig); err != nil {
 		log.Fatal(err)
 	}
-	// default port for zero value
-	for i, ds := range config.DatasourcesConfig.Datasources {
-		if ds.Port != 0 {
-			continue
-		}
-		if ds.Type == DatasourceTypeLethe {
-			config.DatasourcesConfig.Datasources[i].Port = 8080
-		} else {
-			config.DatasourcesConfig.Datasources[i].Port = 9090
-		}
-	}
+	log.Println(config.DatasourcesConfig)
 	log.Println("Datasources config file loaded.")
 }
 
@@ -144,32 +134,46 @@ func GetAlertRuleGroups() []AlertRuleGroup {
 }
 
 func GetDatasources() ([]Datasource, error) {
-	config, err := rest.InClusterConfig()
-	if err != nil {
-		return nil, err
-	}
-	clientset, err := kubernetes.NewForConfig(config)
-	if err != nil {
-		return nil, err
-	}
+	// config, err := rest.InClusterConfig()
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// clientset, err := kubernetes.NewForConfig(config)
+	// if err != nil {
+	// 	return nil, err
+	// }
 
 	var datasources = GetConfig().DatasourcesConfig.Datasources
 
 	// add prometheus services
-	services, err := clientset.CoreV1().Services("").List(context.TODO(), metav1.ListOptions{})
-	if err != nil {
-		return nil, err
-	}
-	for _, service := range services.Items {
-		if service.Namespace == "kube-system" || service.Name != "prometheus" {
-			continue
-		}
-		datasources = append(datasources, Datasource{
-			Type:         "Prometheus",
-			Host:         service.Name + "." + service.Namespace,
-			Port:         9090,
-			IsDiscovered: true,
-		})
-	}
+	// services, err := clientset.CoreV1().Services("").List(context.TODO(), metav1.ListOptions{})
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// for _, service := range services.Items {
+	// 	if service.Namespace == "kube-system" || service.Name != "prometheus" {
+	// 		continue
+	// 	}
+	// 	datasources = append(datasources, Datasource{
+	// 		Type:         DatasourceTypePrometheus,
+	// 		Host:         service.Name + "." + service.Namespace,
+	// 		Port:         9090,
+	// 		IsDiscovered: true,
+	// 	})
+	// }
 	return datasources, nil
+}
+
+func GetDefaultDatasource(dstype DatasourceType) (Datasource, error) {
+	var datasource Datasource
+	datasources, err := GetDatasources()
+	if err != nil {
+		return datasource, err
+	}
+	for _, ds := range datasources {
+		if ds.Type == dstype {
+			return ds, nil
+		}
+	}
+	return datasource, fmt.Errorf("datasource of type %s not found", dstype)
 }

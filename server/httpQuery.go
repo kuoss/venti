@@ -2,85 +2,96 @@ package server
 
 import (
 	"fmt"
+	"io"
+	"log"
+	"net/url"
+	"net/http"
 )
 
-type HTTPQuery struct {
-	Host  string `form:"host,omitempty"`
-	Port  int    `form:"port,omitempty"`
-	Query string `form:"expr"`
-	Time  string `form:"time,omitempty"`
+type PathQuery struct {
+	Datasource     Datasource
+	DatasourceType DatasourceType
+	Path   string
+	Params map[string]string
+	Start  string
+	End    string
+	Step   string
 }
 
-type HTTPQueryRange struct {
-	Host  string `form:"host,omitempty"`
-	Port  int    `form:"port,omitempty"`
-	Query string `form:"expr"`
-	Start string `form:"start"`
-	End   string `form:"end"`
-	Step  string `form:"step"`
+type InstantQuery struct {
+	Datasource     Datasource     `form:"datasource,omitempty"`
+	DatasourceType DatasourceType `form:"datasourceType,omitempty"`
+	Expr string                   `form:"expr"`
+	Time string                   `form:"time,omitempty"`
 }
 
-func RunHTTPPrometheusQuery(httpQuery HTTPQuery) (string, error) {
-	if httpQuery.Host == "" {
-		httpQuery.Host = "prometheus"
-	}
-	if httpQuery.Port == 0 {
-		httpQuery.Port = 9090
-	}
-	return runHTTPQuery(httpQuery)
+type RangeQuery struct {
+	Datasource     Datasource     `form:"datasource,omitempty"`
+	DatasourceType DatasourceType `form:"datasourceType,omitempty"`
+	Expr  string                  `form:"expr"`
+	Start string                  `form:"start,omitempty"`
+	End   string                  `form:"end,omitempty"`
+	Step  string                  `form:"step,omitempty"`
 }
 
-func RunHTTPPrometheusQueryRange(httpQueryRange HTTPQueryRange) (string, error) {
-	if httpQueryRange.Host == "" {
-		httpQueryRange.Host = "prometheus"
+func (pq PathQuery) execute() (string, error) {
+	ds := pq.Datasource
+	if ds.Type == DatasourceTypeNone {
+		var err error
+		ds, err = GetDefaultDatasource(pq.DatasourceType)
+		if err != nil {
+			return "", fmt.Errorf("error on GetDefaultDatasource: %w", err)
+		}
 	}
-	if httpQueryRange.Port == 0 {
-		httpQueryRange.Port = 9090
-	}
-	return runHTTPQueryRange(httpQueryRange)
-}
-
-func RunHTTPLetheQuery(httpQuery HTTPQuery) (string, error) {
-	if httpQuery.Host == "" {
-		httpQuery.Host = "lethe"
-	}
-	if httpQuery.Port == 0 {
-		httpQuery.Port = 8080
-	}
-	return runHTTPQuery(httpQuery)
-}
-
-func RunHTTPLetheQueryRange(httpQueryRange HTTPQueryRange) (string, error) {
-	if httpQueryRange.Host == "" {
-		httpQueryRange.Host = "lethe"
-	}
-	if httpQueryRange.Port == 0 {
-		httpQueryRange.Port = 8080
-	}
-	return runHTTPQueryRange(httpQueryRange)
-}
-
-func runHTTPQuery(httpQuery HTTPQuery) (string, error) {
-	// log.Printf("http://%s:%d/api/v1/query query=%s", httpQuery.Host, httpQuery.Port, httpQuery.Query)
-	response, err := HTTPGet(fmt.Sprintf("http://%s:%d/api/v1/query", httpQuery.Host, httpQuery.Port), map[string]string{
-		"query": httpQuery.Query,
-		"time":  httpQuery.Time,
-	})
+	u, err := url.Parse(ds.URL + pq.Path)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("error on url.Parse: %w", err)
 	}
-	return response, nil
+	q := u.Query()
+	for key, value := range pq.Params {
+		q.Set(key, value)
+	}
+	u.RawQuery = q.Encode()
+	log.Println(u.String())
+	req, err := http.NewRequest("GET", u.String(), nil)
+	if err != nil {
+		return "", fmt.Errorf("error on http.NewRequest: %w", err)
+	}
+	if(ds.BasicAuth) {
+		req.SetBasicAuth(ds.BasicAuthUser, ds.BasicAuthPassword)
+	}
+	client := http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", fmt.Errorf("error on client.Do: %w", err)
+	}
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", fmt.Errorf("error on io.ReadAll: %w", err)
+	}
+	return string(body), nil
 }
 
-func runHTTPQueryRange(httpQueryRange HTTPQueryRange) (string, error) {
-	response, err := HTTPGet(fmt.Sprintf("http://%s:%d/api/v1/query_range", httpQueryRange.Host, httpQueryRange.Port), map[string]string{
-		"query": httpQueryRange.Query,
-		"start": httpQueryRange.Start,
-		"end":   httpQueryRange.End,
-		"step":  httpQueryRange.Step,
-	})
-	if err != nil {
-		return "", err
-	}
-	return response, nil
+func (iq InstantQuery) execute() (string, error) {
+	return PathQuery{
+		DatasourceType: iq.DatasourceType,
+		Path: "/api/v1/query",
+		Params: map[string]string{
+			"query": iq.Expr,
+			"time":  iq.Time,
+		},
+	}.execute()
+}
+
+func (rq RangeQuery) execute() (string, error) {
+	return PathQuery{
+		DatasourceType: rq.DatasourceType,
+		Path: "/api/v1/query_range",
+		Params: map[string]string{
+			"query": rq.Expr,
+			"start": rq.Start,
+			"end":   rq.End,
+			"step":  rq.Step,
+		},
+	}.execute()
 }

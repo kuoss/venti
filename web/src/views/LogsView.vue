@@ -1,3 +1,271 @@
+<script>
+import { useTimeStore } from "@/stores/time";
+import TimeRangePicker from "@/components/TimeRangePicker.vue";
+import RunButton from "@/components/RunButton.vue";
+
+export default {
+  components: {
+    TimeRangePicker,
+    RunButton,
+  },
+  data() {
+    return {
+      errorResponse: null,
+      busy: false,
+      loading: false,
+      intervalSeconds: 0,
+      range: [],
+      nodes: [],
+      namespaces: [],
+      workloads: [],
+      lastExecuted: null,
+      metadata: {},
+      queryType: "raw",
+      expr: 'pod{namespace="kube-system"}',
+      showKeys: [],
+      keys: [],
+      topKeys: [],
+      result: [],
+      resultType: null,
+      tab: 0,
+      metricInfo: {
+        selected: null,
+        timer: 0,
+      },
+      chartData: [],
+      chartOptions: {
+        width: 500,
+        height: 300,
+      },
+      timerID: null,
+    };
+  },
+  computed: {
+    rows() {
+      const labels = this.getLogLabels();
+      const classes = [
+        "text-green-600",
+        "text-cyan-600",
+        "text-blue-600",
+        "text-purple-600",
+        "text-pink-600",
+      ];
+      return this.result.map((x) => {
+        const idx = x.indexOf(" ");
+
+        let columns = [{ text: x.substr(0, 20), class: "text-yellow-500" }];
+        if (idx == 20) {
+          return {
+            columns: [...columns, { text: " " }, { text: x.substr(idx) }],
+          };
+        }
+        columns.push({ text: "[" });
+        const parts = x.substr(21, idx - 22).split("|");
+        parts.forEach((text, i) => {
+          columns.push({
+            text: text,
+            class: classes[i] + " cursor-pointer hover:underline",
+            label: labels[i],
+          });
+          columns.push({ text: "|" });
+        });
+        columns.pop();
+        return {
+          columns: [...columns, { text: "]" }, { text: x.substr(idx) }],
+        };
+      });
+    },
+  },
+  methods: {
+    selectObject(kind, namespace, name) {
+      if (kind != "pod") name += "-.*";
+      this.expr = `pod{namespace="${namespace}", pod="${name}"}`;
+    },
+    onClickColumn(c) {
+      if (!c.label) return;
+      const idx = this.expr.indexOf("}");
+      if (idx < 0) {
+        this.expr += `{${c.label}="${c.text}"}`;
+        return;
+      }
+      this.expr = `${this.expr.slice(0, idx)}, ${c.label}="${
+        c.text
+      }"${this.expr.slice(idx)}`;
+    },
+    getLogLabels() {
+      let podIndex = this.expr.indexOf("pod");
+      if (podIndex < 0) podIndex = 9999;
+      let nodeIndex = this.expr.indexOf("node");
+      if (nodeIndex < 0) nodeIndex = 9999;
+      if (podIndex < nodeIndex) return ["namespace", "pod", "container"];
+      if (nodeIndex < podIndex) return ["node", "process"];
+      return [];
+    },
+    changeInterval(i) {
+      this.intervalSeconds = i;
+      this.execute();
+    },
+    updateTimeRange(r) {
+      this.range = r;
+    },
+    selectEventNamespace(ns_name) {
+      this.expr = `pod{namespace="kube-system",pod="eventrouter-.*"} | "namespace":"${ns_name}"`;
+    },
+    selectNode(name) {
+      this.expr = `node{node="${name}"}`;
+    },
+    selectNamespace(name, idx) {
+      this.expr = `pod{namespace="${name}"}`;
+      this.namespaces[idx].showPods = !this.namespaces[idx].showPods;
+    },
+    selectPod(ns_name, ns_idx, pod_name, pod_idx) {
+      this.expr = `pod{namespace="${ns_name}", pod="${pod_name}"}`;
+      this.namespaces[ns_idx].pods[pod_idx].showContainers =
+        !this.namespaces[ns_idx].pods[pod_idx].showContainers;
+    },
+    selectContainer(namespace, pod, container) {
+      this.expr = `pod{namespace="${namespace}", pod="${pod}", container="${container}"}`;
+    },
+    async execute() {
+      if (this.expr.length < 1) {
+        console.error("emtpy expr");
+        return;
+      }
+      const timeRange = await useTimeStore().toTimeRangeForQuery(this.range);
+      let lastRange = timeRange.map((x) => useTimeStore().timestamp2ymdhis(x));
+      if (lastRange[0].slice(0, 10) == lastRange[1].slice(0, 10))
+        lastRange[1] = lastRange[1].slice(11);
+      this.lastExecuted = { expr: this.expr, range: lastRange };
+      this.loading = true;
+      try {
+        const response = await fetch('/api/lethe/query_range?' + new URLSearchParams({
+            query: this.expr,
+            start: timeRange[0],
+            end: timeRange[1],
+        }));
+        const data = await response.json();
+        this.loading = false;
+        this.resultType = data.data.resultType;
+        this.result = data.data.result;
+        setTimeout(() => {
+          if (this.$refs.logs) this.$refs.logs.scrollTop = 99999;
+        }, 100);
+        if (this.intervalSeconds > 0) {
+          this.busy = true;
+          setTimeout(() => this.timerHandler(), this.intervalSeconds * 1000);
+        } else {
+          this.busy = false;
+        }
+        this.errorResponse = null;
+      } catch (error) {
+        this.loading = false;
+        this.errorResponse = error.response;
+      }
+    },
+    timerHandler() {
+      if (
+        useTimeStore().timerManager != "LogsView" ||
+        this.intervalSeconds == 0
+      )
+        return;
+      this.execute();
+    },
+    selectMetric(k) {
+      this.metricInfo.selected = k ? [k, this.metadata[k]] : null;
+    },
+    applyTarget(k) {
+      this.expr = k;
+    },
+    clickOutside() {
+      this.selectMetric(null);
+    },
+    async fetchMetadata() {
+      try {
+        const now = await useTimeStore().getNow();
+        const kinds = [
+          "deployment",
+          "statefulset",
+          "daemonset",
+          "job",
+          "cronjob",
+          "pod",
+        ];
+        const groupBy = (arr, key) =>
+          arr.reduce(
+            (acc, item) => (
+              (acc[item[key]] = [...(acc[item[key]] || []), item]), acc
+            ),
+            {}
+          );
+
+        let response, data, namespaces;
+        response = await fetch('/api/prometheus/query?' + new URLSearchParams({
+            query: 'kube_node_created',
+            time: now,
+        }));
+        data = await response.json();
+        this.nodes = data.data.result.map((x) => {
+          return { name: x.metric.node };
+        });
+
+        response = await fetch('/api/prometheus/query?' + new URLSearchParams({
+            query: 'kube_namespace_created',
+            time: now,
+        }));
+        data = await response.json();
+        namespaces = data.data.result.map((x) => {
+          return { name: x.metric.namespace, isExpanded: false, workloads: [] };
+        });
+
+        for (const [i, kind] of kinds.entries()) {
+          response = await fetch('/api/prometheus/query?' + new URLSearchParams({
+            query: `kube_${kind}_created`,
+            time: now,
+          }));
+          data = await response.json()
+          const objects = groupBy(
+            data.data.result.map((x) => {
+              return {
+                namespace: x.metric.namespace,
+                isExpanded: false,
+                pods: [],
+                name: x.metric[kind == "job" ? "job_name" : kind],
+              };
+            }),
+            "namespace"
+          );
+          Object.entries(objects).forEach((x) => {
+            for (const [i, ns] of Object.entries(namespaces)) {
+              if (ns.name == x[0])
+                namespaces[i].workloads.push({
+                  kind: kind,
+                  isExpanded: false,
+                  objects: x[1],
+                });
+            }
+          });
+        }
+        this.namespaces = namespaces;
+      } catch (error) {
+        console.error(error);
+      }
+    },
+  },
+  mounted() {
+    useTimeStore().timerManager = "LogsView";
+    this.fetchMetadata();
+    if (this.$route.query?.query) {
+      this.expr = this.$route.query.query;
+      setTimeout(this.execute, 500);
+    }
+    window.addEventListener("resize", this.chartResize);
+  },
+  unmounted() {
+    window.removeEventListener("resize", this.chartResize);
+  },
+};
+</script>
+
 <template>
   <header
     class="fixed right-0 w-full bg-white border-b border-common shadow z-30 p-2 pl-52"
@@ -180,266 +448,3 @@
     </div>
   </div>
 </template>
-
-<script>
-import { useTimeStore } from "@/stores/time";
-import TimeRangePicker from "@/components/TimeRangePicker.vue";
-import RunButton from "@/components/RunButton.vue";
-
-export default {
-  components: {
-    TimeRangePicker,
-    RunButton,
-  },
-  data() {
-    return {
-      errorResponse: null,
-      busy: false,
-      loading: false,
-      intervalSeconds: 0,
-      range: [],
-      nodes: [],
-      namespaces: [],
-      workloads: [],
-      lastExecuted: null,
-      metadata: {},
-      queryType: "raw",
-      expr: 'pod{namespace="kube-system"}',
-      showKeys: [],
-      keys: [],
-      topKeys: [],
-      result: [],
-      resultType: null,
-      tab: 0,
-      metricInfo: {
-        selected: null,
-        timer: 0,
-      },
-      chartData: [],
-      chartOptions: {
-        width: 500,
-        height: 300,
-      },
-      timerID: null,
-    };
-  },
-  computed: {
-    rows() {
-      const labels = this.getLogLabels();
-      const classes = [
-        "text-green-600",
-        "text-cyan-600",
-        "text-blue-600",
-        "text-purple-600",
-        "text-pink-600",
-      ];
-      return this.result.map((x) => {
-        const idx = x.indexOf(" ");
-
-        let columns = [{ text: x.substr(0, 20), class: "text-yellow-500" }];
-        if (idx == 20) {
-          return {
-            columns: [...columns, { text: " " }, { text: x.substr(idx) }],
-          };
-        }
-        columns.push({ text: "[" });
-        const parts = x.substr(21, idx - 22).split("|");
-        parts.forEach((text, i) => {
-          columns.push({
-            text: text,
-            class: classes[i] + " cursor-pointer hover:underline",
-            label: labels[i],
-          });
-          columns.push({ text: "|" });
-        });
-        columns.pop();
-        return {
-          columns: [...columns, { text: "]" }, { text: x.substr(idx) }],
-        };
-      });
-    },
-  },
-  methods: {
-    selectObject(kind, namespace, name) {
-      if (kind != "pod") name += "-.*";
-      this.expr = `pod{namespace="${namespace}", pod="${name}"}`;
-    },
-    onClickColumn(c) {
-      if (!c.label) return;
-      const idx = this.expr.indexOf("}");
-      if (idx < 0) {
-        this.expr += `{${c.label}="${c.text}"}`;
-        return;
-      }
-      this.expr = `${this.expr.slice(0, idx)}, ${c.label}="${
-        c.text
-      }"${this.expr.slice(idx)}`;
-    },
-    getLogLabels() {
-      let podIndex = this.expr.indexOf("pod");
-      if (podIndex < 0) podIndex = 9999;
-      let nodeIndex = this.expr.indexOf("node");
-      if (nodeIndex < 0) nodeIndex = 9999;
-      if (podIndex < nodeIndex) return ["namespace", "pod", "container"];
-      if (nodeIndex < podIndex) return ["node", "process"];
-      return [];
-    },
-    changeInterval(i) {
-      this.intervalSeconds = i;
-      this.execute();
-    },
-    updateTimeRange(r) {
-      this.range = r;
-    },
-    selectEventNamespace(ns_name) {
-      this.expr = `pod{namespace="kube-system",pod="eventrouter-.*"} | "namespace":"${ns_name}"`;
-    },
-    selectNode(name) {
-      this.expr = `node{node="${name}"}`;
-    },
-    selectNamespace(name, idx) {
-      this.expr = `pod{namespace="${name}"}`;
-      this.namespaces[idx].showPods = !this.namespaces[idx].showPods;
-    },
-    selectPod(ns_name, ns_idx, pod_name, pod_idx) {
-      this.expr = `pod{namespace="${ns_name}", pod="${pod_name}"}`;
-      this.namespaces[ns_idx].pods[pod_idx].showContainers =
-        !this.namespaces[ns_idx].pods[pod_idx].showContainers;
-    },
-    selectContainer(namespace, pod, container) {
-      this.expr = `pod{namespace="${namespace}", pod="${pod}", container="${container}"}`;
-    },
-    async execute() {
-      if (this.expr.length < 1) {
-        console.error("emtpy expr");
-        return;
-      }
-      const timeRange = await useTimeStore().toTimeRangeForQuery(this.range);
-      let lastRange = timeRange.map((x) => useTimeStore().timestamp2ymdhis(x));
-      if (lastRange[0].slice(0, 10) == lastRange[1].slice(0, 10))
-        lastRange[1] = lastRange[1].slice(11);
-      this.lastExecuted = { expr: this.expr, range: lastRange };
-      this.loading = true;
-      try {
-        const response = await this.axios.get("/api/lethe/query_range", {
-          params: {
-            expr: this.expr,
-            start: timeRange[0],
-            end: timeRange[1],
-          },
-        });
-        this.loading = false;
-        this.resultType = response.data.data.resultType;
-        this.result = response.data.data.result;
-        setTimeout(() => {
-          if (this.$refs.logs) this.$refs.logs.scrollTop = 99999;
-        }, 100);
-        if (this.intervalSeconds > 0) {
-          this.busy = true;
-          setTimeout(() => this.timerHandler(), this.intervalSeconds * 1000);
-        } else {
-          this.busy = false;
-        }
-        this.errorResponse = null;
-      } catch (error) {
-        this.loading = false;
-        this.errorResponse = error.response;
-      }
-    },
-    timerHandler() {
-      if (
-        useTimeStore().timerManager != "LogsView" ||
-        this.intervalSeconds == 0
-      )
-        return;
-      this.execute();
-    },
-    selectMetric(k) {
-      this.metricInfo.selected = k ? [k, this.metadata[k]] : null;
-    },
-    applyTarget(k) {
-      this.expr = k;
-    },
-    clickOutside() {
-      this.selectMetric(null);
-    },
-    async fetchMetadata() {
-      try {
-        const now = await useTimeStore().getNow();
-        const kinds = [
-          "deployment",
-          "statefulset",
-          "daemonset",
-          "job",
-          "cronjob",
-          "pod",
-        ];
-        const groupBy = (arr, key) =>
-          arr.reduce(
-            (acc, item) => (
-              (acc[item[key]] = [...(acc[item[key]] || []), item]), acc
-            ),
-            {}
-          );
-
-        let response, namespaces;
-        response = await this.axios.get("/api/prometheus/query", {
-          params: { expr: "kube_node_created", time: now },
-        });
-        this.nodes = response.data.data.result.map((x) => {
-          return { name: x.metric.node };
-        });
-
-        response = await this.axios.get("/api/prometheus/query", {
-          params: { expr: "kube_namespace_created", time: now },
-        });
-        namespaces = response.data.data.result.map((x) => {
-          return { name: x.metric.namespace, isExpanded: false, workloads: [] };
-        });
-
-        for (const [i, kind] of kinds.entries()) {
-          response = await this.axios.get("/api/prometheus/query", {
-            params: { expr: `kube_${kind}_created`, time: now },
-          });
-          const objects = groupBy(
-            response.data.data.result.map((x) => {
-              return {
-                namespace: x.metric.namespace,
-                isExpanded: false,
-                pods: [],
-                name: x.metric[kind == "job" ? "job_name" : kind],
-              };
-            }),
-            "namespace"
-          );
-          Object.entries(objects).forEach((x) => {
-            for (const [i, ns] of Object.entries(namespaces)) {
-              if (ns.name == x[0])
-                namespaces[i].workloads.push({
-                  kind: kind,
-                  isExpanded: false,
-                  objects: x[1],
-                });
-            }
-          });
-        }
-        this.namespaces = namespaces;
-      } catch (error) {
-        console.error(error);
-      }
-    },
-  },
-  mounted() {
-    useTimeStore().timerManager = "LogsView";
-    this.fetchMetadata();
-    if (this.$route.query?.query) {
-      this.expr = this.$route.query.query;
-      setTimeout(this.execute, 500);
-    }
-    window.addEventListener("resize", this.chartResize);
-  },
-  unmounted() {
-    window.removeEventListener("resize", this.chartResize);
-  },
-};
-</script>

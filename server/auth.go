@@ -23,7 +23,7 @@ func login(c *gin.Context) {
 		})
 		return
 	}
-	
+
 	var user User
 	err := db.First(&user, "username = ?", username).Error
 	if err == nil {

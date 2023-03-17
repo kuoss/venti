@@ -28,14 +28,14 @@ export default {
       this.$emit("setIsLoading", true);
       try {
         const target = this.panelConfig.targets[0];
-        const response = await this.axios.get("/api/prometheus/query", {
-          params: {
-            expr: this.panelConfig.targets[0].expr,
-            time: this.timeRange[1],
-          },
-        });
-        const result = response.data.data.result;
-        const resultType = response.data.data.resultType;
+        const response = await fetch('/api/prometheus/query?' + new URLSearchParams({
+          query: target.expr,
+          time: this.timeRange[1],
+        }));
+        const data = await response.json();
+
+        const result = data.data.result;
+        const resultType = data.data.resultType;
 
         let value;
         if (resultType == "scalar") value = result[1];

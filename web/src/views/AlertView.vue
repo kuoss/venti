@@ -90,32 +90,30 @@ export default {
     return {
       alertGroups: [],
       isLoading: false,
+      repeat: true,
     };
   },
   methods: {
     async fetchData() {
+      if(!this.repeat) return;
       this.isLoading = true;
       try {
-        const response = await this.axios.get("/api/alerts");
-        this.alertGroups = response.data;
-        setTimeout(() => this.timerHandler(), 3000);
+        const response = await fetch("/api/alerts");
+        const data = await response.json();
+        this.alertGroups = data;
+        setTimeout(() => this.fetchData(), 3000);
       } catch (error) {
+        this.repeat = false;
         console.error(error);
       }
       this.isLoading = false;
     },
-    timerHandler() {
-      if (
-        useTimeStore().timerManager != "AlertView" ||
-        this.intervalSeconds == 0
-      )
-        return;
-      this.fetchData();
-    },
   },
   mounted() {
-    useTimeStore().timerManager = "AlertView";
     this.fetchData();
   },
+  beforeUnmount() {
+    this.repeat = false;
+  }
 };
 </script>

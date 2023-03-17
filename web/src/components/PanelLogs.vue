@@ -68,17 +68,16 @@ export default {
       if (this.timeRange.length < 2) return;
       this.$emit("setIsLoading", true);
       try {
-        const response = await this.axios.get("/api/lethe/query_range", {
-          params: {
-            expr: useFilterStore().renderExpr(this.panelConfig.targets[0].expr),
+        const response = await fetch('/api/lethe/query_range?' + new URLSearchParams({
+            query: useFilterStore().renderExpr(this.panelConfig.targets[0].expr),
             start: this.timeRange[0],
             end: this.timeRange[1],
-          },
-        });
-        this.result = response.data.data.result.slice(-100);
-        this.resultType = response.data.data.resultType;
-        // console.log(this.result)
-        // console.log(this.resultType)
+        }));
+        const data = await response.json();
+        
+        this.result = data.data.result.slice(-100);
+        this.resultType = data.data.resultType;
+        
         setTimeout(() => {
           if (this.$refs.logs) this.$refs.logs.scrollTop = 99999;
         }, 100);
