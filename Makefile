@@ -4,18 +4,23 @@ IMAGE_REPO=ghcr.io/kuoss
 LDFLAGS += -X "main.ventiVersion=$(VENTI_VERSION)"
 MAKEFLAGS += -j2
 
-# dev server(5173)
-run-dev: go-dev web-dev
-go-dev:
-	API_ONLY=1 VENTI_VERSION=${VENTI_VERSION} air
-web-dev:
-	cd web && VITE_SERVER_HMR_HOST=localhost npm run dev --clearScreen=false
+install-dev:
+	go mod tidy
+	cd web && npm install
+	go install github.com/cosmtrek/air@latest
 
-# gin server(8080)
-run-pre: go-air web-watch
-web-watch:
+# dev server (port 5173)
+run-dev: run-dev-go run-dev-web
+run-dev-go:
+	API_ONLY=1 VENTI_VERSION=${VENTI_VERSION} air
+run-dev-web:
+	cd web && npm run dev --clearScreen=false
+
+# gin server (port 8080)
+run-watch: run-watch-go run-watch-web
+run-watch-go:
 	cd web && npm run watch
-go-air:
+run-watch-web:
 	sleep 15 && air
 
 # on codespace
@@ -27,7 +32,6 @@ stage:
 
 docker-build:
 	docker build -t ${IMAGE_REPO}/venti:${VENTI_VERSION} --build-arg VENTI_VERSION=${VENTI_VERSION} . && docker push ${IMAGE_REPO}/venti:${VENTI_VERSION} 
-
 
 go-licenses:
 	# go install github.com/google/go-licenses@latest
