@@ -15,8 +15,8 @@ export default defineConfig({
   server: {
     host: true,
     proxy: {
-      "/api": { target: "http://localhost:5000" },
-      "/user": { target: "http://localhost:5000" },
+      "/api": { target: "http://localhost:8080" },
+      "/user": { target: "http://localhost:8080" },
     },
   },
 });

@@ -1,6 +1,6 @@
 groups:
 - name: sample
-  datasource: Prometheus
+  datasource: prometheus
   commonLabels:
     severity: silence
   rules:

@@ -33,6 +33,7 @@ func LoadConfig(version string) {
 	if err != nil {
 		log.Printf("error on loadDatasourcesConfig: %s", err)
 	}
+	LoadDatasources()
 	loadDashboards()
 	loadAlertRuleGroups()
 }
@@ -152,11 +153,12 @@ func LoadDatasources() {
 	var dc = GetConfig().DatasourcesConfig
 	var datasources = dc.Datasources
 	if dc.Discovery.Enabled {
-		discoverdDatasources, err := discoverDatasources()
+		services, err := discoverServices()
 		if err != nil {
-			fmt.Printf("cannot discoverDatasources: %s", err)
+			log.Printf("cannot discoverServices: %s", err)
 		} else {
-			datasources = append(datasources, discoverdDatasources...)
+			discoveredDatasources := getDatasourcesFromServices(services)
+			datasources = append(datasources, discoveredDatasources...)
 		}
 	}
 	datasources = setDefaultDatasources(datasources)
@@ -198,6 +200,7 @@ func setDefaultDatasources(datasources []Datasource) []Datasource {
 		for i, ds := range datasources {
 			if ds.Type == DatasourceTypePrometheus {
 				datasources[i].IsDefault = true
+				break
 			}
 		}
 	}
@@ -205,13 +208,14 @@ func setDefaultDatasources(datasources []Datasource) []Datasource {
 		for i, ds := range datasources {
 			if ds.Type == DatasourceTypeLethe {
 				datasources[i].IsDefault = true
+				break
 			}
 		}
 	}
 	return datasources
 }
 
-func listServices() ([]v1.Service, error) {
+func discoverServices() ([]v1.Service, error) {
 	var config, err = rest.InClusterConfig()
 	if err != nil {
 		return []v1.Service{}, fmt.Errorf("cannot InClusterConfig: %w", err)
@@ -228,15 +232,11 @@ func listServices() ([]v1.Service, error) {
 	return services.Items, nil
 }
 
-func discoverDatasources() ([]Datasource, error) {
+func getDatasourcesFromServices(services []v1.Service) []Datasource {
 	var datasources = []Datasource{}
 
-	services, err := listServices()
-	if err != nil {
-		return datasources, fmt.Errorf("cannot listServices")
-	}
-
 	var dc = GetConfig().DatasourcesConfig
+	fmt.Printf("dc=%#v\n", dc)
 	for _, service := range services {
 		typ := DatasourceTypeNone
 
@@ -293,5 +293,5 @@ func discoverDatasources() ([]Datasource, error) {
 			IsDefault:    isDefault,
 		})
 	}
-	return datasources, nil
+	return datasources
 }

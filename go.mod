@@ -3,6 +3,7 @@ module github.com/kuoss/venti
 go 1.18
 
 require (
+	github.com/gin-gonic/contrib v0.0.0-20221130124618-7e01895a63f2
 	github.com/gin-gonic/gin v1.7.7
 	github.com/stretchr/testify v1.8.0
 	golang.org/x/crypto v0.0.0-20220411220226-7b82a4e95df4
