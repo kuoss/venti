@@ -44,8 +44,17 @@ const (
 )
 
 type DatasourcesConfig struct {
-	QueryTimeout time.Duration `json:"queryTimeout"`
-	Datasources  []Datasource  `json:"datasources"`
+	QueryTimeout time.Duration `json:"queryTimeout,omitempty" yaml:"queryTimeout,omitempty"`
+	Datasources  []Datasource  `json:"datasources" yaml:"datasources,omitempty"`
+	Discovery    Discovery     `json:"discovery,omitempty" yaml:"discovery,omitempty"`
+}
+
+type Discovery struct {
+	Enabled          bool   `json:"enabled,omitempty" yaml:"enabled,omitempty"`                   // default: false
+	DefaultNamespace string `json:"defaultNamespace,omitempty" yaml:"defaultNamespace,omitempty"` // default: ''
+	AnnotationKey    string `json:"annotationKey,omitempty" yaml:"annotationKey,omitempty"`       // default: kuoss.org/datasource-type
+	ByNamePrometheus bool   `json:"byNamePrometheus,omitempty" yaml:"byNamePrometheus,omitempty"` // deprecated
+	ByNameLethe      bool   `json:"byNameLethe,omitempty" yaml:"byNameLethe,omitempty"`           // deprecated
 }
 
 type Datasource struct {
@@ -55,7 +64,13 @@ type Datasource struct {
 	BasicAuth         bool           `json:"basicAuth" yaml:"basicAuth"`
 	BasicAuthUser     string         `json:"basicAuthUser" yaml:"basicAuthUser"`
 	BasicAuthPassword string         `json:"basicAuthPassword" yaml:"basicAuthPassword"`
-	IsDiscovered      bool           `json:"is_discovered,omitempty" yaml:"is_discovered,omitempty"`
+	IsDefault         bool           `json:"isDefault,omitempty" yaml:"isDefault,omitempty"`
+	IsDiscovered      bool           `json:"isDiscovered,omitempty" yaml:"isDiscovered,omitempty"`
+}
+
+type Annotation struct {
+	Type DatasourceType `json:"type,omitempty"` // default: "kuoss.org/datasource"
+	Port string         `json:"port,omitempty"` // default: "kuoss.org/port"
 }
 
 // dashboard

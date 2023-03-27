@@ -12,18 +12,11 @@ import (
 
 func routesAPIDatasources(api *gin.RouterGroup) {
 	api.GET("/datasources", func(c *gin.Context) {
-		datasources, err := GetDatasources()
-		if err != nil {
-			c.JSON(500, err)
-		}
+		datasources := GetDatasources()
 		c.JSON(200, datasources)
 	})
 	api.GET("/datasources/targets", func(c *gin.Context) {
-		datasources, err := GetDatasources()
-		if err != nil {
-			c.JSON(500, gin.H{"error": err.Error()})
-			return
-		}
+		datasources := GetDatasources()
 		var bodies []string
 		for _, ds := range datasources {
 			var err error

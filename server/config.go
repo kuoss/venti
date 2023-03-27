@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"fmt"
 	"io/fs"
 	"log"
@@ -9,13 +10,14 @@ import (
 	"strings"
 
 	"gopkg.in/yaml.v3"
-	// metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	// "k8s.io/client-go/kubernetes"
-	// "k8s.io/client-go/rest"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 )
 
 var (
-	config Config
+	config            Config
+	loadedDatasources []Datasource
 )
 
 func LoadConfig(version string) {
@@ -50,8 +52,11 @@ func loadDatasourcesConfig() {
 	if err := yaml.Unmarshal(yamlBytes, &config.DatasourcesConfig); err != nil {
 		log.Fatal(err)
 	}
-	log.Println(config.DatasourcesConfig)
 	log.Println("Datasources config file loaded.")
+	if config.DatasourcesConfig.Discovery.AnnotationKey == "" {
+		config.DatasourcesConfig.Discovery.AnnotationKey = "kuoss.org/datasource"
+	}
+	log.Println(config.DatasourcesConfig)
 }
 
 func glob(root string, fn func(string) bool) []string {
@@ -133,47 +138,140 @@ func GetAlertRuleGroups() []AlertRuleGroup {
 	return config.AlertRuleGroups
 }
 
-func GetDatasources() ([]Datasource, error) {
-	// config, err := rest.InClusterConfig()
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// clientset, err := kubernetes.NewForConfig(config)
-	// if err != nil {
-	// 	return nil, err
-	// }
-
-	var datasources = GetConfig().DatasourcesConfig.Datasources
-
-	// add prometheus services
-	// services, err := clientset.CoreV1().Services("").List(context.TODO(), metav1.ListOptions{})
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// for _, service := range services.Items {
-	// 	if service.Namespace == "kube-system" || service.Name != "prometheus" {
-	// 		continue
-	// 	}
-	// 	datasources = append(datasources, Datasource{
-	// 		Type:         DatasourceTypePrometheus,
-	// 		Host:         service.Name + "." + service.Namespace,
-	// 		Port:         9090,
-	// 		IsDiscovered: true,
-	// 	})
-	// }
-	return datasources, nil
+func LoadDatasources() {
+	var dc = GetConfig().DatasourcesConfig
+	var datasources = dc.Datasources
+	if dc.Discovery.Enabled {
+		datasources = append(datasources, discoverDatasources()...)
+	}
+	datasources = setDefaultDatasources(datasources)
+	loadedDatasources = datasources
+	log.Printf("loadedDatasources=%v", loadedDatasources)
 }
 
-func GetDefaultDatasource(dstype DatasourceType) (Datasource, error) {
-	var datasource Datasource
-	datasources, err := GetDatasources()
-	if err != nil {
-		return datasource, err
-	}
-	for _, ds := range datasources {
-		if ds.Type == dstype {
+func GetDatasources() []Datasource {
+	return loadedDatasources
+}
+
+func GetDefaultDatasource(typ DatasourceType) (Datasource, error) {
+	for _, ds := range loadedDatasources {
+		if ds.Type == typ && ds.IsDefault {
 			return ds, nil
 		}
 	}
-	return datasource, fmt.Errorf("datasource of type %s not found", dstype)
+	return Datasource{}, fmt.Errorf("datasource of type %s not found", typ)
+}
+
+func setDefaultDatasources(datasources []Datasource) []Datasource {
+	// check & ensure to set a default datasource for each type
+	existsDefaultPrometheus := false
+	existsDefaultLethe := false
+	for _, ds := range datasources {
+		if !ds.IsDefault {
+			continue
+		}
+		switch ds.Type {
+		case DatasourceTypePrometheus:
+			existsDefaultPrometheus = true
+			continue
+		case DatasourceTypeLethe:
+			existsDefaultLethe = true
+			continue
+		}
+	}
+	if !existsDefaultPrometheus {
+		for i, ds := range datasources {
+			if ds.Type == DatasourceTypePrometheus {
+				datasources[i].IsDefault = true
+			}
+		}
+	}
+	if !existsDefaultLethe {
+		for i, ds := range datasources {
+			if ds.Type == DatasourceTypeLethe {
+				datasources[i].IsDefault = true
+			}
+		}
+	}
+	return datasources
+}
+
+func discoverDatasources() []Datasource {
+	var datasources = []Datasource{}
+
+	var config, err = rest.InClusterConfig()
+	if err != nil {
+		log.Fatal("error on InClusterConfig")
+		return datasources
+	}
+	clientset, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		log.Fatal("error on NewForConfig")
+		return datasources
+	}
+
+	services, err := clientset.CoreV1().Services("").List(context.TODO(), metav1.ListOptions{})
+	if err != nil {
+		log.Fatal("error on ListServices")
+		return datasources
+	}
+
+	var dc = GetConfig().DatasourcesConfig
+	for _, service := range services.Items {
+		typ := DatasourceTypeNone
+
+		// by annotation
+		for key, value := range service.Annotations {
+			if key != dc.Discovery.AnnotationKey {
+				continue
+			}
+			if value == string(DatasourceTypePrometheus) {
+				typ = DatasourceTypePrometheus
+				break
+			}
+			if value == string(DatasourceTypeLethe) {
+				typ = DatasourceTypeLethe
+				break
+			}
+		}
+		// by name prometheus
+		if typ == DatasourceTypeNone && dc.Discovery.ByNamePrometheus && service.Name == "prometheus" {
+			typ = DatasourceTypePrometheus
+		}
+		// by name lethe
+		if typ == DatasourceTypeNone && dc.Discovery.ByNameLethe && service.Name == "lethe" {
+			typ = DatasourceTypeLethe
+		}
+		// not matched
+		if typ == DatasourceTypeNone {
+			continue
+		}
+
+		// isDefault
+		isDefault := false
+		if service.Namespace == dc.Discovery.DefaultNamespace {
+			isDefault = true
+		}
+
+		// portNumber
+		var portNumber int32 = 0
+		for _, port := range service.Spec.Ports {
+			if port.Name == "http" {
+				portNumber = port.Port
+				break
+			}
+		}
+		if portNumber == 0 {
+			portNumber = service.Spec.Ports[0].Port
+		}
+
+		datasources = append(datasources, Datasource{
+			Name:         fmt.Sprintf("%s.%s", service.Name, service.Namespace),
+			Type:         typ,
+			URL:          fmt.Sprintf("http://%s.%s:%d", service.Name, service.Namespace, portNumber),
+			IsDiscovered: true,
+			IsDefault:    isDefault,
+		})
+	}
+	return datasources
 }
