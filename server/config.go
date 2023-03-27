@@ -1,8 +1,8 @@
 package server
 
 import (
-	"io/fs"
 	"fmt"
+	"io/fs"
 	"log"
 	"os"
 	"path/filepath"
@@ -56,7 +56,7 @@ func loadDatasourcesConfig() {
 
 func glob(root string, fn func(string) bool) []string {
 	var matches []string
-	filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
+	_ = filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
 		if fn(path) {
 			matches = append(matches, path)
 		}

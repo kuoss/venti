@@ -20,7 +20,7 @@ func InitDB() {
 	}
 
 	// Database Migrations
-	db.AutoMigrate(&User{})
+	_ = db.AutoMigrate(&User{})
 
 	// Database Seeding
 	// etc users

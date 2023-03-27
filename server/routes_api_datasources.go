@@ -3,8 +3,8 @@ package server
 import (
 	"fmt"
 	"io"
-	"net/http"
 	"log"
+	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -35,7 +35,7 @@ func routesAPIDatasources(api *gin.RouterGroup) {
 				bodies = append(bodies, `{"status":"error","errorType":"NewRequest"}`)
 				continue
 			}
-			if(ds.BasicAuth) {
+			if ds.BasicAuth {
 				req.SetBasicAuth(ds.BasicAuthUser, ds.BasicAuthPassword)
 			}
 			client := http.Client{Timeout: 2 * time.Second}

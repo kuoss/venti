@@ -69,7 +69,7 @@ func alertTask() {
 			now := time.Now()
 			instanctQuery := InstantQuery{
 				DatasourceType: datasourceType,
-				Expr: rule.Expr,
+				Expr:           rule.Expr,
 			}
 			resultString, err := instanctQuery.execute()
 			if err != nil {

@@ -34,7 +34,7 @@ docker-build:
 	docker build -t ${IMAGE_REPO}/venti:${VENTI_VERSION} --build-arg VENTI_VERSION=${VENTI_VERSION} . && docker push ${IMAGE_REPO}/venti:${VENTI_VERSION} 
 
 
-checks: fmt vet staticcheck golangci-lint go-licenses js-licenses
+checks: fmt vet staticcheck golangci-lint go-licenses js-licenses test-cover
 
 fmt:
 	go fmt ./...
@@ -57,3 +57,6 @@ js-licenses:
 	# npm install -g js-green-licenses
 	cd web && jsgl --local . && echo OK
 	
+test-cover:
+	./hack/test-cover.sh
+

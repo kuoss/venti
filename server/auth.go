@@ -113,7 +113,7 @@ func issueToken(user User) string {
 		user.TokenExpires = time.Now().Add(48 * time.Hour)
 	} else {
 		b := make([]byte, 16)
-		rand.Read(b)
+		_, _ = rand.Read(b)
 		token := fmt.Sprintf("%x", b)
 		user.Token = token
 		user.TokenExpires = time.Now().Add(48 * time.Hour)

@@ -50,5 +50,5 @@ func StartServer() {
 	}
 
 	log.Println("venti started...💨💨💨")
-	r.Run(":5000") // 0.0.0.0:5000
+	_ = r.Run() // :8080
 }

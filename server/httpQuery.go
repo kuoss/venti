@@ -4,34 +4,34 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"net/url"
 	"net/http"
+	"net/url"
 )
 
 type PathQuery struct {
 	Datasource     Datasource
 	DatasourceType DatasourceType
-	Path   string
-	Params map[string]string
-	Start  string
-	End    string
-	Step   string
+	Path           string
+	Params         map[string]string
+	Start          string
+	End            string
+	Step           string
 }
 
 type InstantQuery struct {
 	Datasource     Datasource     `form:"datasource,omitempty"`
 	DatasourceType DatasourceType `form:"datasourceType,omitempty"`
-	Expr string                   `form:"expr"`
-	Time string                   `form:"time,omitempty"`
+	Expr           string         `form:"expr"`
+	Time           string         `form:"time,omitempty"`
 }
 
 type RangeQuery struct {
 	Datasource     Datasource     `form:"datasource,omitempty"`
 	DatasourceType DatasourceType `form:"datasourceType,omitempty"`
-	Expr  string                  `form:"expr"`
-	Start string                  `form:"start,omitempty"`
-	End   string                  `form:"end,omitempty"`
-	Step  string                  `form:"step,omitempty"`
+	Expr           string         `form:"expr"`
+	Start          string         `form:"start,omitempty"`
+	End            string         `form:"end,omitempty"`
+	Step           string         `form:"step,omitempty"`
 }
 
 func (pq PathQuery) execute() (string, error) {
@@ -57,7 +57,7 @@ func (pq PathQuery) execute() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("error on http.NewRequest: %w", err)
 	}
-	if(ds.BasicAuth) {
+	if ds.BasicAuth {
 		req.SetBasicAuth(ds.BasicAuthUser, ds.BasicAuthPassword)
 	}
 	client := http.Client{}
@@ -75,7 +75,7 @@ func (pq PathQuery) execute() (string, error) {
 func (iq InstantQuery) execute() (string, error) {
 	return PathQuery{
 		DatasourceType: iq.DatasourceType,
-		Path: "/api/v1/query",
+		Path:           "/api/v1/query",
 		Params: map[string]string{
 			"query": iq.Expr,
 			"time":  iq.Time,
@@ -86,7 +86,7 @@ func (iq InstantQuery) execute() (string, error) {
 func (rq RangeQuery) execute() (string, error) {
 	return PathQuery{
 		DatasourceType: rq.DatasourceType,
-		Path: "/api/v1/query_range",
+		Path:           "/api/v1/query_range",
 		Params: map[string]string{
 			"query": rq.Expr,
 			"start": rq.Start,
