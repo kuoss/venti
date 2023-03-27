@@ -14,7 +14,6 @@ func TestGetConfig(t *testing.T) {
 	assert.Equal(t, "Unknown", config.Version)
 }
 
-
 func TestListServices(t *testing.T) {
 	services, err := listServices()
 }

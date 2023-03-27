@@ -1,7 +1,7 @@
-VERSION=v0.1.13
+VENTI_VERSION=v0.1.13
 IMAGE_REPO=ghcr.io/kuoss
 
-LDFLAGS += -X "main.Version=$(VERSION)"
+LDFLAGS += -X "main.ventiVersion=$(VENTI_VERSION)"
 MAKEFLAGS += -j2
 
 install-dev:
@@ -30,8 +30,8 @@ stage:
 #go-build:
 #	go mod download -x && go build -ldflags '$(LDFLAGS)' -o /app/venti
 
-# docker-build:
-# 	docker build -t ${IMAGE_REPO}/venti:${VENTI_VERSION} --build-arg VENTI_VERSION=${VENTI_VERSION} . && docker push ${IMAGE_REPO}/venti:${VENTI_VERSION} 
+docker-build:
+	docker build -t ${IMAGE_REPO}/venti:${VENTI_VERSION} --build-arg VENTI_VERSION=${VENTI_VERSION} . && docker push ${IMAGE_REPO}/venti:${VENTI_VERSION} 
 
 checks: fmt vet staticcheck golangci-lint test-cover
 
