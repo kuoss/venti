@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"gopkg.in/yaml.v3"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -21,10 +22,17 @@ var (
 )
 
 func LoadConfig(version string) {
+	var err error
 	log.Println("Loading configurations...")
 	config.Version = version
-	loadUsersConfig()
-	loadDatasourcesConfig()
+	err = loadUsersConfig()
+	if err != nil {
+		log.Printf("error on loadUsersConfig: %s", err)
+	}
+	err = loadDatasourcesConfig()
+	if err != nil {
+		log.Printf("error on loadDatasourcesConfig: %s", err)
+	}
 	loadDashboards()
 	loadAlertRuleGroups()
 }
@@ -33,30 +41,32 @@ func GetConfig() Config {
 	return config
 }
 
-func loadUsersConfig() {
+func loadUsersConfig() error {
 	yamlBytes, err := os.ReadFile("etc/users.yaml")
 	if err != nil {
-		log.Fatal(err)
+		return fmt.Errorf("cannot ReadFile: %w", err)
 	}
 	if err := yaml.Unmarshal(yamlBytes, &config.EtcUsersConfig); err != nil {
-		log.Fatal(err)
+		return fmt.Errorf("cannot Unmarshal: %w", err)
 	}
 	log.Println("Users config file loaded.")
+	return nil
 }
 
-func loadDatasourcesConfig() {
+func loadDatasourcesConfig() error {
 	yamlBytes, err := os.ReadFile("etc/datasources.yaml")
 	if err != nil {
-		log.Fatal(err)
+		return fmt.Errorf("cannot ReadFile: %w", err)
 	}
 	if err := yaml.Unmarshal(yamlBytes, &config.DatasourcesConfig); err != nil {
-		log.Fatal(err)
+		return fmt.Errorf("cannot Unmarshal: %w", err)
 	}
 	log.Println("Datasources config file loaded.")
 	if config.DatasourcesConfig.Discovery.AnnotationKey == "" {
 		config.DatasourcesConfig.Discovery.AnnotationKey = "kuoss.org/datasource"
 	}
 	log.Println(config.DatasourcesConfig)
+	return nil
 }
 
 func glob(root string, fn func(string) bool) []string {
@@ -142,7 +152,12 @@ func LoadDatasources() {
 	var dc = GetConfig().DatasourcesConfig
 	var datasources = dc.Datasources
 	if dc.Discovery.Enabled {
-		datasources = append(datasources, discoverDatasources()...)
+		discoverdDatasources, err := discoverDatasources()
+		if err != nil {
+			fmt.Printf("cannot discoverDatasources: %s", err)
+		} else {
+			datasources = append(datasources, discoverdDatasources...)
+		}
 	}
 	datasources = setDefaultDatasources(datasources)
 	loadedDatasources = datasources
@@ -196,28 +211,33 @@ func setDefaultDatasources(datasources []Datasource) []Datasource {
 	return datasources
 }
 
-func discoverDatasources() []Datasource {
-	var datasources = []Datasource{}
-
+func listServices() ([]v1.Service, error) {
 	var config, err = rest.InClusterConfig()
 	if err != nil {
-		log.Fatal("error on InClusterConfig")
-		return datasources
+		return []v1.Service{}, fmt.Errorf("cannot InClusterConfig: %w", err)
 	}
 	clientset, err := kubernetes.NewForConfig(config)
 	if err != nil {
-		log.Fatal("error on NewForConfig")
-		return datasources
+		return []v1.Service{}, fmt.Errorf("cannot NewForConfig: %w", err)
 	}
 
 	services, err := clientset.CoreV1().Services("").List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
-		log.Fatal("error on ListServices")
-		return datasources
+		return []v1.Service{}, fmt.Errorf("cannot ListServices: %w", err)
+	}
+	return services.Items, nil
+}
+
+func discoverDatasources() ([]Datasource, error) {
+	var datasources = []Datasource{}
+
+	services, err := listServices()
+	if err != nil {
+		return datasources, fmt.Errorf("cannot listServices")
 	}
 
 	var dc = GetConfig().DatasourcesConfig
-	for _, service := range services.Items {
+	for _, service := range services {
 		typ := DatasourceTypeNone
 
 		// by annotation
@@ -273,5 +293,5 @@ func discoverDatasources() []Datasource {
 			IsDefault:    isDefault,
 		})
 	}
-	return datasources
+	return datasources, nil
 }
