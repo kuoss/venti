@@ -48,5 +48,5 @@ golangci-lint:
 	golangci-lint run
 
 test-cover:
-	./hack/test-cover.sh
+	./scripts/test-cover.sh
 
