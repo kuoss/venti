@@ -1,6 +1,9 @@
 package server
 
 import (
+	"github.com/kuoss/venti/server/alert"
+	"github.com/kuoss/venti/server/api"
+	"github.com/kuoss/venti/server/configuration"
 	"log"
 
 	"github.com/gin-gonic/gin"
@@ -9,9 +12,9 @@ import (
 // var secret = []byte("secret")
 
 func Run(ventiVersion string) {
-	LoadConfig(ventiVersion)
+	configuration.Load(ventiVersion)
 	InitDB()
-	StartAlertDaemon()
+	alert.StartAlertDaemon()
 	StartServer()
 }
 
@@ -20,22 +23,23 @@ func StartServer() {
 	r := gin.New()
 
 	// token not required
-	r.POST("/user/login", login)
-	r.POST("/user/logout", logout)
+	r.POST("/user/login", api.login)
+	r.POST("/user/logout", api.logout)
 
-	// api routes
-	api := r.Group("/api")
+	// routerGroup routes
+	routerGroup := r.Group("/api")
 
-	// TODO: add to api routes
-	// api.Use(tokenRequired)
-	routesAPIConfig(api)
-	routesAPIDatasources(api)
-	routesAPILethe(api)
-	routesAPIPrometheus(api)
-	if len(config.AlertRuleGroups) < 1 {
+	// TODO: add to routerGroup routes
+	// routerGroup.Use(tokenRequired)
+	api.routesAPIConfig(routerGroup)
+	api.routesAPIDatasources(routerGroup)
+	api.routesAPILethe(routerGroup)
+	api.routesAPIPrometheus(routerGroup)
+
+	if len(configuration.config.AlertRuleGroups) < 1 {
 		log.Println("No AlertRuleGroups...")
 	} else {
-		routesAPIAlerts(api)
+		api.routesAPIAlerts(routerGroup)
 	}
 
 	r.Use(handleSPA())

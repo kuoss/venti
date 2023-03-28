@@ -4,25 +4,6 @@ import (
 	"time"
 )
 
-type User struct {
-	ID           int    `gorm:"primaryKey"`
-	Username     string `gorm:"index:,unique"`
-	Hash         string
-	IsAdmin      bool
-	Token        string
-	TokenExpires time.Time
-	CreatedAt    time.Time
-	UpdatedAt    time.Time
-}
-
-type Config struct {
-	Version           string
-	EtcUsersConfig    EtcUsersConfig
-	DatasourcesConfig DatasourcesConfig
-	Dashboards        []Dashboard
-	AlertRuleGroups   []AlertRuleGroup
-}
-
 // user
 type EtcUsersConfig struct {
 	EtcUsers []EtcUser `yaml:"users"`
@@ -110,32 +91,3 @@ type Threshold struct {
 	Values []int `yaml:"values,omitempty" json:"values,omitempty"`
 	Invert bool  `yaml:"invert,omitempty" json:"invert,omitempty"`
 }
-
-type AlertRuleGroupList struct {
-	Groups []AlertRuleGroup `json:"groups"`
-}
-
-type AlertRuleGroup struct {
-	Name           string            `json:"name"`
-	Rules          []AlertRule       `json:"rules"`
-	DatasourceType DatasourceType    `json:"datasource" yaml:"datasource"`
-	CommonLabels   map[string]string `json:"commonLabels,omitempty" yaml:"commonLabels,omitempty"`
-}
-
-type AlertRule struct {
-	Alert       string            `json:"alert,omitempty"`
-	Expr        string            `json:"expr"`
-	For         time.Duration     `json:"for,omitempty"`
-	Labels      map[string]string `json:"labels,omitempty"`
-	Annotations map[string]string `json:"annotations,omitempty"`
-	State       AlertState        `json:"state,omitempty"`
-	ActiveAt    time.Time         `json:"activeStartTime,omitempty"`
-}
-
-type AlertState string
-
-const (
-	AlertStateInactive AlertState = "inactive"
-	AlertStatePending  AlertState = "pending"
-	AlertStateFiring   AlertState = "firing"
-)

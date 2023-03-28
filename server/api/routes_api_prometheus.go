@@ -1,15 +1,16 @@
-package server
+package api
 
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/kuoss/venti/server"
 )
 
 func routesAPIPrometheus(api *gin.RouterGroup) {
 
 	api.GET("/prometheus/time", func(c *gin.Context) {
-		result, err := InstantQuery{
-			DatasourceType: DatasourceTypePrometheus,
+		result, err := server.InstantQuery{
+			DatasourceType: server.DatasourceTypePrometheus,
 			Expr:           "time()",
 		}.execute()
 		if err != nil {
@@ -19,8 +20,8 @@ func routesAPIPrometheus(api *gin.RouterGroup) {
 	})
 
 	api.GET("/prometheus/namespaces", func(c *gin.Context) {
-		result, err := InstantQuery{
-			DatasourceType: DatasourceTypePrometheus,
+		result, err := server.InstantQuery{
+			DatasourceType: server.DatasourceTypePrometheus,
 			Expr:           "kube_namespace_created",
 		}.execute()
 		if err != nil {
@@ -30,8 +31,8 @@ func routesAPIPrometheus(api *gin.RouterGroup) {
 	})
 
 	api.GET("/prometheus/pods/:namespace", func(c *gin.Context) {
-		result, err := InstantQuery{
-			DatasourceType: DatasourceTypePrometheus,
+		result, err := server.InstantQuery{
+			DatasourceType: server.DatasourceTypePrometheus,
 			Expr:           fmt.Sprintf(`kube_pod_created{namespace="%s"}`, c.Param("namespace")),
 		}.execute()
 		if err != nil {
@@ -41,8 +42,8 @@ func routesAPIPrometheus(api *gin.RouterGroup) {
 	})
 
 	api.GET("/prometheus/nodes", func(c *gin.Context) {
-		result, err := InstantQuery{
-			DatasourceType: DatasourceTypePrometheus,
+		result, err := server.InstantQuery{
+			DatasourceType: server.DatasourceTypePrometheus,
 			Expr:           "kube_node_created",
 		}.execute()
 		if err != nil {
@@ -52,8 +53,8 @@ func routesAPIPrometheus(api *gin.RouterGroup) {
 	})
 
 	api.GET("/prometheus/metadata", func(c *gin.Context) {
-		result, err := PathQuery{
-			DatasourceType: DatasourceTypePrometheus,
+		result, err := server.PathQuery{
+			DatasourceType: server.DatasourceTypePrometheus,
 			Path:           "/api/v1/metadata",
 		}.execute()
 		if err != nil {
@@ -63,8 +64,8 @@ func routesAPIPrometheus(api *gin.RouterGroup) {
 	})
 
 	api.GET("/prometheus/query", func(c *gin.Context) {
-		result, err := InstantQuery{
-			DatasourceType: DatasourceTypePrometheus,
+		result, err := server.InstantQuery{
+			DatasourceType: server.DatasourceTypePrometheus,
 			Expr:           c.Query("query"),
 			Time:           c.Query("time"),
 		}.execute()
@@ -75,8 +76,8 @@ func routesAPIPrometheus(api *gin.RouterGroup) {
 	})
 
 	api.GET("/prometheus/query_range", func(c *gin.Context) {
-		result, err := RangeQuery{
-			DatasourceType: DatasourceTypePrometheus,
+		result, err := server.RangeQuery{
+			DatasourceType: server.DatasourceTypePrometheus,
 			Expr:           c.Query("query"),
 			Start:          c.Query("start"),
 			End:            c.Query("end"),

@@ -2,6 +2,7 @@ package server
 
 import (
 	"fmt"
+	"github.com/kuoss/venti/server/configuration"
 	"io"
 	"log"
 	"net/http"
@@ -38,7 +39,7 @@ func (pq PathQuery) execute() (string, error) {
 	ds := pq.Datasource
 	if ds.Type == DatasourceTypeNone {
 		var err error
-		ds, err = GetDefaultDatasource(pq.DatasourceType)
+		ds, err = configuration.GetDefaultDatasource(pq.DatasourceType)
 		if err != nil {
 			return "", fmt.Errorf("error on GetDefaultDatasource: %w", err)
 		}

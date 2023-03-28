@@ -1,7 +1,8 @@
-package server
+package api
 
 import (
 	"fmt"
+	"github.com/kuoss/venti/server/configuration"
 	"io"
 	"log"
 	"net/http"
@@ -12,11 +13,11 @@ import (
 
 func routesAPIDatasources(api *gin.RouterGroup) {
 	api.GET("/datasources", func(c *gin.Context) {
-		datasources := GetDatasources()
+		datasources := configuration.GetDatasources()
 		c.JSON(200, datasources)
 	})
 	api.GET("/datasources/targets", func(c *gin.Context) {
-		datasources := GetDatasources()
+		datasources := configuration.GetDatasources()
 		var bodies []string
 		for _, ds := range datasources {
 			var err error

@@ -1,13 +1,12 @@
 package server
 
 import (
+	"github.com/kuoss/venti/server/configuration"
 	"log"
 
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
-
-var db *gorm.DB
 
 func InitDB() {
 	log.Println("Initializing database...")
@@ -24,7 +23,7 @@ func InitDB() {
 
 	// Database Seeding
 	// etc users
-	for _, etcUser := range GetConfig().EtcUsersConfig.EtcUsers {
+	for _, etcUser := range configuration.GetConfig().EtcUsersConfig.EtcUsers {
 		var user User
 		result := db.First(&user, "username = ?", etcUser.Username)
 		if result.RowsAffected == 0 {

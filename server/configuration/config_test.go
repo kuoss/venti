@@ -1,4 +1,4 @@
-package server
+package configuration
 
 import (
 	"github.com/stretchr/testify/assert"
@@ -6,7 +6,7 @@ import (
 )
 
 func init() {
-	LoadConfig("Unknown")
+	Load("Unknown")
 }
 
 func TestGetConfig(t *testing.T) {

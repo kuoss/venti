@@ -1,6 +1,7 @@
 package server
 
 import (
+	"github.com/kuoss/venti/server/configuration"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -8,8 +9,8 @@ import (
 )
 
 func init() {
-	LoadConfig("Unknown")
-	config.DatasourcesConfig.Discovery.Enabled = false
+	configuration.Load("Unknown")
+	configuration.config.DatasourcesConfig.Discovery.Enabled = false
 }
 
 func makeService(name string, namespace string, multiport bool) v1.Service {
@@ -41,11 +42,11 @@ func makeService(name string, namespace string, multiport bool) v1.Service {
 }
 
 func TestGetDatasourcesFromServices(t *testing.T) {
-	config.DatasourcesConfig.Discovery.Enabled = false
-	datasourceStore = NewDatasourceStore(config.DatasourcesConfig)
-	config.DatasourcesConfig.Discovery.Enabled = false
-	config.DatasourcesConfig.Discovery.ByNamePrometheus = true
-	config.DatasourcesConfig.Discovery.ByNameLethe = true
+	configuration.config.DatasourcesConfig.Discovery.Enabled = false
+	configuration.datasourceStore = NewDatasourceStore(configuration.config.DatasourcesConfig)
+	configuration.config.DatasourcesConfig.Discovery.Enabled = false
+	configuration.config.DatasourcesConfig.Discovery.ByNamePrometheus = true
+	configuration.config.DatasourcesConfig.Discovery.ByNameLethe = true
 
 	services := []v1.Service{
 		makeService("prometheus", "namespace1", false),
@@ -56,14 +57,14 @@ func TestGetDatasourcesFromServices(t *testing.T) {
 	}
 
 	assert.Equal(t, 5, len(services))
-	datasourceStore.getDatasourcesFromServices(services)
+	configuration.datasourceStore.getDatasourcesFromServices(services)
 
 	// TODO: change after refactoring
 
 	// assert.Equal(t, 5, len(datasourceStore.GetDatasources()))
-	assert.Equal(t, 0, len(datasourceStore.GetDatasources()))
-	datasourceStore.setDefaultDatasources()
-	datasources := datasourceStore.GetDatasources()
+	assert.Equal(t, 0, len(configuration.datasourceStore.GetDatasources()))
+	configuration.datasourceStore.setDefaultDatasources()
+	datasources := configuration.datasourceStore.GetDatasources()
 
 	// assert.Equal(t, 5, len(datasources))
 	assert.Equal(t, 0, len(datasources))

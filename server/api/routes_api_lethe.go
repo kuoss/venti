@@ -1,14 +1,14 @@
-package server
+package api
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/kuoss/venti/server"
 )
 
 func routesAPILethe(api *gin.RouterGroup) {
-
 	api.GET("/lethe/metadata", func(c *gin.Context) {
-		result, err := PathQuery{
-			DatasourceType: DatasourceTypeLethe,
+		result, err := server.PathQuery{
+			DatasourceType: server.DatasourceTypeLethe,
 			Path:           "/api/v1/metadata",
 		}.execute()
 		if err != nil {
@@ -18,8 +18,8 @@ func routesAPILethe(api *gin.RouterGroup) {
 	})
 
 	api.GET("/lethe/query", func(c *gin.Context) {
-		result, err := InstantQuery{
-			DatasourceType: DatasourceTypeLethe,
+		result, err := server.InstantQuery{
+			DatasourceType: server.DatasourceTypeLethe,
 			Expr:           c.Query("query"),
 			Time:           c.Query("time"),
 		}.execute()
@@ -30,8 +30,8 @@ func routesAPILethe(api *gin.RouterGroup) {
 	})
 
 	api.GET("/lethe/query_range", func(c *gin.Context) {
-		result, err := RangeQuery{
-			DatasourceType: DatasourceTypeLethe,
+		result, err := server.RangeQuery{
+			DatasourceType: server.DatasourceTypeLethe,
 			Expr:           c.Query("query"),
 			Start:          c.Query("start"),
 			End:            c.Query("end"),

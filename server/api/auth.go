@@ -1,8 +1,10 @@
-package server
+package api
 
 import (
 	"crypto/rand"
 	"fmt"
+	"github.com/kuoss/venti/server"
+	"github.com/kuoss/venti/server/auth"
 	"log"
 	"net/http"
 	"strings"
@@ -24,8 +26,8 @@ func login(c *gin.Context) {
 		return
 	}
 
-	var user User
-	err := db.First(&user, "username = ?", username).Error
+	var user auth.User
+	err := server.db.First(&user, "username = ?", username).Error
 	if err == nil {
 		if checkPassword(password, user.Hash) {
 			token := issueToken(user)
@@ -66,15 +68,15 @@ func deleteTokenIfWeCan(c *gin.Context) {
 	}
 	token = strings.TrimPrefix(token, "Bearer ")
 	userID := c.GetHeader("UserID")
-	var user User
-	err := db.First(&user, "ID = ? AND token = ?", userID, token).Error
+	var user auth.User
+	err := server.db.First(&user, "ID = ? AND token = ?", userID, token).Error
 	if err != nil {
 		return
 	}
 	log.Println("User '" + user.Username + "' has logged out.")
 	user.Token = ""
 	user.TokenExpires = time.Now().Add(-480 * time.Hour)
-	db.Save(&user)
+	server.db.Save(&user)
 }
 
 // TODO: add to api routes
@@ -93,8 +95,8 @@ func TokenRequired(c *gin.Context) {
 	}
 	token = strings.TrimPrefix(token, "Bearer ")
 	userID := c.GetHeader("UserID")
-	var user User
-	err := db.First(&user, "id = ? AND token = ?", userID, token).Error
+	var user auth.User
+	err := server.db.First(&user, "id = ? AND token = ?", userID, token).Error
 	if err != nil {
 		c.String(http.StatusUnauthorized, `{"message":"cannot find token"}`)
 		c.Abort()
@@ -108,7 +110,7 @@ func TokenRequired(c *gin.Context) {
 	c.Next()
 }
 
-func issueToken(user User) string {
+func issueToken(user auth.User) string {
 	if user.Token != "" && user.TokenExpires.After(time.Now()) {
 		user.TokenExpires = time.Now().Add(48 * time.Hour)
 	} else {
@@ -118,6 +120,6 @@ func issueToken(user User) string {
 		user.Token = token
 		user.TokenExpires = time.Now().Add(48 * time.Hour)
 	}
-	db.Save(&user)
+	server.db.Save(&user)
 	return user.Token
 }

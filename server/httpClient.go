@@ -2,6 +2,7 @@ package server
 
 import (
 	"errors"
+	"github.com/kuoss/venti/server/configuration"
 	"io"
 	"net/http"
 )
@@ -9,7 +10,7 @@ import (
 var client *http.Client
 
 func init() {
-	client = &http.Client{Timeout: config.DatasourcesConfig.QueryTimeout}
+	client = &http.Client{Timeout: configuration.config.DatasourcesConfig.QueryTimeout}
 }
 
 func HTTPGet(url string, params map[string]string) (string, error) {
