@@ -28,7 +28,7 @@ func LoadConfig(version string) {
 	if err != nil {
 		log.Printf("error on loadDatasourcesConfig: %s", err)
 	}
-	datasourceStore = DatasourceStore.New(config.DatasourcesConfig)
+	datasourceStore = NewDatasourceStore(config.DatasourcesConfig)
 	loadDashboards()
 	loadAlertRuleGroups()
 }
