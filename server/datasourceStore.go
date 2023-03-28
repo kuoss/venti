@@ -15,18 +15,18 @@ type DatasourceStore struct {
 	datasources       []Datasource
 }
 
-func NewDatasourceStore(datasourcesConfig DatasourcesConfig) DatasourceStore {
-	dss := DatasourceStore{datasourcesConfig: datasourcesConfig}
+func NewDatasourceStore(datasourcesConfig DatasourcesConfig) *DatasourceStore {
+	dss := &DatasourceStore{datasourcesConfig: datasourcesConfig}
 	dss.loadDatasources()
 	dss.setDefaultDatasources()
 	return dss
 }
 
-func (d DatasourceStore) GetDatasources() []Datasource {
+func (d *DatasourceStore) GetDatasources() []Datasource {
 	return d.datasources
 }
 
-func (d DatasourceStore) GetDefaultDatasource(typ DatasourceType) (Datasource, error) {
+func (d *DatasourceStore) GetDefaultDatasource(typ DatasourceType) (Datasource, error) {
 	for _, ds := range d.datasources {
 		if ds.Type == typ && ds.IsDefault {
 			return ds, nil
@@ -35,7 +35,7 @@ func (d DatasourceStore) GetDefaultDatasource(typ DatasourceType) (Datasource, e
 	return Datasource{}, fmt.Errorf("datasource of type %s not found", typ)
 }
 
-func (d DatasourceStore) loadDatasources() {
+func (d *DatasourceStore) loadDatasources() {
 	d.datasources = d.datasourcesConfig.Datasources
 	if d.datasourcesConfig.Discovery.Enabled {
 		services, err := d.discoverServices()
@@ -48,7 +48,7 @@ func (d DatasourceStore) loadDatasources() {
 	}
 }
 
-func (d DatasourceStore) discoverServices() ([]v1.Service, error) {
+func (d *DatasourceStore) discoverServices() ([]v1.Service, error) {
 	var config, err = rest.InClusterConfig()
 	if err != nil {
 		return []v1.Service{}, fmt.Errorf("cannot InClusterConfig: %w", err)
@@ -65,7 +65,7 @@ func (d DatasourceStore) discoverServices() ([]v1.Service, error) {
 	return services.Items, nil
 }
 
-func (d DatasourceStore) getDatasourcesFromServices(services []v1.Service) []Datasource {
+func (d *DatasourceStore) getDatasourcesFromServices(services []v1.Service) []Datasource {
 	var datasources = []Datasource{}
 
 	for _, service := range services {
@@ -127,7 +127,7 @@ func (d DatasourceStore) getDatasourcesFromServices(services []v1.Service) []Dat
 	return datasources
 }
 
-func (d DatasourceStore) setDefaultDatasources() {
+func (d *DatasourceStore) setDefaultDatasources() {
 	existsDefaultPrometheus := false
 	existsDefaultLethe := false
 	for _, ds := range d.datasources {

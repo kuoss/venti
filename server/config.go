@@ -13,7 +13,7 @@ import (
 
 var (
 	config          Config
-	datasourceStore DatasourceStore
+	datasourceStore *DatasourceStore
 )
 
 func LoadConfig(version string) {
