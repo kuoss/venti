@@ -2,7 +2,6 @@ package server
 
 import (
 	"log"
-	"os"
 
 	"github.com/gin-gonic/gin"
 )
@@ -19,16 +18,6 @@ func Run(ventiVersion string) {
 func StartServer() {
 	log.Println("Starting Venti Server...")
 	r := gin.New()
-
-	// web routes
-	if os.Getenv("API_ONLY") != "1" {
-		r.Static("/assets", "./web/dist/assets")
-		r.StaticFile("/favicon.ico", "./web/public/favicon.ico")
-		r.LoadHTMLGlob("web/dist/index.html")
-		r.GET("/", func(c *gin.Context) {
-			c.HTML(200, "index.html", nil)
-		})
-	}
 
 	// token not required
 	r.POST("/user/login", login)
@@ -48,6 +37,8 @@ func StartServer() {
 	} else {
 		routesAPIAlerts(api)
 	}
+
+	r.Use(handleSPA())
 
 	log.Println("venti started...💨💨💨")
 	_ = r.Run() // :8080

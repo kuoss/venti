@@ -9,20 +9,26 @@ import (
 	"strings"
 
 	"gopkg.in/yaml.v3"
-	// metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	// "k8s.io/client-go/kubernetes"
-	// "k8s.io/client-go/rest"
 )
 
 var (
-	config Config
+	config          Config
+	datasourceStore *DatasourceStore
 )
 
 func LoadConfig(version string) {
+	var err error
 	log.Println("Loading configurations...")
 	config.Version = version
-	loadUsersConfig()
-	loadDatasourcesConfig()
+	err = loadUsersConfig()
+	if err != nil {
+		log.Printf("error on loadUsersConfig: %s", err)
+	}
+	err = loadDatasourcesConfig()
+	if err != nil {
+		log.Printf("error on loadDatasourcesConfig: %s", err)
+	}
+	datasourceStore = NewDatasourceStore(config.DatasourcesConfig)
 	loadDashboards()
 	loadAlertRuleGroups()
 }
@@ -31,27 +37,32 @@ func GetConfig() Config {
 	return config
 }
 
-func loadUsersConfig() {
+func loadUsersConfig() error {
 	yamlBytes, err := os.ReadFile("etc/users.yaml")
 	if err != nil {
-		log.Fatal(err)
+		return fmt.Errorf("cannot ReadFile: %w", err)
 	}
 	if err := yaml.Unmarshal(yamlBytes, &config.EtcUsersConfig); err != nil {
-		log.Fatal(err)
+		return fmt.Errorf("cannot Unmarshal: %w", err)
 	}
 	log.Println("Users config file loaded.")
+	return nil
 }
 
-func loadDatasourcesConfig() {
+func loadDatasourcesConfig() error {
 	yamlBytes, err := os.ReadFile("etc/datasources.yaml")
 	if err != nil {
-		log.Fatal(err)
+		return fmt.Errorf("cannot ReadFile: %w", err)
 	}
 	if err := yaml.Unmarshal(yamlBytes, &config.DatasourcesConfig); err != nil {
-		log.Fatal(err)
+		return fmt.Errorf("cannot Unmarshal: %w", err)
+	}
+	log.Println("Datasources config file loaded.")
+	if config.DatasourcesConfig.Discovery.AnnotationKey == "" {
+		config.DatasourcesConfig.Discovery.AnnotationKey = "kuoss.org/datasource"
 	}
 	log.Println(config.DatasourcesConfig)
-	log.Println("Datasources config file loaded.")
+	return nil
 }
 
 func glob(root string, fn func(string) bool) []string {
@@ -133,47 +144,10 @@ func GetAlertRuleGroups() []AlertRuleGroup {
 	return config.AlertRuleGroups
 }
 
-func GetDatasources() ([]Datasource, error) {
-	// config, err := rest.InClusterConfig()
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// clientset, err := kubernetes.NewForConfig(config)
-	// if err != nil {
-	// 	return nil, err
-	// }
-
-	var datasources = GetConfig().DatasourcesConfig.Datasources
-
-	// add prometheus services
-	// services, err := clientset.CoreV1().Services("").List(context.TODO(), metav1.ListOptions{})
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// for _, service := range services.Items {
-	// 	if service.Namespace == "kube-system" || service.Name != "prometheus" {
-	// 		continue
-	// 	}
-	// 	datasources = append(datasources, Datasource{
-	// 		Type:         DatasourceTypePrometheus,
-	// 		Host:         service.Name + "." + service.Namespace,
-	// 		Port:         9090,
-	// 		IsDiscovered: true,
-	// 	})
-	// }
-	return datasources, nil
+func GetDatasources() []Datasource {
+	return datasourceStore.GetDatasources()
 }
 
-func GetDefaultDatasource(dstype DatasourceType) (Datasource, error) {
-	var datasource Datasource
-	datasources, err := GetDatasources()
-	if err != nil {
-		return datasource, err
-	}
-	for _, ds := range datasources {
-		if ds.Type == dstype {
-			return ds, nil
-		}
-	}
-	return datasource, fmt.Errorf("datasource of type %s not found", dstype)
+func GetDefaultDatasource(typ DatasourceType) (Datasource, error) {
+	return datasourceStore.GetDefaultDatasource(typ)
 }

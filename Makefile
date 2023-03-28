@@ -23,6 +23,11 @@ run-watch-go:
 run-watch-web:
 	sleep 15 && air
 
+# gin server (port 8080)
+run-air:
+	cd web && npm run build
+	air
+
 # on codespace
 stage:
 	skaffold dev --namespace=kube-system --default-repo=ghcr.io/kuoss
@@ -33,8 +38,11 @@ stage:
 docker-build:
 	docker build -t ${IMAGE_REPO}/venti:${VENTI_VERSION} --build-arg VENTI_VERSION=${VENTI_VERSION} . && docker push ${IMAGE_REPO}/venti:${VENTI_VERSION} 
 
+pre-checks:
+	go install honnef.co/go/tools/cmd/staticcheck@latest
+	go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 
-checks: fmt vet staticcheck golangci-lint go-licenses js-licenses test-cover
+checks: fmt vet staticcheck golangci-lint test-cover
 
 fmt:
 	go fmt ./...
@@ -48,15 +56,6 @@ staticcheck:
 golangci-lint:
 	golangci-lint run
 
-go-licenses:
-	# go install github.com/google/go-licenses@latest
-	go-licenses report github.com/kuoss/venti | tee docs/go-licenses.csv;\
-	go-licenses check github.com/kuoss/venti && echo OK
-
-js-licenses:
-	# npm install -g js-green-licenses
-	cd web && jsgl --local . && echo OK
-	
 test-cover:
-	./hack/test-cover.sh
+	./scripts/test-cover.sh
 

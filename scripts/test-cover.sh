@@ -9,6 +9,7 @@ if [[ $? != 0 ]]; then
 fi
 
 COVER=$(go tool cover -func cover.out | tail -1 | grep -oP [0-9.]+)
+rm -f cover.out
 if [[ $COVER < $MIN_COVER ]]; then
     echo
     echo "❌ FAIL ( test coverage: $COVER% < $MIN_COVER% )"

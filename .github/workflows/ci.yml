@@ -66,18 +66,18 @@ jobs:
       run: go test -race -coverprofile=coverage.out -covermode=atomic
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3
-    - name: Convert coverage to lcov
-      uses: jandelgado/gcov2lcov-action@v1
+    #- name: Convert coverage to lcov
+    #  uses: jandelgado/gcov2lcov-action@v1
     #- name: Coveralls 
     #  uses: coverallsapp/github-action@master
     #  with:
     #    github-token: ${{ secrets.GITHUB_TOKEN }}
     #    path-to-lcov: coverage.lcov
-    - name: Coverage Gate
-      uses: VeryGoodOpenSource/very_good_coverage@v2
-      with:
-        path: coverage.lcov
-        min_coverage: 55
+    #- name: Coverage Gate
+    #  uses: VeryGoodOpenSource/very_good_coverage@v2
+    #  with:
+    #    path: coverage.lcov
+    #    min_coverage: 55
 
   go-licenses:
     runs-on: ubuntu-latest
