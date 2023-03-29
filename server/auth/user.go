@@ -1,5 +1,7 @@
 package auth
 
+import "time"
+
 type User struct {
 	ID           int    `gorm:"primaryKey"`
 	Username     string `gorm:"index:,unique"`

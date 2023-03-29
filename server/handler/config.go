@@ -1,16 +1,28 @@
-package api
+package handler
 
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/kuoss/venti/server/configuration"
-	"gopkg.in/yaml.v2"
+	"net/http"
 )
 
-func routesAPIConfig(api *gin.RouterGroup) {
-	api.GET("/config/version", func(c *gin.Context) {
-		c.JSON(200, configuration.GetConfig().Version)
-	})
+type configHandler struct {
+	*configuration.Config
+}
 
+func (ch *configHandler) Version(c *gin.Context) {
+	c.JSON(http.StatusOK, ch.Config.Version)
+	return
+}
+
+func (ch *configHandler) Dashboards(c *gin.Context) {
+
+	//dashboards not in config now
+	//c.JSON(http.StatusOK,ch.Config.)
+	return
+}
+
+/*
 	api.GET("/config/dashboards", func(c *gin.Context) {
 		c.JSON(200, configuration.GetConfig().Dashboards)
 	})
@@ -25,3 +37,5 @@ func routesAPIConfig(api *gin.RouterGroup) {
 		})
 	})
 }
+
+*/

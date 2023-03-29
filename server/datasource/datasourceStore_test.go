@@ -1,4 +1,4 @@
-package server
+package datasource
 
 import (
 	"github.com/kuoss/venti/server/configuration"
@@ -7,11 +7,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"testing"
 )
-
-func init() {
-	configuration.Load("Unknown")
-	configuration.config.DatasourcesConfig.Discovery.Enabled = false
-}
 
 func makeService(name string, namespace string, multiport bool) v1.Service {
 	ports := []v1.ServicePort{

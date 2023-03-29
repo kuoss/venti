@@ -1,16 +1,14 @@
 package main
 
 import (
-	"os"
-
 	"github.com/kuoss/venti/server"
 )
 
-var ventiVersion string
+// Version will be overwrited by ldflags
+var (
+	Version = "unknown"
+)
 
 func main() {
-	if ventiVersion == "" {
-		ventiVersion = os.Getenv("VENTI_VERSION")
-	}
-	server.Run(ventiVersion)
+	server.Run(Version)
 }

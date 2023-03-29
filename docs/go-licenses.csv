@@ -40,7 +40,7 @@ gopkg.in/yaml.v2,https://github.com/go-yaml/yaml/blob/v2.4.0/LICENSE,Apache-2.0
 gopkg.in/yaml.v3,https://github.com/go-yaml/yaml/blob/v3.0.1/LICENSE,MIT
 gorm.io/driver/sqlite,https://github.com/go-gorm/sqlite/blob/v1.3.2/License,MIT
 gorm.io/gorm,https://github.com/go-gorm/gorm/blob/v1.23.4/License,MIT
-k8s.io/api,https://github.com/kubernetes/api/blob/v0.26.3/LICENSE,Apache-2.0
+k8s.io/handler,https://github.com/kubernetes/api/blob/v0.26.3/LICENSE,Apache-2.0
 k8s.io/apimachinery/pkg,https://github.com/kubernetes/apimachinery/blob/v0.26.3/LICENSE,Apache-2.0
 k8s.io/apimachinery/third_party/forked/golang/reflect,https://github.com/kubernetes/apimachinery/blob/v0.26.3/third_party/forked/golang/LICENSE,BSD-3-Clause
 k8s.io/client-go,https://github.com/kubernetes/client-go/blob/v0.26.3/LICENSE,Apache-2.0

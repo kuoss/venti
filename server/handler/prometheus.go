@@ -1,4 +1,8 @@
+<<<<<<<< HEAD:server/api/routes_api_prometheus.go
 package api
+========
+package handler
+>>>>>>>> e244785 (baseline for reconstruction):server/handler/prometheus.go
 
 import (
 	"fmt"
@@ -55,7 +59,11 @@ func routesAPIPrometheus(api *gin.RouterGroup) {
 	api.GET("/prometheus/metadata", func(c *gin.Context) {
 		result, err := server.PathQuery{
 			DatasourceType: server.DatasourceTypePrometheus,
+<<<<<<<< HEAD:server/api/routes_api_prometheus.go
 			Path:           "/api/v1/metadata",
+========
+			Path:           "/handler/v1/metadata",
+>>>>>>>> e244785 (baseline for reconstruction):server/handler/prometheus.go
 		}.execute()
 		if err != nil {
 			c.JSON(500, err)

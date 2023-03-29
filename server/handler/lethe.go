@@ -1,4 +1,8 @@
+<<<<<<<< HEAD:server/api/routes_api_lethe.go
 package api
+========
+package handler
+>>>>>>>> e244785 (baseline for reconstruction):server/handler/lethe.go
 
 import (
 	"github.com/gin-gonic/gin"
@@ -9,7 +13,11 @@ func routesAPILethe(api *gin.RouterGroup) {
 	api.GET("/lethe/metadata", func(c *gin.Context) {
 		result, err := server.PathQuery{
 			DatasourceType: server.DatasourceTypeLethe,
+<<<<<<<< HEAD:server/api/routes_api_lethe.go
 			Path:           "/api/v1/metadata",
+========
+			Path:           "/handler/v1/metadata",
+>>>>>>>> e244785 (baseline for reconstruction):server/handler/lethe.go
 		}.execute()
 		if err != nil {
 			c.JSON(500, err)

@@ -76,7 +76,7 @@ func (pq PathQuery) execute() (string, error) {
 func (iq InstantQuery) execute() (string, error) {
 	return PathQuery{
 		DatasourceType: iq.DatasourceType,
-		Path:           "/api/v1/query",
+		Path:           "/handler/v1/query",
 		Params: map[string]string{
 			"query": iq.Expr,
 			"time":  iq.Time,
@@ -87,7 +87,7 @@ func (iq InstantQuery) execute() (string, error) {
 func (rq RangeQuery) execute() (string, error) {
 	return PathQuery{
 		DatasourceType: rq.DatasourceType,
-		Path:           "/api/v1/query_range",
+		Path:           "/handler/v1/query_range",
 		Params: map[string]string{
 			"query": rq.Expr,
 			"start": rq.Start,
