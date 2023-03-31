@@ -14,7 +14,7 @@ type AlertRuleStore struct {
 func NewAlertRuleStore(pattern string) (*AlertRuleStore, error) {
 	log.Println("Loading alertrules...")
 	// default: "etc/alertrules/*.yaml"
-	files, err := filepath.Glob(pattern)
+	files, err := filepath.Glob("etc/alertrules/*.yaml")
 	if err != nil {
 		return nil, err
 	}

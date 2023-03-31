@@ -4,7 +4,7 @@ import (
 	"crypto/rand"
 	"fmt"
 	"github.com/kuoss/venti/pkg/auth"
-	"github.com/kuoss/venti/pkg/service"
+	"github.com/kuoss/venti/pkg/store"
 	"log"
 	"net/http"
 	"strings"
@@ -16,7 +16,11 @@ import (
 
 type authHandler struct {
 	// todo service to database
-	service *service.UserService
+	service *store.UserStore
+}
+
+func NewAuthHandler(us *store.UserStore) *authHandler {
+	return &authHandler{us}
 }
 
 func (ah *authHandler) Login(c *gin.Context) {

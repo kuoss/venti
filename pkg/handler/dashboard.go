@@ -14,6 +14,10 @@ type dashboardHandler struct {
 	*store.DashboardStore
 }
 
+func NewDashboardHandler(ds *store.DashboardStore) *dashboardHandler {
+	return &dashboardHandler{ds}
+}
+
 //GET /dashboards
 func (dh *dashboardHandler) Dashboards(c *gin.Context) {
 	c.JSON(http.StatusOK, dh.DashboardStore.Dashboards())

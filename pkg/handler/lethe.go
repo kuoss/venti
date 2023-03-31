@@ -2,18 +2,22 @@ package handler
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/kuoss/venti/pkg/configuration"
 	"github.com/kuoss/venti/pkg/query"
 )
 
 type letheHandler struct {
 	// todo: something to query lethe data
 	querier query.Querier
-	configuration.DatasourceType
+}
+
+func NewLetheHandler(querier query.Querier) *letheHandler {
+	return &letheHandler{
+		querier: querier,
+	}
 }
 
 // GET /lethe/metadata
-func (lh *letheHandler) metadata(c *gin.Context) {
+func (lh *letheHandler) Metadata(c *gin.Context) {
 	qr, err := lh.querier.Execute(c.Request.Context(), query.Query{
 		Path: "metadata",
 	})
@@ -25,7 +29,7 @@ func (lh *letheHandler) metadata(c *gin.Context) {
 }
 
 // GET /lethe/query
-func (lh *letheHandler) query(c *gin.Context) {
+func (lh *letheHandler) Query(c *gin.Context) {
 	qr, err := lh.querier.Execute(c.Request.Context(), query.Query{
 		Path: "/api/v1/query",
 		Params: map[string]string{
@@ -40,7 +44,7 @@ func (lh *letheHandler) query(c *gin.Context) {
 }
 
 // GET /lethe/query_range
-func (lh *letheHandler) query_range(c *gin.Context) {
+func (lh *letheHandler) QueryRange(c *gin.Context) {
 	qr, err := lh.querier.Execute(c.Request.Context(), query.Query{
 		Path: "/api/v1/query",
 		Params: map[string]string{

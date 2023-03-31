@@ -2,18 +2,21 @@ package handler
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/kuoss/venti/pkg/configuration"
 	"github.com/kuoss/venti/pkg/query"
 )
 
 type prometheusHandler struct {
-	// todo : something able to query
 	querier query.Querier
-	configuration.DatasourceType
+}
+
+func NewPrometheusHandler(querier query.Querier) *prometheusHandler {
+	return &prometheusHandler{
+		querier: querier,
+	}
 }
 
 // GET /prometheus/metadata
-func (ph *prometheusHandler) metadata(c *gin.Context) {
+func (ph *prometheusHandler) Metadata(c *gin.Context) {
 
 	qr, err := ph.querier.Execute(c.Request.Context(), query.Query{
 		Path: "metadata",
@@ -26,7 +29,7 @@ func (ph *prometheusHandler) metadata(c *gin.Context) {
 }
 
 // GET /prometheus/query
-func (ph *prometheusHandler) query(c *gin.Context) {
+func (ph *prometheusHandler) Query(c *gin.Context) {
 
 	qr, err := ph.querier.Execute(c.Request.Context(), query.Query{
 		Path: "/api/v1/query",
@@ -42,7 +45,7 @@ func (ph *prometheusHandler) query(c *gin.Context) {
 }
 
 // GET /prometheus/query_range
-func (ph *prometheusHandler) queryRange(c *gin.Context) {
+func (ph *prometheusHandler) QueryRange(c *gin.Context) {
 
 	qr, err := ph.querier.Execute(c.Request.Context(), query.Query{
 		Path: "/api/v1/query",

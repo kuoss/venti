@@ -21,6 +21,15 @@ type httpQuerier struct {
 	datasource configuration.Datasource
 }
 
+func NewHttpQuerier(ds configuration.Datasource, timeout time.Duration) *httpQuerier {
+	return &httpQuerier{
+		Client:     &http.Client{},
+		url:        ds.URL,
+		timeout:    timeout,
+		datasource: ds,
+	}
+}
+
 func (hq *httpQuerier) Execute(ctx context.Context, q Query) (string, error) {
 
 	// ds := q.Datasource
@@ -47,7 +56,8 @@ func (hq *httpQuerier) Execute(ctx context.Context, q Query) (string, error) {
 	}
 
 	u.RawQuery = queryParam.Encode()
-
+	ctx, cancel := context.WithTimeout(ctx, hq.timeout)
+	defer cancel()
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), nil)
 	if err != nil {
 		return "", fmt.Errorf("error on http.NewRequest: %w", err)

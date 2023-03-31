@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/kuoss/venti/pkg/configuration"
+	"github.com/kuoss/venti/pkg/store"
 	"io"
 	"log"
 	"net/http"
@@ -13,22 +14,28 @@ import (
 )
 
 type datasourceHandler struct {
-	*configuration.DatasourcesConfig
+	// configuration.DatasourcesConfig should be used for initializing datasourceStore
+	*store.DatasourceStore
 }
 
-// datasources
+func NewDatasourceHandler(ds *store.DatasourceStore) *datasourceHandler {
+	return &datasourceHandler{ds}
+}
+
+// GET datasources
 func (dh *datasourceHandler) Datasources(c *gin.Context) {
+
 	// todo check Datasources is pointer type
-	c.JSON(http.StatusOK, dh.DatasourcesConfig.Datasources)
+	c.JSON(http.StatusOK, dh.DatasourceStore.GetDatasources())
 }
 
-///datasources/targets
+// GET /datasources/targets
 
 func (dh *datasourceHandler) Targets(c *gin.Context) {
 
 	var bodies []string
-	for _, ds := range dh.DatasourcesConfig.Datasources {
-		url := fmt.Sprintf("%s/handler/v1/targets?state=active", ds.URL)
+	for _, ds := range dh.DatasourceStore.GetDatasources() {
+		url := fmt.Sprintf("%s/api/v1/targets?state=active", ds.URL)
 		body, err := httpDo(url, *ds)
 		if err != nil {
 			bodies = append(bodies, fmt.Sprintf(`{"status":"error","errorType":"%s"}`, err.Error()))

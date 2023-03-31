@@ -14,22 +14,38 @@ import (
 
 // DatasourceStore
 type DatasourceStore struct {
-	*configuration.Config
+	config     *configuration.DatasourcesConfig
+	discovered []*configuration.Datasource // discovered
 }
 
-func NewDatasourceStore(config *configuration.Config) *DatasourceStore {
-	dss := &DatasourceStore{config}
+// NewDatasourceStore return *DatasourceStore after service discovery (with k8s service)
+func NewDatasourceStore(config *configuration.DatasourcesConfig) (*DatasourceStore, error) {
+	dss := &DatasourceStore{config, nil}
+	err := dss.discovery()
+	if err != nil {
+		return nil, fmt.Errorf("failed to service discovery: %w", err)
+	}
 	dss.setDefaultDatasources()
-	return dss
+	return dss, nil
 }
 
 // TODO do we need this?
+
 func (d *DatasourceStore) GetDatasources() []*configuration.Datasource {
-	return d.DatasourcesConfig.Datasources
+	return d.discovered
+}
+
+func (d *DatasourceStore) GetDatasourceWithType(t configuration.DatasourceType) *configuration.Datasource {
+	for _, ds := range d.discovered {
+		if ds.Type == t {
+			return ds
+		}
+	}
+	return nil
 }
 
 func (d *DatasourceStore) GetDefaultDatasource(typ configuration.DatasourceType) (*configuration.Datasource, error) {
-	for _, ds := range d.DatasourcesConfig.Datasources {
+	for _, ds := range d.discovered {
 		if ds.Type == typ && ds.IsDefault {
 			return ds, nil
 		}
@@ -37,20 +53,20 @@ func (d *DatasourceStore) GetDefaultDatasource(typ configuration.DatasourceType)
 	return nil, fmt.Errorf("datasource of type %s not found", typ)
 }
 
-func (d *DatasourceStore) loadDatasources() error {
-	if d.DatasourcesConfig.Discovery.Enabled {
-		services, err := d.listServices()
+func (d *DatasourceStore) discovery() error {
+	if d.config.Discovery.Enabled {
+		services, err := listServices()
 		if err != nil {
 			return fmt.Errorf("cannot listServices: %w", err)
 		}
 
-		discoveredDatasources := d.getDatasourcesFromServices(services)
-		d.DatasourcesConfig.Datasources = append(d.DatasourcesConfig.Datasources, discoveredDatasources...)
+		discovered := d.getDatasourcesFromServices(services)
+		d.discovered = append(d.discovered, discovered...)
 	}
 	return nil
 }
 
-func (d *DatasourceStore) listServices() ([]v1.Service, error) {
+func listServices() ([]v1.Service, error) {
 	config, err := rest.InClusterConfig()
 	if err != nil {
 		return []v1.Service{}, fmt.Errorf("cannot InClusterConfig: %w", err)
@@ -68,14 +84,14 @@ func (d *DatasourceStore) listServices() ([]v1.Service, error) {
 }
 
 func (d *DatasourceStore) getDatasourcesFromServices(services []v1.Service) []*configuration.Datasource {
-	var datasources []*configuration.Datasource
+	var discovered []*configuration.Datasource
 
 	for _, service := range services {
 		datasourceType := configuration.DatasourceTypeNone
 
 		// by annotation
 		for key, value := range service.Annotations {
-			if key != d.DatasourcesConfig.Discovery.AnnotationKey {
+			if key != d.config.Discovery.AnnotationKey {
 				continue
 			}
 			if value == string(configuration.DatasourceTypePrometheus) {
@@ -88,11 +104,11 @@ func (d *DatasourceStore) getDatasourcesFromServices(services []v1.Service) []*c
 			}
 		}
 		// by name prometheus
-		if datasourceType == configuration.DatasourceTypeNone && d.DatasourcesConfig.Discovery.ByNamePrometheus && service.Name == "prometheus" {
+		if datasourceType == configuration.DatasourceTypeNone && d.config.Discovery.ByNamePrometheus && service.Name == "prometheus" {
 			datasourceType = configuration.DatasourceTypePrometheus
 		}
 		// by name lethe
-		if datasourceType == configuration.DatasourceTypeNone && d.DatasourcesConfig.Discovery.ByNameLethe && service.Name == "lethe" {
+		if datasourceType == configuration.DatasourceTypeNone && d.config.Discovery.ByNameLethe && service.Name == "lethe" {
 			datasourceType = configuration.DatasourceTypeLethe
 		}
 		// not matched
@@ -102,7 +118,7 @@ func (d *DatasourceStore) getDatasourcesFromServices(services []v1.Service) []*c
 
 		// isDefault
 		isDefault := false
-		if service.Namespace == d.DatasourcesConfig.Discovery.DefaultNamespace {
+		if service.Namespace == d.config.Discovery.DefaultNamespace {
 			isDefault = true
 		}
 
@@ -111,7 +127,7 @@ func (d *DatasourceStore) getDatasourcesFromServices(services []v1.Service) []*c
 
 		portNumber := getPortNumberFromService(service)
 
-		datasources = append(datasources, &configuration.Datasource{
+		discovered = append(discovered, &configuration.Datasource{
 			Name:         fmt.Sprintf("%s.%s", service.Name, service.Namespace),
 			Type:         datasourceType,
 			URL:          fmt.Sprintf("http://%s.%s:%d", service.Name, service.Namespace, portNumber),
@@ -119,7 +135,7 @@ func (d *DatasourceStore) getDatasourcesFromServices(services []v1.Service) []*c
 			IsDefault:    isDefault,
 		})
 	}
-	return datasources
+	return discovered
 }
 
 // return port number within "http" named port. if not exist return service's first port number
@@ -133,13 +149,15 @@ func getPortNumberFromService(service v1.Service) int32 {
 	return service.Spec.Ports[0].Port
 }
 
+// todo : what is this for?
 func (d *DatasourceStore) setDefaultDatasources() {
+
 	// initialize with false
 	var (
 		existsDefaultPrometheus, existsDefaultLethe bool
 	)
 
-	for _, ds := range d.DatasourcesConfig.Datasources {
+	for _, ds := range d.discovered {
 		if !ds.IsDefault {
 			continue
 		}
@@ -153,7 +171,7 @@ func (d *DatasourceStore) setDefaultDatasources() {
 		}
 	}
 	if !existsDefaultPrometheus {
-		for _, ds := range d.DatasourcesConfig.Datasources {
+		for _, ds := range d.discovered {
 			if ds.Type == configuration.DatasourceTypePrometheus {
 				ds.IsDefault = true
 				break
@@ -161,7 +179,7 @@ func (d *DatasourceStore) setDefaultDatasources() {
 		}
 	}
 	if !existsDefaultLethe {
-		for _, ds := range d.DatasourcesConfig.Datasources {
+		for _, ds := range d.discovered {
 			if ds.Type == configuration.DatasourceTypeLethe {
 				ds.IsDefault = true
 				break

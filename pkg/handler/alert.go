@@ -9,6 +9,10 @@ type alertHandler struct {
 	*store.AlertRuleStore
 }
 
+func NewAlertHandler(r *store.AlertRuleStore) *alertHandler {
+	return &alertHandler{r}
+}
+
 func (ah *alertHandler) AlertRuleGroups(c *gin.Context) {
 	c.JSON(200, ah.AlertRuleStore.Groups())
 }
