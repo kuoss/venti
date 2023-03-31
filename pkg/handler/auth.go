@@ -3,8 +3,8 @@ package handler
 import (
 	"crypto/rand"
 	"fmt"
-	"github.com/kuoss/venti/server/auth"
-	"github.com/kuoss/venti/server/service"
+	"github.com/kuoss/venti/pkg/auth"
+	"github.com/kuoss/venti/pkg/service"
 	"log"
 	"net/http"
 	"strings"

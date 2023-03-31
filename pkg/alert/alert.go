@@ -3,8 +3,8 @@ package alert
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/kuoss/venti/server"
-	"github.com/kuoss/venti/server/configuration"
+	"github.com/kuoss/venti/pkg"
+	"github.com/kuoss/venti/pkg/configuration"
 	"html/template"
 	"log"
 	"net/http"
@@ -28,10 +28,10 @@ type AlertRuleGroupList struct {
 }
 
 type AlertRuleGroup struct {
-	Name           string                `json:"name"`
-	Rules          []AlertRule           `json:"rules"`
-	DatasourceType server.DatasourceType `json:"datasource" yaml:"datasource"`
-	CommonLabels   map[string]string     `json:"commonLabels,omitempty" yaml:"commonLabels,omitempty"`
+	Name           string             `json:"name"`
+	Rules          []AlertRule        `json:"rules"`
+	DatasourceType pkg.DatasourceType `json:"datasource" yaml:"datasource"`
+	CommonLabels   map[string]string  `json:"commonLabels,omitempty" yaml:"commonLabels,omitempty"`
 }
 
 type AlertRule struct {
@@ -98,7 +98,7 @@ func alertTask() {
 		for j, rule := range group.Rules {
 			time.Sleep(time.Duration(500) * time.Millisecond)
 			now := time.Now()
-			instanctQuery := server.InstantQuery{
+			instanctQuery := pkg.InstantQuery{
 				DatasourceType: datasourceType,
 				Expr:           rule.Expr,
 			}

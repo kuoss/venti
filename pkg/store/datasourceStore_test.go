@@ -1,7 +1,7 @@
-package datasource
+package store
 
 import (
-	"github.com/kuoss/venti/server/configuration"
+	"github.com/kuoss/venti/pkg/configuration"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

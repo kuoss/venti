@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/kuoss/venti/server"
+	"github.com/kuoss/venti/pkg"
 )
 
 // Version will be overwrited by ldflags
@@ -10,5 +10,5 @@ var (
 )
 
 func main() {
-	server.Run(Version)
+	pkg.Run(Version)
 }

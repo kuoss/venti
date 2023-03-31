@@ -2,23 +2,21 @@ package handler
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/kuoss/venti/server/configuration"
+	"github.com/kuoss/venti/pkg/store"
 	"net/http"
 )
 
-type configHandler struct {
-	*configuration.Config
+// todo moved from config handler *should* modify web router path
+// 1. /config/dashboards -> GET /dashboards
+// 2. /config/dashboards/yaml -> should we return yaml bytes?
+
+type dashboardHandler struct {
+	*store.DashboardStore
 }
 
-func (ch *configHandler) Version(c *gin.Context) {
-	c.JSON(http.StatusOK, ch.Config.Version)
-	return
-}
-
-func (ch *configHandler) Dashboards(c *gin.Context) {
-
-	//dashboards not in config now
-	//c.JSON(http.StatusOK,ch.Config.)
+//GET /dashboards
+func (dh *dashboardHandler) Dashboards(c *gin.Context) {
+	c.JSON(http.StatusOK, dh.DashboardStore.Dashboards())
 	return
 }
 

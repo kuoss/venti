@@ -1,16 +1,16 @@
-package datasource
+package store
 
 import (
 	"context"
 	"fmt"
-	"github.com/kuoss/venti/server/configuration"
+	"github.com/kuoss/venti/pkg/configuration"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 )
 
-// TODO 이게 로직이 어떤건지 잘 모르겠음
+// TODO can't fully understand initializing Datasource
 
 // DatasourceStore
 type DatasourceStore struct {

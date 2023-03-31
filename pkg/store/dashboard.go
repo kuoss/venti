@@ -1,9 +1,4 @@
-package server
-
-type Annotation struct {
-	Type DatasourceType `json:"type,omitempty"` // default: "kuoss.org/datasource"
-	Port string         `json:"port,omitempty"` // default: "kuoss.org/port"
-}
+package store
 
 // dashboard
 type Dashboard struct {
@@ -27,6 +22,7 @@ type ChartOptions struct {
 	YMax int `json:"yMax,omitempty" yaml:"yMax,omitempty"`
 }
 
+// todo: what Legend, Legends is for?
 type Target struct {
 	Expr       string      `json:"expr"`
 	Legend     string      `json:"legend,omitempty" yaml:"legend,omitempty"`

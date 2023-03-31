@@ -1,8 +1,8 @@
-package server
+package pkg
 
 import (
 	"fmt"
-	"github.com/kuoss/venti/server/configuration"
+	"github.com/kuoss/venti/pkg/configuration"
 	"io"
 	"log"
 	"net/http"

@@ -1,8 +1,8 @@
-package server
+package client
 
 import (
 	"errors"
-	"github.com/kuoss/venti/server/configuration"
+	"github.com/kuoss/venti/pkg/configuration"
 	"io"
 	"net/http"
 )

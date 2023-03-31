@@ -115,7 +115,7 @@ func Load(version string) (*Config, error) {
 	//loadDashboards()
 	//loadAlertRuleGroups()
 
-	//datasourceStore = server.NewDatasourceStore(Config.DatasourcesConfig)
+	//datasourceStore = pkg.NewDatasourceStore(Config.DatasourcesConfig)
 
 	return &Config{
 		Version:           version,
@@ -160,7 +160,7 @@ func loadDashboard(root string) {
 
 	log.Printf("filepaths: %#v", filepaths)
 
-	var dashboard server.Dashboard
+	var dashboard pkg.Dashboard
 
 	for _, filepath := range filepaths {
 		yamlBytes, err := os.ReadFile(filepath)
@@ -232,11 +232,11 @@ func GetAlertRuleGroups() []alert.AlertRuleGroup {
 	return Config.AlertRuleGroups
 }
 
-func GetDatasources() []server.Datasource {
+func GetDatasources() []pkg.Datasource {
 	return datasourceStore.GetDatasources()
 }
 
-func GetDefaultDatasource(typ server.DatasourceType) (server.Datasource, error) {
+func GetDefaultDatasource(typ pkg.DatasourceType) (pkg.Datasource, error) {
 	return datasourceStore.GetDefaultDatasource(typ)
 }
 

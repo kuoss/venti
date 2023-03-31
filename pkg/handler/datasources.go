@@ -3,7 +3,7 @@ package handler
 import (
 	"context"
 	"fmt"
-	"github.com/kuoss/venti/server/configuration"
+	"github.com/kuoss/venti/pkg/configuration"
 	"io"
 	"log"
 	"net/http"

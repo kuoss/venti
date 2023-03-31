@@ -1,10 +1,10 @@
-package server
+package pkg
 
 import (
-	"github.com/kuoss/venti/server/alert"
-	"github.com/kuoss/venti/server/configuration"
-	"github.com/kuoss/venti/server/handler"
-	"github.com/kuoss/venti/server/service"
+	"github.com/kuoss/venti/pkg/alert"
+	"github.com/kuoss/venti/pkg/configuration"
+	"github.com/kuoss/venti/pkg/handler"
+	"github.com/kuoss/venti/pkg/service"
 	"log"
 
 	"github.com/gin-gonic/gin"

@@ -2,8 +2,8 @@ package service
 
 import (
 	"fmt"
-	"github.com/kuoss/venti/server/auth"
-	"github.com/kuoss/venti/server/configuration"
+	"github.com/kuoss/venti/pkg/auth"
+	"github.com/kuoss/venti/pkg/configuration"
 	"log"
 
 	"gorm.io/driver/sqlite"

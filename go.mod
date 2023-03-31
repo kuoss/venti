@@ -14,6 +14,7 @@ require (
 	k8s.io/api v0.26.3
 	k8s.io/apimachinery v0.26.3
 	k8s.io/client-go v0.26.3
+	github.com/prometheus/prometheus v0.36.0
 )
 
 require (
