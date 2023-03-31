@@ -10,8 +10,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// var secret = []byte("secret")
-
 func Run(version string) {
 	configuration.Load(version)
 	service.InitDB()
@@ -19,27 +17,45 @@ func Run(version string) {
 	StartServer()
 }
 
+// TODO: add to routerGroup routes
+// routerGroup.Use(tokenRequired)
+
 func StartServer() {
 	log.Println("Starting Venti Server...")
 
 	router := gin.New()
 
 	// token not required
+
 	user := router.Group("/user")
 	{
 		user.POST("/login", handler.login)
-		user.POST("logout", handler.logout)
+		user.POST("/logout", handler.logout)
 	}
 
 	// routerGroup routes
-	routerGroup := router.Group("/handler")
+	api := router.Group("/api")
 
-	// TODO: add to routerGroup routes
-	// routerGroup.Use(tokenRequired)
-	handler.routesAPIConfig(routerGroup)
-	handler.routesAPIDatasources(routerGroup)
-	handler.routesAPILethe(routerGroup)
-	handler.routesAPIPrometheus(routerGroup)
+	api.Group("/config")
+	{
+
+	}
+	api.Group("/datasource")
+	{
+
+	}
+	api.Group("/lethe")
+	{
+
+	}
+	api.Group("/prometheus")
+	{
+
+	}
+	api.Group("/alert")
+	{
+
+	}
 
 	if len(configuration.config.AlertRuleGroups) < 1 {
 		log.Println("No AlertRuleGroups...")

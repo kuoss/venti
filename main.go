@@ -10,5 +10,10 @@ var (
 )
 
 func main() {
+	//load configuration
+
+	//router setting?
+
+	// run server
 	pkg.Run(Version)
 }

@@ -1,20 +1,9 @@
 package alert
 
-import (
-	"bytes"
-	"encoding/json"
-	"github.com/kuoss/venti/pkg"
-	"github.com/kuoss/venti/pkg/configuration"
-	"html/template"
-	"log"
-	"net/http"
-	"reflect"
-	"strings"
-	"time"
-)
-
 type ValueType string
 
+// todo : is this type of prometheus api?
+// https://prometheus.io/docs/prometheus/latest/querying/api/#range-queries
 const (
 	ValueTypeNone   ValueType = "none"
 	ValueTypeVector ValueType = "vector"
@@ -23,6 +12,7 @@ const (
 	ValueTypeString ValueType = "string"
 )
 
+/*
 type AlertRuleGroupList struct {
 	Groups []AlertRuleGroup `json:"groups"`
 }
@@ -206,3 +196,4 @@ func fireAlerts(alerts []Alert) {
 	}
 	log.Println("alertmanager", response.StatusCode)
 }
+*/
