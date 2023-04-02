@@ -11,7 +11,7 @@ import (
 )
 
 // todo remove
-const dbfilepath = "./data/venti.sqlite3"
+// const dbfilepath = "./data/venti.sqlite3"
 
 type UserStore struct {
 	db *gorm.DB
