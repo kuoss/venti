@@ -54,7 +54,7 @@ func (dh *datasourceHandler) Targets(c *gin.Context) {
 func httpDo(url string, ds configuration.Datasource) (io.ReadCloser, error) {
 	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, url, nil)
 	if err != nil {
-
+		return nil, fmt.Errorf("fail to make requset %w", err)
 	}
 	if ds.BasicAuth {
 		req.SetBasicAuth(ds.BasicAuthUser, ds.BasicAuthPassword)
