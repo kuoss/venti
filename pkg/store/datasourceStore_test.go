@@ -1,8 +1,12 @@
 package store
 
 import (
+	"github.com/kuoss/venti/pkg/configuration"
+	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"testing"
+	"time"
 )
 
 func makeService(name string, namespace string, multiport bool) v1.Service {
@@ -33,13 +37,39 @@ func makeService(name string, namespace string, multiport bool) v1.Service {
 	}
 }
 
-/*
 func TestGetDatasourcesFromServices(t *testing.T) {
-	configuration.DatasourcesConfig.Discovery.Enabled = false
-	configuration.datasourceStore = NewDatasourceStore(configuration.config.DatasourcesConfig)
-	configuration.config.DatasourcesConfig.Discovery.Enabled = false
-	configuration.config.DatasourcesConfig.Discovery.ByNamePrometheus = true
-	configuration.config.DatasourcesConfig.Discovery.ByNameLethe = true
+
+	datasourcesConfig := &configuration.DatasourcesConfig{
+		QueryTimeout: time.Second * 10,
+		Datasources: []*configuration.Datasource{
+			{
+				Type:         configuration.DatasourceTypePrometheus,
+				Name:         "prometheus",
+				URL:          "localhost",
+				BasicAuth:    false,
+				IsDefault:    false,
+				IsDiscovered: false,
+			},
+			{
+				Type:         configuration.DatasourceTypeLethe,
+				Name:         "lethe",
+				URL:          "localhost",
+				BasicAuth:    false,
+				IsDefault:    false,
+				IsDiscovered: false,
+			},
+		},
+		Discovery: configuration.Discovery{
+			Enabled:          false,
+			ByNamePrometheus: true,
+			ByNameLethe:      true,
+		},
+	}
+
+	dss, err := NewDatasourceStore(datasourcesConfig)
+	if err != nil {
+		t.Fatalf("datasource fatal %s", err)
+	}
 
 	services := []v1.Service{
 		makeService("prometheus", "namespace1", false),
@@ -49,27 +79,13 @@ func TestGetDatasourcesFromServices(t *testing.T) {
 		makeService("lethe", "kube-system", true),
 	}
 
-	assert.Equal(t, 5, len(services))
-	configuration.datasourceStore.getDatasourcesFromServices(services)
+	discovered := dss.getDatasourcesFromServices(services)
 
-	// TODO: change after refactoring
-
-	// assert.Equal(t, 5, len(datasourceStore.GetDatasources()))
-	assert.Equal(t, 0, len(configuration.datasourceStore.GetDatasources()))
-	configuration.datasourceStore.setDefaultDatasources()
-	discovered := configuration.datasourceStore.GetDatasources()
-
-	// assert.Equal(t, 5, len(discovered))
-	assert.Equal(t, 0, len(discovered))
-
-	// assert.Equal(t, []Datasource{
-	// 	{Type: "prometheus", Name: "prometheus.namespace1", URL: "http://prometheus.namespace1:30900", BasicAuth: false, BasicAuthUser: "", BasicAuthPassword: "", IsDefault: true, IsDiscovered: true},
-	// 	{Type: "prometheus", Name: "prometheus.namespace2", URL: "http://prometheus.namespace2:30900", BasicAuth: false, BasicAuthUser: "", BasicAuthPassword: "", IsDefault: false, IsDiscovered: true},
-	// 	{Type: "prometheus", Name: "prometheus.kube-system", URL: "http://prometheus.kube-system:30900", BasicAuth: false, BasicAuthUser: "", BasicAuthPassword: "", IsDefault: false, IsDiscovered: true},
-	// 	{Type: "lethe", Name: "lethe.kuoss", URL: "http://lethe.kuoss:8080", BasicAuth: false, BasicAuthUser: "", BasicAuthPassword: "", IsDefault: true, IsDiscovered: true},
-	// 	{Type: "lethe", Name: "lethe.kube-system", URL: "http://lethe.kube-system:8080", BasicAuth: false, BasicAuthUser: "", BasicAuthPassword: "", IsDefault: false, IsDiscovered: true},
-	// }, discovered)
-	assert.Equal(t, []Datasource(nil), discovered)
+	assert.ElementsMatch(t, []*configuration.Datasource{
+		{Type: "prometheus", Name: "prometheus.namespace1", URL: "http://prometheus.namespace1:30900", BasicAuth: false, BasicAuthUser: "", BasicAuthPassword: "", IsDefault: false, IsDiscovered: true},
+		{Type: "prometheus", Name: "prometheus.namespace2", URL: "http://prometheus.namespace2:30900", BasicAuth: false, BasicAuthUser: "", BasicAuthPassword: "", IsDefault: false, IsDiscovered: true},
+		{Type: "prometheus", Name: "prometheus.kube-system", URL: "http://prometheus.kube-system:30900", BasicAuth: false, BasicAuthUser: "", BasicAuthPassword: "", IsDefault: false, IsDiscovered: true},
+		{Type: "lethe", Name: "lethe.kuoss", URL: "http://lethe.kuoss:8080", BasicAuth: false, BasicAuthUser: "", BasicAuthPassword: "", IsDefault: false, IsDiscovered: true},
+		{Type: "lethe", Name: "lethe.kube-system", URL: "http://lethe.kube-system:8080", BasicAuth: false, BasicAuthUser: "", BasicAuthPassword: "", IsDefault: false, IsDiscovered: true},
+	}, discovered)
 }
-
-*/
