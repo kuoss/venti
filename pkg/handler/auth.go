@@ -78,7 +78,6 @@ func (ah *authHandler) Login(c *gin.Context) {
 		"errorType": "authentication_failed",
 		"error":     "The username or password is incorrect",
 	})
-	return
 }
 
 func checkPassword(plain string, hashed string) bool {

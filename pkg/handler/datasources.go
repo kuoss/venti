@@ -49,7 +49,6 @@ func (dh *datasourceHandler) Targets(c *gin.Context) {
 		}
 	}
 	c.JSON(http.StatusOK, bodies)
-	return
 }
 
 func httpDo(url string, ds configuration.Datasource) (io.ReadCloser, error) {

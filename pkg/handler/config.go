@@ -16,5 +16,4 @@ func NewConfigHandler(config *configuration.Config) *configHandler {
 
 func (ch *configHandler) Version(c *gin.Context) {
 	c.JSON(http.StatusOK, ch.Config.Version)
-	return
 }

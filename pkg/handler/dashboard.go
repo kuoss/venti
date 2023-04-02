@@ -21,7 +21,6 @@ func NewDashboardHandler(ds *store.DashboardStore) *dashboardHandler {
 //GET /dashboards
 func (dh *dashboardHandler) Dashboards(c *gin.Context) {
 	c.JSON(http.StatusOK, dh.DashboardStore.Dashboards())
-	return
 }
 
 /*
