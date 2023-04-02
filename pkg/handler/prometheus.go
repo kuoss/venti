@@ -66,61 +66,58 @@ func (ph *prometheusHandler) QueryRange(c *gin.Context) {
 // this is also another isntantQuery
 // GET /prometheus/time -> /prometheus/query?expr=time()
 // todo: migrate with /prometheus/query
-func (ph *prometheusHandler) time(c *gin.Context) {
-
-	/*
-		result, err := server.InstantQuery{
-			DatasourceType: server.DatasourceTypePrometheus,
-			Expr:           "time()",
-		}.execute()
-		if err != nil {
-			c.JSON(500, err)
-		}
-			c.String(200, result)
-	*/
-}
+//func (ph *prometheusHandler) time(c *gin.Context) {
+//
+//		result, err := server.InstantQuery{
+//			DatasourceType: server.DatasourceTypePrometheus,
+//			Expr:           "time()",
+//		}.execute()
+//		if err != nil {
+//			c.JSON(500, err)
+//		}
+//			c.String(200, result)
+//}
 
 // GET /prometheus/namespaces
 // todo: migrate with /prometheus/query
-func (ph *prometheusHandler) namespaces(c *gin.Context) {
-	/*
-		result, err := server.InstantQuery{
-			DatasourceType: server.DatasourceTypePrometheus,
-			Expr:           "kube_namespace_created",
-		}.execute()
-		if err != nil {
-			c.JSON(500, err)
-		}
-		c.String(200, result)
-	*/
-}
+//func (ph *prometheusHandler) namespaces(c *gin.Context) {
+//
+//		result, err := server.InstantQuery{
+//			DatasourceType: server.DatasourceTypePrometheus,
+//			Expr:           "kube_namespace_created",
+//		}.execute()
+//		if err != nil {
+//			c.JSON(500, err)
+//		}
+//		c.String(200, result)
+//
+//}
 
 // GET /prometheus/pods/:namespace
 // todo: migrate with /prometheus/query?kube_pod_created{namespace="namespace01"}
-func (ph *prometheusHandler) pod(c *gin.Context) {
-	/*
-		result, err := server.InstantQuery{
-			DatasourceType: server.DatasourceTypePrometheus,
-			Expr:           fmt.Sprintf(`kube_pod_created{namespace="%s"}`, c.Param("namespace")),
-		}.execute()
-		if err != nil {
-			c.JSON(500, err)
-		}
-		c.String(200, result)
-	*/
-}
+//func (ph *prometheusHandler) pod(c *gin.Context) {
+//
+//		result, err := server.InstantQuery{
+//			DatasourceType: server.DatasourceTypePrometheus,
+//			Expr:           fmt.Sprintf(`kube_pod_created{namespace="%s"}`, c.Param("namespace")),
+//		}.execute()
+//		if err != nil {
+//			c.JSON(500, err)
+//		}
+//		c.String(200, result)
+//}
 
 // GET /prometheus/nodes
 // todo: migrate with /prometheus/query?kube_node_created
-func (ph *prometheusHandler) nodes(c *gin.Context) {
-	/*
-		result, err := server.InstantQuery{
-			DatasourceType: server.DatasourceTypePrometheus,
-			Expr:           "kube_node_created",
-		}.execute()
-		if err != nil {
-			c.JSON(500, err)
-		}
-		c.String(200, result)
-	*/
-}
+//func (ph *prometheusHandler) nodes(c *gin.Context) {
+//
+//		result, err := server.InstantQuery{
+//			DatasourceType: server.DatasourceTypePrometheus,
+//			Expr:           "kube_node_created",
+//		}.execute()
+//		if err != nil {
+//			c.JSON(500, err)
+//		}
+//		c.String(200, result)
+//
+//}
