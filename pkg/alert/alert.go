@@ -1,24 +1,45 @@
-package server
-
-import (
-	"bytes"
-	"encoding/json"
-	"html/template"
-	"log"
-	"net/http"
-	"reflect"
-	"strings"
-	"time"
-)
+package alert
 
 type ValueType string
 
+// todo : is this type of prometheus api?
+// https://prometheus.io/docs/prometheus/latest/querying/api/#range-queries
 const (
 	ValueTypeNone   ValueType = "none"
 	ValueTypeVector ValueType = "vector"
 	ValueTypeScalar ValueType = "scalar"
 	ValueTypeMatrix ValueType = "matrix"
 	ValueTypeString ValueType = "string"
+)
+
+/*
+type AlertRuleGroupList struct {
+	Groups []AlertRuleGroup `json:"groups"`
+}
+
+type AlertRuleGroup struct {
+	Name           string             `json:"name"`
+	Rules          []AlertRule        `json:"rules"`
+	DatasourceType pkg.DatasourceType `json:"datasource" yaml:"datasource"`
+	CommonLabels   map[string]string  `json:"commonLabels,omitempty" yaml:"commonLabels,omitempty"`
+}
+
+type AlertRule struct {
+	Alert       string            `json:"alert,omitempty"`
+	Expr        string            `json:"expr"`
+	For         time.Duration     `json:"for,omitempty"`
+	Labels      map[string]string `json:"labels,omitempty"`
+	Annotations map[string]string `json:"annotations,omitempty"`
+	State       AlertState        `json:"state,omitempty"`
+	ActiveAt    time.Time         `json:"activeStartTime,omitempty"`
+}
+
+type AlertState string
+
+const (
+	AlertStateInactive AlertState = "inactive"
+	AlertStatePending  AlertState = "pending"
+	AlertStateFiring   AlertState = "firing"
 )
 
 type Sample struct {
@@ -60,14 +81,14 @@ func alertTaskLoop() {
 }
 
 func alertTask() {
-	alertRuleGroups := GetAlertRuleGroups()
+	alertRuleGroups := configuration.GetAlertRuleGroups()
 	firingAlerts := []Alert{}
 	for i, group := range alertRuleGroups {
 		datasourceType := group.DatasourceType
 		for j, rule := range group.Rules {
 			time.Sleep(time.Duration(500) * time.Millisecond)
 			now := time.Now()
-			instanctQuery := InstantQuery{
+			instanctQuery := pkg.InstantQuery{
 				DatasourceType: datasourceType,
 				Expr:           rule.Expr,
 			}
@@ -88,20 +109,20 @@ func alertTask() {
 			}
 			if len(queryResult.Data.Result) < 1 {
 				// NORMAL
-				config.AlertRuleGroups[i].Rules[j].State = AlertStateInactive
-				config.AlertRuleGroups[i].Rules[j].ActiveAt = time.Time{}
+				configuration.config.AlertRuleGroups[i].Rules[j].State = AlertStateInactive
+				configuration.config.AlertRuleGroups[i].Rules[j].ActiveAt = time.Time{}
 				continue
 			}
 			if reflect.ValueOf(rule.ActiveAt).IsZero() {
-				config.AlertRuleGroups[i].Rules[j].ActiveAt = now
+				configuration.config.AlertRuleGroups[i].Rules[j].ActiveAt = now
 			}
 			// pending
-			if config.AlertRuleGroups[i].Rules[j].ActiveAt.Add(rule.For).After(now) {
-				config.AlertRuleGroups[i].Rules[j].State = AlertStatePending
+			if configuration.config.AlertRuleGroups[i].Rules[j].ActiveAt.Add(rule.For).After(now) {
+				configuration.config.AlertRuleGroups[i].Rules[j].State = AlertStatePending
 				continue
 			}
 			// firing: add to firing alerts
-			config.AlertRuleGroups[i].Rules[j].State = AlertStateFiring
+			configuration.config.AlertRuleGroups[i].Rules[j].State = AlertStateFiring
 			firingAlerts = append(firingAlerts, renderAlerts(rule, queryResult)...)
 		}
 	}
@@ -131,7 +152,7 @@ func renderAlerts(rule AlertRule, result QueryResult) []Alert {
 	rule.Labels["alertname"] = rule.Alert
 	rule.Labels["firer"] = "venti"
 	if _, exists := rule.Annotations["summary"]; !exists {
-		rule.Annotations["summary"] = "venti alerting.go"
+		rule.Annotations["summary"] = "venti alert.go"
 	}
 	if result.Data.ResultType != ValueTypeVector {
 		log.Println("ResultType is not Vector ㅠㅠ")
@@ -164,7 +185,7 @@ func fireAlerts(alerts []Alert) {
 	}
 	pbytes, err := json.Marshal(alerts)
 	if err != nil {
-		log.Println("alerting.go: cannot marshal alerts")
+		log.Println("alert.go: cannot marshal alerts")
 		return
 	}
 	buff := bytes.NewBuffer(pbytes)
@@ -175,3 +196,4 @@ func fireAlerts(alerts []Alert) {
 	}
 	log.Println("alertmanager", response.StatusCode)
 }
+*/
