@@ -3,10 +3,8 @@ package configuration
 import (
 	"fmt"
 	"io"
-	"io/fs"
 	"log"
 	"os"
-	"path/filepath"
 	"time"
 
 	"gopkg.in/yaml.v3"
@@ -177,6 +175,8 @@ func loadDashboard(root string) {
 
 
 */
+
+/*
 func glob(root string, fn func(string) bool) []string {
 	var matches []string
 	_ = filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
@@ -187,6 +187,8 @@ func glob(root string, fn func(string) bool) []string {
 	})
 	return matches
 }
+
+*/
 
 /*
 func loadAlertRuleGroups() {
