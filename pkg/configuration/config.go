@@ -73,8 +73,8 @@ func Load(version string) (*Config, error) {
 	}
 	defer userConfigFile.Close()
 
-	var userConf *UsersConfig
-	err = loadConfig(userConfigFile, userConf)
+	var userConf UsersConfig
+	err = loadConfig(userConfigFile, &userConf)
 	if err != nil {
 		return nil, fmt.Errorf("error on loading User Config: %w", err)
 	}
@@ -85,7 +85,7 @@ func Load(version string) (*Config, error) {
 	}
 	defer dsConfigFile.Close()
 
-	var dataSourceConfig *DatasourcesConfig
+	var dataSourceConfig DatasourcesConfig
 	err = loadConfig(dsConfigFile, &dataSourceConfig)
 	if err != nil {
 		return nil, fmt.Errorf("error on loading Datasources Config: %w", err)
@@ -117,8 +117,8 @@ func Load(version string) (*Config, error) {
 
 	return &Config{
 		Version:           version,
-		UserConfig:        userConf,
-		DatasourcesConfig: dataSourceConfig,
+		UserConfig:        &userConf,
+		DatasourcesConfig: &dataSourceConfig,
 	}, nil
 }
 

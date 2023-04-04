@@ -2,10 +2,28 @@ package configuration
 
 import (
 	"bytes"
-	"github.com/stretchr/testify/assert"
 	"io"
+	"os"
 	"testing"
+	"time"
+
+	"github.com/stretchr/testify/assert"
 )
+
+func init() {
+	_ = os.Chdir("../..")
+}
+
+func TestLoad(t *testing.T) {
+	cfg, err := Load("Unknown")
+	assert.Nil(t, err)
+	assert.NotNil(t, cfg)
+	assert.Equal(t, cfg.UserConfig, &UsersConfig{EtcUsers: []EtcUser{EtcUser{Username: "admin", Hash: "$2a$12$VcCDgh2NDk07JGN0rjGbM.Ad41qVR/YFJcgHp0UGns5JDymv..TOG", IsAdmin: true}}})
+	assert.Equal(t, cfg.DatasourcesConfig.QueryTimeout, time.Duration(0))
+	assert.Equal(t, len(cfg.DatasourcesConfig.Datasources), 2)
+	assert.Equal(t, cfg.DatasourcesConfig.Datasources[0], &Datasource{Type: "prometheus", Name: "Prometheus", URL: "http://prometheus:9090", BasicAuth: false, BasicAuthUser: "", BasicAuthPassword: "", IsDefault: false, IsDiscovered: false})
+	assert.Equal(t, cfg.DatasourcesConfig.Datasources[1], &Datasource{Type: "lethe", Name: "Lethe", URL: "http://lethe:3100", BasicAuth: false, BasicAuthUser: "", BasicAuthPassword: "", IsDefault: false, IsDiscovered: false})
+}
 
 func TestLoadDatasourcesConfig(t *testing.T) {
 

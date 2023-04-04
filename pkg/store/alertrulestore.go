@@ -1,10 +1,11 @@
 package store
 
 import (
-	"github.com/prometheus/prometheus/model/rulefmt"
 	"log"
 	"os"
 	"path/filepath"
+
+	"github.com/prometheus/prometheus/model/rulefmt"
 )
 
 type AlertRuleStore struct {
@@ -26,12 +27,12 @@ func NewAlertRuleStore(pattern string) (*AlertRuleStore, error) {
 		if err != nil {
 			log.Printf("error open alertrulegroup file: %s\n", err.Error())
 		}
-		var rg *rulefmt.RuleGroup
-		err = loadYaml(f, rg)
+		var rg rulefmt.RuleGroup
+		err = loadYaml(f, &rg)
 		if err != nil {
 			return nil, err
 		}
-		alertRuleGroups.Groups = append(alertRuleGroups.Groups, *rg)
+		alertRuleGroups.Groups = append(alertRuleGroups.Groups, rg)
 	}
 	return &AlertRuleStore{ruleGroups: alertRuleGroups}, nil
 }

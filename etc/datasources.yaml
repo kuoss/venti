@@ -1,11 +1,7 @@
-# queryTimeOut: 30
 datasources:
 - name: Prometheus
   type: prometheus
   url: http://prometheus:9090
-  # basicAuth: true
-  # basicAuthUser: Aladdin
-  # basicAuthPassword: openSesame
 - name: Lethe
   type: lethe
   url: http://lethe:3100
