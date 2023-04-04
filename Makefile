@@ -54,7 +54,7 @@ staticcheck:
 	staticcheck ./...
 
 golangci-lint:
-	golangci-lint run
+	golangci-lint run --timeout 3m
 
 test-cover:
 	./scripts/test-cover.sh

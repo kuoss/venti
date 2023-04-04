@@ -2,6 +2,7 @@ package pkg
 
 import (
 	"fmt"
+
 	"github.com/gin-gonic/gin"
 	"github.com/kuoss/venti/pkg/configuration"
 	"github.com/kuoss/venti/pkg/handler"
@@ -89,7 +90,7 @@ func LoadRouter(s *Stores, config *configuration.Config) *gin.Engine {
 
 		alertGroup := api.Group("/alerts")
 		{
-			alertGroup.GET("/", ah.AlertRuleGroups)
+			alertGroup.GET("/", ah.AlertRuleGroupsList)
 		}
 
 		letheGroup := api.Group("/lethe")

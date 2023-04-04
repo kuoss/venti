@@ -10,7 +10,7 @@ import (
 )
 
 type AlertRuleStore struct {
-	ruleGroupsSlice []rulefmt.RuleGroups
+	ruleGroupsList []rulefmt.RuleGroups
 }
 
 func NewAlertRuleStore(pattern string) (*AlertRuleStore, error) {
@@ -19,9 +19,9 @@ func NewAlertRuleStore(pattern string) (*AlertRuleStore, error) {
 	if err != nil {
 		return nil, err
 	}
-	var ruleGroupsSlice []rulefmt.RuleGroups
+	var ruleGroupsList []rulefmt.RuleGroups
 	for _, filename := range files {
-		log.Printf("alertRuleGroup file: %s\n", filename)
+		log.Printf("alertRule file: %s\n", filename)
 		f, err := os.Open(filename)
 		if err != nil {
 			return nil, fmt.Errorf("error on Open: %w", err)
@@ -31,11 +31,11 @@ func NewAlertRuleStore(pattern string) (*AlertRuleStore, error) {
 		if err != nil {
 			return nil, fmt.Errorf("error on loadYaml: %w", err)
 		}
-		ruleGroupsSlice = append(ruleGroupsSlice, *ruleGroups)
+		ruleGroupsList = append(ruleGroupsList, *ruleGroups)
 	}
-	return &AlertRuleStore{ruleGroupsSlice: ruleGroupsSlice}, nil
+	return &AlertRuleStore{ruleGroupsList: ruleGroupsList}, nil
 }
 
-func (ars *AlertRuleStore) GroupsSlice() []rulefmt.RuleGroups {
-	return ars.ruleGroupsSlice
+func (ars *AlertRuleStore) RuleGroupsList() []rulefmt.RuleGroups {
+	return ars.ruleGroupsList
 }

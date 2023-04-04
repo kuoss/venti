@@ -13,6 +13,6 @@ func NewAlertHandler(r *store.AlertRuleStore) *alertHandler {
 	return &alertHandler{r}
 }
 
-func (ah *alertHandler) AlertRuleGroups(c *gin.Context) {
-	c.JSON(200, ah.AlertRuleStore.Groups())
+func (ah *alertHandler) AlertRuleGroupsList(c *gin.Context) {
+	c.JSON(200, ah.AlertRuleStore.RuleGroupsList())
 }
