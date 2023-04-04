@@ -1,9 +1,10 @@
 package handler
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	"github.com/kuoss/venti/pkg/store"
-	"net/http"
 )
 
 // todo moved from config handler *should* modify web router path
@@ -18,7 +19,7 @@ func NewDashboardHandler(ds *store.DashboardStore) *dashboardHandler {
 	return &dashboardHandler{ds}
 }
 
-//GET /dashboards
+// GET /dashboards
 func (dh *dashboardHandler) Dashboards(c *gin.Context) {
 	c.JSON(http.StatusOK, dh.DashboardStore.Dashboards())
 }
