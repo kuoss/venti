@@ -12,7 +12,7 @@ import (
 
 type Config struct {
 	Version           string
-	UserConfig        *UsersConfig
+	UserConfig        UsersConfig
 	DatasourcesConfig *DatasourcesConfig
 	//Dashboards        []Dashboard
 	//AlertRuleGroups   []AlertRuleGroup
@@ -73,7 +73,7 @@ func Load(version string) (*Config, error) {
 	}
 	defer userConfigFile.Close()
 
-	var userConf *UsersConfig
+	var userConf UsersConfig
 	err = loadConfig(userConfigFile, &userConf)
 	if err != nil {
 		return nil, fmt.Errorf("error on loading User Config: %w", err)
@@ -90,30 +90,6 @@ func Load(version string) (*Config, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error on loading Datasources Config: %w", err)
 	}
-
-	/*
-		dashboardfilepaths := glob("etc/dashboards", func(path string) bool {
-			return !strings.Contains(path, "/..") && filepath.Ext(path) == ".yaml"
-		})
-
-		for _, path := range dashboardfilepaths {
-			f, err := os.Open(path)
-			if err != nil {
-				return nil, err
-			}
-
-			var dashBoard *Dashboard
-			err = loadConfig(f, dashBoard)
-			if err != nil {
-				return nil, err
-			}
-		}
-	*/
-
-	//loadDashboards()
-	//loadAlertRuleGroups()
-
-	//datasourceStore = pkg.NewDatasourceStore(Config.DatasourcesConfig)
 
 	return &Config{
 		Version:           version,
