@@ -20,9 +20,10 @@ func TestLoad(t *testing.T) {
 	assert.NotNil(t, cfg)
 	assert.Equal(t, cfg.UserConfig, &UsersConfig{EtcUsers: []EtcUser{EtcUser{Username: "admin", Hash: "$2a$12$VcCDgh2NDk07JGN0rjGbM.Ad41qVR/YFJcgHp0UGns5JDymv..TOG", IsAdmin: true}}})
 	assert.Equal(t, cfg.DatasourcesConfig.QueryTimeout, time.Duration(0))
-	assert.Equal(t, len(cfg.DatasourcesConfig.Datasources), 2)
-	assert.Equal(t, cfg.DatasourcesConfig.Datasources[0], &Datasource{Type: "prometheus", Name: "Prometheus", URL: "http://prometheus:9090", BasicAuth: false, BasicAuthUser: "", BasicAuthPassword: "", IsDefault: false, IsDiscovered: false})
-	assert.Equal(t, cfg.DatasourcesConfig.Datasources[1], &Datasource{Type: "lethe", Name: "Lethe", URL: "http://lethe:3100", BasicAuth: false, BasicAuthUser: "", BasicAuthPassword: "", IsDefault: false, IsDiscovered: false})
+	assert.ElementsMatch(t, cfg.DatasourcesConfig.Datasources, []*Datasource{
+		{Type: DatasourceTypePrometheus, Name: "Prometheus", URL: "http://prometheus:9090", BasicAuth: false, BasicAuthUser: "", BasicAuthPassword: "", IsDefault: false, IsDiscovered: false},
+		{Type: DatasourceTypeLethe, Name: "Lethe", URL: "http://lethe:3100", BasicAuth: false, BasicAuthUser: "", BasicAuthPassword: "", IsDefault: false, IsDiscovered: false},
+	})
 }
 
 func TestLoadDatasourcesConfig(t *testing.T) {
