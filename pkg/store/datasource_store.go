@@ -163,7 +163,6 @@ func (s *DatasourceStore) setMainDatasources() {
 	}
 }
 
-
 func (s *DatasourceStore) GetDatasources() []*configuration.Datasource {
 	return s.datasources
 }
