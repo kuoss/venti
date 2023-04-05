@@ -42,7 +42,8 @@ pre-checks:
 	go install honnef.co/go/tools/cmd/staticcheck@latest
 	go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 
-checks: fmt vet staticcheck golangci-lint test-cover
+checks:
+	./scripts/checks.sh
 
 fmt:
 	go fmt ./...
@@ -54,7 +55,7 @@ staticcheck:
 	staticcheck ./...
 
 golangci-lint:
-	golangci-lint run
+	golangci-lint run --timeout 5m
 
 test-cover:
 	./scripts/test-cover.sh

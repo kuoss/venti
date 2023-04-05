@@ -2,6 +2,7 @@ package pkg
 
 import (
 	"fmt"
+
 	"github.com/gin-gonic/gin"
 	"github.com/kuoss/venti/pkg/configuration"
 	"github.com/kuoss/venti/pkg/handler"
@@ -31,7 +32,7 @@ func LoadStores(config *configuration.Config) (*Stores, error) {
 		return nil, fmt.Errorf("load datasource configuration failed: %w", err)
 	}
 
-	userStore, err := store.NewUserService("./data/venti.sqlite3", config.UserConfig)
+	userStore, err := store.NewUserStore("./data/venti.sqlite3", config.UserConfig)
 	if err != nil {
 		return nil, fmt.Errorf("load user configuration failed: %w", err)
 	}
@@ -89,7 +90,7 @@ func LoadRouter(s *Stores, config *configuration.Config) *gin.Engine {
 
 		alertGroup := api.Group("/alerts")
 		{
-			alertGroup.GET("/", ah.AlertRuleGroups)
+			alertGroup.GET("/", ah.AlertRuleGroupsList)
 		}
 
 		letheGroup := api.Group("/lethe")

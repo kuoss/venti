@@ -2,7 +2,7 @@
 MIN_COVER=50.0
 
 cd $(dirname $0)/..
-go test ./... -failfast -coverprofile cover.out
+go test ./... -failfast -race -coverprofile cover.out
 if [[ $? != 0 ]]; then
     echo "❌ FAIL ( test failed )"
     exit 1

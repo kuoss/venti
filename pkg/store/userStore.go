@@ -2,9 +2,10 @@ package store
 
 import (
 	"fmt"
+	"log"
+
 	"github.com/kuoss/venti/pkg/auth"
 	"github.com/kuoss/venti/pkg/configuration"
-	"log"
 
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
@@ -17,7 +18,7 @@ type UserStore struct {
 	db *gorm.DB
 }
 
-func NewUserService(filepath string, config *configuration.UsersConfig) (*UserStore, error) {
+func NewUserStore(filepath string, config configuration.UsersConfig) (*UserStore, error) {
 	log.Println("Initializing database...")
 
 	db, err := gorm.Open(sqlite.Open(filepath), &gorm.Config{})
@@ -33,7 +34,7 @@ func NewUserService(filepath string, config *configuration.UsersConfig) (*UserSt
 	return &UserStore{db}, nil
 }
 
-func setEtcUsers(db *gorm.DB, config *configuration.UsersConfig) {
+func setEtcUsers(db *gorm.DB, config configuration.UsersConfig) {
 
 	for _, etcUser := range config.EtcUsers {
 		var user auth.User
