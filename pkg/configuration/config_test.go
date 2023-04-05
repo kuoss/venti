@@ -21,8 +21,8 @@ func TestLoad(t *testing.T) {
 		{Username: "admin", Hash: "$2a$12$VcCDgh2NDk07JGN0rjGbM.Ad41qVR/YFJcgHp0UGns5JDymv..TOG", IsAdmin: true},
 	}})
 	assert.ElementsMatch(t, cfg.DatasourcesConfig.Datasources, []*Datasource{
-		{Type: DatasourceTypePrometheus, Name: "Prometheus", URL: "http://prometheus:9090", BasicAuth: false, BasicAuthUser: "", BasicAuthPassword: "", IsDefault: false, IsDiscovered: false},
-		{Type: DatasourceTypeLethe, Name: "Lethe", URL: "http://lethe:3100", BasicAuth: false, BasicAuthUser: "", BasicAuthPassword: "", IsDefault: false, IsDiscovered: false},
+		{Type: DatasourceTypePrometheus, Name: "Prometheus", URL: "http://prometheus:9090", BasicAuth: false, BasicAuthUser: "", BasicAuthPassword: "", IsMain: false, IsDiscovered: false},
+		{Type: DatasourceTypeLethe, Name: "Lethe", URL: "http://lethe:3100", BasicAuth: false, BasicAuthUser: "", BasicAuthPassword: "", IsMain: false, IsDiscovered: false},
 	})
 }
 
@@ -51,7 +51,7 @@ datasources:
 						BasicAuth:         false,
 						BasicAuthUser:     "",
 						BasicAuthPassword: "",
-						IsDefault:         false,
+						IsMain:            false,
 						IsDiscovered:      false,
 					},
 					{Type: "lethe",
@@ -60,13 +60,13 @@ datasources:
 						BasicAuth:         false,
 						BasicAuthUser:     "",
 						BasicAuthPassword: "",
-						IsDefault:         false,
+						IsMain:            false,
 						IsDiscovered:      false,
 					},
 				},
 				Discovery: Discovery{
 					Enabled:          false,
-					DefaultNamespace: "",
+					MainNamespace:    "",
 					AnnotationKey:    "",
 					ByNamePrometheus: false,
 					ByNameLethe:      false,
