@@ -56,10 +56,12 @@ func LoadRouter(s *Stores, config *configuration.Config) *gin.Engine {
 	dsh := handler.NewDatasourceHandler(s.DatasourceStore)
 	us := handler.NewAuthHandler(s.UserStore)
 
-	letheQuerier := query.NewHttpQuerier(*s.DatasourceStore.GetDatasourceWithType(configuration.DatasourceTypeLethe), config.DatasourcesConfig.QueryTimeout)
+	mainLethe, _ := s.DatasourceStore.GetMainDatasourceWithType(configuration.DatasourceTypeLethe)
+	letheQuerier := query.NewHttpQuerier(mainLethe, config.DatasourcesConfig.QueryTimeout)
 	lh := handler.NewLetheHandler(letheQuerier)
 
-	prometheusQuerier := query.NewHttpQuerier(*s.DatasourceStore.GetDatasourceWithType(configuration.DatasourceTypePrometheus), config.DatasourcesConfig.QueryTimeout)
+	mainPrometheus, _ := s.DatasourceStore.GetMainDatasourceWithType(configuration.DatasourceTypePrometheus)
+	prometheusQuerier := query.NewHttpQuerier(mainPrometheus, config.DatasourcesConfig.QueryTimeout)
 	ph := handler.NewPrometheusHandler(prometheusQuerier)
 
 	router := gin.New()

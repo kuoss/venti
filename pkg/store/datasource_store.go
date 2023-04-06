@@ -3,6 +3,8 @@ package store
 import (
 	"context"
 	"fmt"
+	"log"
+
 	"github.com/kuoss/venti/pkg/configuration"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -10,60 +12,49 @@ import (
 	"k8s.io/client-go/rest"
 )
 
-// TODO can't fully understand initializing Datasource
-
 // DatasourceStore
 type DatasourceStore struct {
-	config     *configuration.DatasourcesConfig
-	discovered []*configuration.Datasource // discovered
+	config      *configuration.DatasourcesConfig
+	datasources []configuration.Datasource
 }
 
 // NewDatasourceStore return *DatasourceStore after service discovery (with k8s service)
-func NewDatasourceStore(config *configuration.DatasourcesConfig) (*DatasourceStore, error) {
-	dss := &DatasourceStore{config, nil}
-	err := dss.discovery()
+func NewDatasourceStore(cfg *configuration.DatasourcesConfig) (*DatasourceStore, error) {
+	store := &DatasourceStore{cfg, nil}
+	err := store.load()
 	if err != nil {
-		return nil, fmt.Errorf("failed to service discovery: %w", err)
+		return store, fmt.Errorf("error on load: %w", err)
 	}
-	dss.setDefaultDatasources()
-	return dss, nil
+	return store, nil
 }
 
-// TODO do we need this?
-
-func (d *DatasourceStore) GetDatasources() []*configuration.Datasource {
-	return d.discovered
-}
-
-func (d *DatasourceStore) GetDatasourceWithType(t configuration.DatasourceType) *configuration.Datasource {
-	for _, ds := range d.discovered {
-		if ds.Type == t {
-			return ds
-		}
+func (s *DatasourceStore) load() error {
+	// load from config
+	for _, datasource := range s.config.Datasources {
+		s.datasources = append(s.datasources, *datasource)
 	}
-	return nil
-}
 
-func (d *DatasourceStore) GetDefaultDatasource(typ configuration.DatasourceType) (*configuration.Datasource, error) {
-	for _, ds := range d.discovered {
-		if ds.Type == typ && ds.IsDefault {
-			return ds, nil
-		}
-	}
-	return nil, fmt.Errorf("datasource of type %s not found", typ)
-}
-
-func (d *DatasourceStore) discovery() error {
-	if d.config.Discovery.Enabled {
-		services, err := listServices()
+	// load from discovery
+	if s.config.Discovery.Enabled {
+		discoveredDatasources, err := s.discoverDatasources()
 		if err != nil {
-			return fmt.Errorf("cannot listServices: %w", err)
+			log.Fatalf("error on discoverDatasources: %s", err)
+		} else {
+			s.datasources = append(s.datasources, discoveredDatasources...)
 		}
-
-		discovered := d.getDatasourcesFromServices(services)
-		d.discovered = append(d.discovered, discovered...)
 	}
+	// set main datasources
+	s.setMainDatasources()
+
 	return nil
+}
+
+func (s *DatasourceStore) discoverDatasources() ([]configuration.Datasource, error) {
+	services, err := listServices()
+	if err != nil {
+		return []configuration.Datasource{}, fmt.Errorf("error on listServices: %s", err)
+	}
+	return s.getDatasourcesFromServices(services), nil
 }
 
 func listServices() ([]v1.Service, error) {
@@ -83,15 +74,17 @@ func listServices() ([]v1.Service, error) {
 	return services.Items, nil
 }
 
-func (d *DatasourceStore) getDatasourcesFromServices(services []v1.Service) []*configuration.Datasource {
-	var discovered []*configuration.Datasource
+// get datasources from k8s services
+// recognize as a datasource by annotation or name
+func (s *DatasourceStore) getDatasourcesFromServices(services []v1.Service) []configuration.Datasource {
+	var datasources []configuration.Datasource
 
 	for _, service := range services {
 		datasourceType := configuration.DatasourceTypeNone
 
-		// by annotation
+		// recognize as a datasource by annotation of k8s service
 		for key, value := range service.Annotations {
-			if key != d.config.Discovery.AnnotationKey {
+			if key != s.config.Discovery.AnnotationKey {
 				continue
 			}
 			if value == string(configuration.DatasourceTypePrometheus) {
@@ -103,43 +96,43 @@ func (d *DatasourceStore) getDatasourcesFromServices(services []v1.Service) []*c
 				break
 			}
 		}
-		// by name prometheus
-		if datasourceType == configuration.DatasourceTypeNone && d.config.Discovery.ByNamePrometheus && service.Name == "prometheus" {
+		// recognize as a datasource by name 'prometheus'
+		if datasourceType == configuration.DatasourceTypeNone && s.config.Discovery.ByNamePrometheus && service.Name == "prometheus" {
 			datasourceType = configuration.DatasourceTypePrometheus
 		}
-		// by name lethe
-		if datasourceType == configuration.DatasourceTypeNone && d.config.Discovery.ByNameLethe && service.Name == "lethe" {
+
+		// recognize as a datasource by name 'lethe'
+		if datasourceType == configuration.DatasourceTypeNone && s.config.Discovery.ByNameLethe && service.Name == "lethe" {
 			datasourceType = configuration.DatasourceTypeLethe
 		}
-		// not matched
+		// the service is not a datasource
 		if datasourceType == configuration.DatasourceTypeNone {
 			continue
 		}
 
-		// isDefault
-		isDefault := false
-		if service.Namespace == d.config.Discovery.DefaultNamespace {
-			isDefault = true
+		// recognize as a main datasource by namespace
+		isMain := false
+		if service.Namespace == s.config.Discovery.MainNamespace {
+			isMain = true
 		}
 
-		// portNumber
-		//	var portNumber int32 = 0
+		// get port number of datasource from k8s service
+		portNumber := s.getPortNumberFromService(service)
 
-		portNumber := getPortNumberFromService(service)
-
-		discovered = append(discovered, &configuration.Datasource{
+		// append to datasources
+		datasources = append(datasources, configuration.Datasource{
 			Name:         fmt.Sprintf("%s.%s", service.Name, service.Namespace),
 			Type:         datasourceType,
 			URL:          fmt.Sprintf("http://%s.%s:%d", service.Name, service.Namespace, portNumber),
 			IsDiscovered: true,
-			IsDefault:    isDefault,
+			IsMain:       isMain,
 		})
 	}
-	return discovered
+	return datasources
 }
 
 // return port number within "http" named port. if not exist return service's first port number
-func getPortNumberFromService(service v1.Service) int32 {
+func (s *DatasourceStore) getPortNumberFromService(service v1.Service) int32 {
 
 	for _, port := range service.Spec.Ports {
 		if port.Name == "http" {
@@ -149,41 +142,58 @@ func getPortNumberFromService(service v1.Service) int32 {
 	return service.Spec.Ports[0].Port
 }
 
-// todo : what is this for?
-func (d *DatasourceStore) setDefaultDatasources() {
+// ensure that there is one main datasource for each type
+func (s *DatasourceStore) setMainDatasources() {
 
-	// initialize with false
-	var (
-		existsDefaultPrometheus, existsDefaultLethe bool
-	)
+	existsMainPrometheus := false
+	existsMainLethe := false
 
-	for _, ds := range d.discovered {
-		if !ds.IsDefault {
+	for _, ds := range s.datasources {
+		if !ds.IsMain {
 			continue
 		}
 		switch ds.Type {
 		case configuration.DatasourceTypePrometheus:
-			existsDefaultPrometheus = true
+			existsMainPrometheus = true
 			continue
 		case configuration.DatasourceTypeLethe:
-			existsDefaultLethe = true
+			existsMainLethe = true
 			continue
 		}
 	}
-	if !existsDefaultPrometheus {
-		for _, ds := range d.discovered {
+
+	// fallback for main prometheus datasource
+	// If there is no main prometheus, the first prometheus will be a main prometheus.
+	if !existsMainPrometheus {
+		for _, ds := range s.datasources {
 			if ds.Type == configuration.DatasourceTypePrometheus {
-				ds.IsDefault = true
+				ds.IsMain = true
 				break
 			}
 		}
 	}
-	if !existsDefaultLethe {
-		for _, ds := range d.discovered {
+
+	// fallback for main lethe datasource
+	// If there is no main lethe, the first lethe will be a main lethe.
+	if !existsMainLethe {
+		for _, ds := range s.datasources {
 			if ds.Type == configuration.DatasourceTypeLethe {
-				ds.IsDefault = true
+				ds.IsMain = true
 				break
 			}
 		}
 	}
+}
+
+func (s *DatasourceStore) GetDatasources() []configuration.Datasource {
+	return s.datasources
+}
+
+func (s *DatasourceStore) GetMainDatasourceWithType(typ configuration.DatasourceType) (configuration.Datasource, error) {
+	for _, ds := range s.datasources {
+		if ds.Type == typ && ds.IsMain {
+			return ds, nil
+		}
+	}
+	return configuration.Datasource{}, fmt.Errorf("datasource of type %s not found", typ)
 }

@@ -49,13 +49,13 @@ type Datasource struct {
 	BasicAuth         bool           `json:"basicAuth" yaml:"basicAuth"`
 	BasicAuthUser     string         `json:"basicAuthUser" yaml:"basicAuthUser"`
 	BasicAuthPassword string         `json:"basicAuthPassword" yaml:"basicAuthPassword"`
-	IsDefault         bool           `json:"isDefault,omitempty" yaml:"isDefault,omitempty"`
+	IsMain            bool           `json:"isMain,omitempty" yaml:"isMain,omitempty"`
 	IsDiscovered      bool           `json:"isDiscovered,omitempty" yaml:"isDiscovered,omitempty"`
 }
 
 type Discovery struct {
 	Enabled          bool   `json:"enabled,omitempty" yaml:"enabled,omitempty"`                   // default: false
-	DefaultNamespace string `json:"defaultNamespace,omitempty" yaml:"defaultNamespace,omitempty"` // default: ''
+	MainNamespace    string `json:"mainNamespace,omitempty" yaml:"mainNamespace,omitempty"`       // default: ''
 	AnnotationKey    string `json:"annotationKey,omitempty" yaml:"annotationKey,omitempty"`       // default: kuoss.org/datasource-type
 	ByNamePrometheus bool   `json:"byNamePrometheus,omitempty" yaml:"byNamePrometheus,omitempty"` // deprecated
 	ByNameLethe      bool   `json:"byNameLethe,omitempty" yaml:"byNameLethe,omitempty"`           // deprecated
