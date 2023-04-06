@@ -39,13 +39,17 @@ func makeService(name string, namespace string, multiport bool) v1.Service {
 }
 
 func TestNewDatasourceStore(t *testing.T) {
-	datasources := []*configuration.Datasource{
+	datasources := []configuration.Datasource{
+		{Type: configuration.DatasourceTypePrometheus, Name: "Prometheus", URL: "http://prometheus:9090", BasicAuth: false, BasicAuthUser: "", BasicAuthPassword: "", IsMain: false, IsDiscovered: false},
+		{Type: configuration.DatasourceTypeLethe, Name: "Lethe", URL: "http://lethe:3100", BasicAuth: false, BasicAuthUser: "", BasicAuthPassword: "", IsMain: false, IsDiscovered: false},
+	}
+	datasourcesPointer := []*configuration.Datasource{
 		{Type: configuration.DatasourceTypePrometheus, Name: "Prometheus", URL: "http://prometheus:9090", BasicAuth: false, BasicAuthUser: "", BasicAuthPassword: "", IsMain: false, IsDiscovered: false},
 		{Type: configuration.DatasourceTypeLethe, Name: "Lethe", URL: "http://lethe:3100", BasicAuth: false, BasicAuthUser: "", BasicAuthPassword: "", IsMain: false, IsDiscovered: false},
 	}
 	datasourcesConfig := &configuration.DatasourcesConfig{
 		QueryTimeout: time.Second * 10,
-		Datasources:  datasources,
+		Datasources:  datasourcesPointer,
 		Discovery: configuration.Discovery{
 			Enabled:          false,
 			ByNamePrometheus: true,
@@ -54,17 +58,14 @@ func TestNewDatasourceStore(t *testing.T) {
 	}
 	store, err := NewDatasourceStore(datasourcesConfig)
 	assert.Nil(t, err)
+	assert.Equal(t, store.config, datasourcesConfig)
 	assert.ElementsMatch(t, store.datasources, datasources)
 }
 
 func TestGetDatasourcesFromServices(t *testing.T) {
-	datasources := []*configuration.Datasource{
-		{Type: configuration.DatasourceTypePrometheus, Name: "Prometheus", URL: "http://prometheus:9090", BasicAuth: false, BasicAuthUser: "", BasicAuthPassword: "", IsMain: false, IsDiscovered: false},
-		{Type: configuration.DatasourceTypeLethe, Name: "Lethe", URL: "http://lethe:3100", BasicAuth: false, BasicAuthUser: "", BasicAuthPassword: "", IsMain: false, IsDiscovered: false},
-	}
 	datasourcesConfig := &configuration.DatasourcesConfig{
 		QueryTimeout: time.Second * 10,
-		Datasources:  datasources,
+		Datasources:  []*configuration.Datasource{},
 		Discovery: configuration.Discovery{
 			Enabled:          false,
 			ByNamePrometheus: true,
@@ -72,7 +73,6 @@ func TestGetDatasourcesFromServices(t *testing.T) {
 		},
 	}
 	store, _ := NewDatasourceStore(datasourcesConfig)
-
 	services := []v1.Service{
 		makeService("prometheus", "namespace1", false),
 		makeService("prometheus", "namespace2", false),
@@ -80,12 +80,12 @@ func TestGetDatasourcesFromServices(t *testing.T) {
 		makeService("lethe", "kuoss", true),
 		makeService("lethe", "kube-system", true),
 	}
-	datasources2 := store.getDatasourcesFromServices(services)
-	assert.ElementsMatch(t, []*configuration.Datasource{
+	got := store.getDatasourcesFromServices(services)
+	assert.ElementsMatch(t, []configuration.Datasource{
 		{Type: "prometheus", Name: "prometheus.namespace1", URL: "http://prometheus.namespace1:30900", BasicAuth: false, BasicAuthUser: "", BasicAuthPassword: "", IsMain: false, IsDiscovered: true},
 		{Type: "prometheus", Name: "prometheus.namespace2", URL: "http://prometheus.namespace2:30900", BasicAuth: false, BasicAuthUser: "", BasicAuthPassword: "", IsMain: false, IsDiscovered: true},
 		{Type: "prometheus", Name: "prometheus.kube-system", URL: "http://prometheus.kube-system:30900", BasicAuth: false, BasicAuthUser: "", BasicAuthPassword: "", IsMain: false, IsDiscovered: true},
 		{Type: "lethe", Name: "lethe.kuoss", URL: "http://lethe.kuoss:8080", BasicAuth: false, BasicAuthUser: "", BasicAuthPassword: "", IsMain: false, IsDiscovered: true},
 		{Type: "lethe", Name: "lethe.kube-system", URL: "http://lethe.kube-system:8080", BasicAuth: false, BasicAuthUser: "", BasicAuthPassword: "", IsMain: false, IsDiscovered: true},
-	}, datasources2)
+	}, got)
 }

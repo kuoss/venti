@@ -36,7 +36,7 @@ func (dh *datasourceHandler) Targets(c *gin.Context) {
 	var bodies []string
 	for _, ds := range dh.DatasourceStore.GetDatasources() {
 		url := fmt.Sprintf("%s/api/v1/targets?state=active", ds.URL)
-		body, err := httpDo(url, *ds)
+		body, err := httpDo(url, ds)
 		if err != nil {
 			bodies = append(bodies, fmt.Sprintf(`{"status":"error","errorType":"%s"}`, err.Error()))
 		} else {
