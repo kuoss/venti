@@ -116,7 +116,7 @@ func (s *DatasourceStore) getDatasourcesFromServices(services []v1.Service) []co
 		}
 
 		// get port number of datasource from k8s service
-		portNumber := s.getPortNumberFromService(service)
+		portNumber := getPortNumberFromService(service)
 
 		// append to datasources
 		datasources = append(datasources, configuration.Datasource{
@@ -131,7 +131,7 @@ func (s *DatasourceStore) getDatasourcesFromServices(services []v1.Service) []co
 }
 
 // return port number within "http" named port. if not exist return service's first port number
-func (s *DatasourceStore) getPortNumberFromService(service v1.Service) int32 {
+func getPortNumberFromService(service v1.Service) int32 {
 
 	for _, port := range service.Spec.Ports {
 		if port.Name == "http" {
