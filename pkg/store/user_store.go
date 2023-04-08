@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/kuoss/venti/pkg/auth"
 	"github.com/kuoss/venti/pkg/model"
 
 	"gorm.io/driver/sqlite"
@@ -26,7 +25,7 @@ func NewUserStore(filepath string, config model.UsersConfig) (*UserStore, error)
 		return nil, fmt.Errorf("cannot open database: %w", err)
 	}
 
-	err = db.AutoMigrate(auth.User{})
+	err = db.AutoMigrate(model.User{})
 	if err != nil {
 		return nil, fmt.Errorf("auto migration failed: %w", err)
 	}
@@ -37,10 +36,10 @@ func NewUserStore(filepath string, config model.UsersConfig) (*UserStore, error)
 func setEtcUsers(db *gorm.DB, config model.UsersConfig) {
 
 	for _, etcUser := range config.EtcUsers {
-		var user auth.User
+		var user model.User
 		result := db.First(&user, "username = ?", etcUser.Username)
 		if result.RowsAffected == 0 {
-			db.Create(&auth.User{Username: etcUser.Username, Hash: etcUser.Hash, IsAdmin: etcUser.IsAdmin})
+			db.Create(&model.User{Username: etcUser.Username, Hash: etcUser.Hash, IsAdmin: etcUser.IsAdmin})
 			log.Println("User '" + etcUser.Username + "' added.")
 		} else {
 			log.Println("User '" + etcUser.Username + "' already exists.")
@@ -53,18 +52,18 @@ func setEtcUsers(db *gorm.DB, config model.UsersConfig) {
 	}
 }
 
-func (s *UserStore) FindByUsername(name string) (auth.User, error) {
-	var user auth.User
+func (s *UserStore) FindByUsername(name string) (model.User, error) {
+	var user model.User
 	tx := s.db.First(&user, "username = ?", name)
 	return user, tx.Error
 }
 
-func (s *UserStore) FindByUserIdAndToken(id, token string) (auth.User, error) {
-	var user auth.User
+func (s *UserStore) FindByUserIdAndToken(id, token string) (model.User, error) {
+	var user model.User
 	tx := s.db.First(&user, "ID = ? AND token = ?", id, token)
 	return user, tx.Error
 }
 
-func (s *UserStore) Save(user auth.User) error {
+func (s *UserStore) Save(user model.User) error {
 	return s.db.Save(&user).Error
 }

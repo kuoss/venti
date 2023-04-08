@@ -1,4 +1,4 @@
-package store
+package model
 
 // dashboard
 type Dashboard struct {
