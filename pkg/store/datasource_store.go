@@ -23,7 +23,7 @@ func NewDatasourceStore(cfg *configuration.DatasourcesConfig) (*DatasourceStore,
 	store := &DatasourceStore{cfg, nil}
 	err := store.load()
 	if err != nil {
-		return store, fmt.Errorf("error on load: %w", err)
+		return nil, fmt.Errorf("error on load: %w", err)
 	}
 	return store, nil
 }
@@ -51,7 +51,7 @@ func (s *DatasourceStore) load() error {
 func (s *DatasourceStore) discoverDatasources() ([]configuration.Datasource, error) {
 	services, err := listServices()
 	if err != nil {
-		return []configuration.Datasource{}, fmt.Errorf("error on listServices: %s", err)
+		return nil, fmt.Errorf("error on listServices: %s", err)
 	}
 	return s.getDatasourcesFromServices(services), nil
 }
@@ -59,16 +59,16 @@ func (s *DatasourceStore) discoverDatasources() ([]configuration.Datasource, err
 func listServices() ([]v1.Service, error) {
 	config, err := rest.InClusterConfig()
 	if err != nil {
-		return []v1.Service{}, fmt.Errorf("cannot InClusterConfig: %w", err)
+		return nil, fmt.Errorf("cannot InClusterConfig: %w", err)
 	}
 	clientset, err := kubernetes.NewForConfig(config)
 	if err != nil {
-		return []v1.Service{}, fmt.Errorf("cannot NewForConfig: %w", err)
+		return nil, fmt.Errorf("cannot NewForConfig: %w", err)
 	}
 
 	services, err := clientset.CoreV1().Services("").List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
-		return []v1.Service{}, fmt.Errorf("cannot ListServices: %w", err)
+		return nil, fmt.Errorf("cannot ListServices: %w", err)
 	}
 	return services.Items, nil
 }
