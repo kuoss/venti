@@ -2,9 +2,8 @@ package handler
 
 import (
 	"fmt"
-	"net/http"
-
 	"github.com/gin-gonic/gin"
+	"net/http"
 )
 
 func responseAPIError(c *gin.Context, apiError *apiError) {

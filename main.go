@@ -1,11 +1,10 @@
 package main
 
 import (
-	"log"
-
 	"github.com/kuoss/venti/pkg/configuration"
 	"github.com/kuoss/venti/pkg/handler"
 	"github.com/kuoss/venti/pkg/store"
+	"log"
 )
 
 // Version will be overwrited by ldflags
