@@ -39,9 +39,8 @@ func (s *DatasourceStore) load() error {
 		discoveredDatasources, err := s.discoverDatasources()
 		if err != nil {
 			log.Fatalf("error on discoverDatasources: %s", err)
-		} else {
-			s.datasources = append(s.datasources, discoveredDatasources...)
 		}
+		s.datasources = append(s.datasources, discoveredDatasources...)
 	}
 	// set main datasources
 	s.setMainDatasources()
