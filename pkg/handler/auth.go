@@ -3,7 +3,7 @@ package handler
 import (
 	"crypto/rand"
 	"fmt"
-	"github.com/kuoss/venti/pkg/auth"
+	"github.com/kuoss/venti/pkg/model"
 	"github.com/kuoss/venti/pkg/store"
 	"log"
 	"net/http"
@@ -84,7 +84,7 @@ func checkPassword(plain string, hashed string) bool {
 	return bcrypt.CompareHashAndPassword([]byte(hashed), []byte(plain)) == nil
 }
 
-func issueToken(user auth.User) auth.User {
+func issueToken(user model.User) model.User {
 	if user.Token != "" && user.TokenExpires.After(time.Now()) {
 		user.TokenExpires = time.Now().Add(48 * time.Hour)
 	} else {

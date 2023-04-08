@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/kuoss/venti/pkg/configuration"
+	"github.com/kuoss/venti/pkg/model"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -14,12 +14,12 @@ import (
 
 // DatasourceStore
 type DatasourceStore struct {
-	config      *configuration.DatasourcesConfig
-	datasources []configuration.Datasource
+	config      *model.DatasourcesConfig
+	datasources []model.Datasource
 }
 
 // NewDatasourceStore return *DatasourceStore after service discovery (with k8s service)
-func NewDatasourceStore(cfg *configuration.DatasourcesConfig) (*DatasourceStore, error) {
+func NewDatasourceStore(cfg *model.DatasourcesConfig) (*DatasourceStore, error) {
 	store := &DatasourceStore{cfg, nil}
 	err := store.load()
 	if err != nil {
@@ -49,10 +49,10 @@ func (s *DatasourceStore) load() error {
 	return nil
 }
 
-func (s *DatasourceStore) discoverDatasources() ([]configuration.Datasource, error) {
+func (s *DatasourceStore) discoverDatasources() ([]model.Datasource, error) {
 	services, err := listServices()
 	if err != nil {
-		return []configuration.Datasource{}, fmt.Errorf("error on listServices: %s", err)
+		return []model.Datasource{}, fmt.Errorf("error on listServices: %s", err)
 	}
 	return s.getDatasourcesFromServices(services), nil
 }
@@ -76,37 +76,37 @@ func listServices() ([]v1.Service, error) {
 
 // get datasources from k8s services
 // recognize as a datasource by annotation or name
-func (s *DatasourceStore) getDatasourcesFromServices(services []v1.Service) []configuration.Datasource {
-	var datasources []configuration.Datasource
+func (s *DatasourceStore) getDatasourcesFromServices(services []v1.Service) []model.Datasource {
+	var datasources []model.Datasource
 
 	for _, service := range services {
-		datasourceType := configuration.DatasourceTypeNone
+		datasourceType := model.DatasourceTypeNone
 
 		// recognize as a datasource by annotation of k8s service
 		for key, value := range service.Annotations {
 			if key != s.config.Discovery.AnnotationKey {
 				continue
 			}
-			if value == string(configuration.DatasourceTypePrometheus) {
-				datasourceType = configuration.DatasourceTypePrometheus
+			if value == string(model.DatasourceTypePrometheus) {
+				datasourceType = model.DatasourceTypePrometheus
 				break
 			}
-			if value == string(configuration.DatasourceTypeLethe) {
-				datasourceType = configuration.DatasourceTypeLethe
+			if value == string(model.DatasourceTypeLethe) {
+				datasourceType = model.DatasourceTypeLethe
 				break
 			}
 		}
 		// recognize as a datasource by name 'prometheus'
-		if datasourceType == configuration.DatasourceTypeNone && s.config.Discovery.ByNamePrometheus && service.Name == "prometheus" {
-			datasourceType = configuration.DatasourceTypePrometheus
+		if datasourceType == model.DatasourceTypeNone && s.config.Discovery.ByNamePrometheus && service.Name == "prometheus" {
+			datasourceType = model.DatasourceTypePrometheus
 		}
 
 		// recognize as a datasource by name 'lethe'
-		if datasourceType == configuration.DatasourceTypeNone && s.config.Discovery.ByNameLethe && service.Name == "lethe" {
-			datasourceType = configuration.DatasourceTypeLethe
+		if datasourceType == model.DatasourceTypeNone && s.config.Discovery.ByNameLethe && service.Name == "lethe" {
+			datasourceType = model.DatasourceTypeLethe
 		}
 		// the service is not a datasource
-		if datasourceType == configuration.DatasourceTypeNone {
+		if datasourceType == model.DatasourceTypeNone {
 			continue
 		}
 
@@ -120,7 +120,7 @@ func (s *DatasourceStore) getDatasourcesFromServices(services []v1.Service) []co
 		portNumber := s.getPortNumberFromService(service)
 
 		// append to datasources
-		datasources = append(datasources, configuration.Datasource{
+		datasources = append(datasources, model.Datasource{
 			Name:         fmt.Sprintf("%s.%s", service.Name, service.Namespace),
 			Type:         datasourceType,
 			URL:          fmt.Sprintf("http://%s.%s:%d", service.Name, service.Namespace, portNumber),
@@ -153,10 +153,10 @@ func (s *DatasourceStore) setMainDatasources() {
 			continue
 		}
 		switch ds.Type {
-		case configuration.DatasourceTypePrometheus:
+		case model.DatasourceTypePrometheus:
 			existsMainPrometheus = true
 			continue
-		case configuration.DatasourceTypeLethe:
+		case model.DatasourceTypeLethe:
 			existsMainLethe = true
 			continue
 		}
@@ -166,7 +166,7 @@ func (s *DatasourceStore) setMainDatasources() {
 	// If there is no main prometheus, the first prometheus will be a main prometheus.
 	if !existsMainPrometheus {
 		for _, ds := range s.datasources {
-			if ds.Type == configuration.DatasourceTypePrometheus {
+			if ds.Type == model.DatasourceTypePrometheus {
 				ds.IsMain = true
 				break
 			}
@@ -177,7 +177,7 @@ func (s *DatasourceStore) setMainDatasources() {
 	// If there is no main lethe, the first lethe will be a main lethe.
 	if !existsMainLethe {
 		for _, ds := range s.datasources {
-			if ds.Type == configuration.DatasourceTypeLethe {
+			if ds.Type == model.DatasourceTypeLethe {
 				ds.IsMain = true
 				break
 			}
@@ -185,15 +185,15 @@ func (s *DatasourceStore) setMainDatasources() {
 	}
 }
 
-func (s *DatasourceStore) GetDatasources() []configuration.Datasource {
+func (s *DatasourceStore) GetDatasources() []model.Datasource {
 	return s.datasources
 }
 
-func (s *DatasourceStore) GetMainDatasourceWithType(typ configuration.DatasourceType) (configuration.Datasource, error) {
+func (s *DatasourceStore) GetMainDatasourceWithType(typ model.DatasourceType) (model.Datasource, error) {
 	for _, ds := range s.datasources {
 		if ds.Type == typ && ds.IsMain {
 			return ds, nil
 		}
 	}
-	return configuration.Datasource{}, fmt.Errorf("datasource of type %s not found", typ)
+	return model.Datasource{}, fmt.Errorf("datasource of type %s not found", typ)
 }

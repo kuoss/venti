@@ -2,15 +2,15 @@ package handler
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/kuoss/venti/pkg/configuration"
+	"github.com/kuoss/venti/pkg/model"
 	"net/http"
 )
 
 type configHandler struct {
-	*configuration.Config
+	*model.Config
 }
 
-func NewConfigHandler(config *configuration.Config) *configHandler {
+func NewConfigHandler(config *model.Config) *configHandler {
 	return &configHandler{config}
 }
 

@@ -3,7 +3,7 @@ package handler
 import (
 	"context"
 	"fmt"
-	"github.com/kuoss/venti/pkg/configuration"
+	"github.com/kuoss/venti/pkg/model"
 	"github.com/kuoss/venti/pkg/store"
 	"io"
 	"log"
@@ -51,7 +51,7 @@ func (dh *datasourceHandler) Targets(c *gin.Context) {
 	c.JSON(http.StatusOK, bodies)
 }
 
-func httpDo(url string, ds configuration.Datasource) (io.ReadCloser, error) {
+func httpDo(url string, ds model.Datasource) (io.ReadCloser, error) {
 	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, url, nil)
 	if err != nil {
 		return nil, fmt.Errorf("fail to make requset %w", err)

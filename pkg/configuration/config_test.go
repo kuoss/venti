@@ -6,6 +6,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/kuoss/venti/pkg/model"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -17,12 +18,12 @@ func TestLoad(t *testing.T) {
 	cfg, err := Load("Unknown")
 	assert.Nil(t, err)
 	assert.Equal(t, cfg.Version, "Unknown")
-	assert.Equal(t, cfg.UserConfig, UsersConfig{EtcUsers: []EtcUser{
+	assert.Equal(t, cfg.UserConfig, model.UsersConfig{EtcUsers: []model.EtcUser{
 		{Username: "admin", Hash: "$2a$12$VcCDgh2NDk07JGN0rjGbM.Ad41qVR/YFJcgHp0UGns5JDymv..TOG", IsAdmin: true},
 	}})
-	assert.ElementsMatch(t, cfg.DatasourcesConfig.Datasources, []*Datasource{
-		{Type: DatasourceTypePrometheus, Name: "Prometheus", URL: "http://prometheus:9090", BasicAuth: false, BasicAuthUser: "", BasicAuthPassword: "", IsMain: false, IsDiscovered: false},
-		{Type: DatasourceTypeLethe, Name: "Lethe", URL: "http://lethe:3100", BasicAuth: false, BasicAuthUser: "", BasicAuthPassword: "", IsMain: false, IsDiscovered: false},
+	assert.ElementsMatch(t, cfg.DatasourcesConfig.Datasources, []*model.Datasource{
+		{Type: model.DatasourceTypePrometheus, Name: "Prometheus", URL: "http://prometheus:9090", BasicAuth: false, BasicAuthUser: "", BasicAuthPassword: "", IsMain: false, IsDiscovered: false},
+		{Type: model.DatasourceTypeLethe, Name: "Lethe", URL: "http://lethe:3100", BasicAuth: false, BasicAuthUser: "", BasicAuthPassword: "", IsMain: false, IsDiscovered: false},
 	})
 }
 
@@ -30,7 +31,7 @@ func TestLoadDatasourcesConfig(t *testing.T) {
 
 	tests := map[string]struct {
 		input io.Reader
-		want  *DatasourcesConfig
+		want  *model.DatasourcesConfig
 	}{
 		"default case": {
 			input: bytes.NewReader([]byte(`
@@ -42,9 +43,9 @@ datasources:
   type: lethe
   url: http://lethe:3100
 `)),
-			want: &DatasourcesConfig{
+			want: &model.DatasourcesConfig{
 				QueryTimeout: 0,
-				Datasources: []*Datasource{
+				Datasources: []*model.Datasource{
 					{Type: "prometheus",
 						Name:              "Prometheus",
 						URL:               "http://prometheus:9090",
@@ -64,7 +65,7 @@ datasources:
 						IsDiscovered:      false,
 					},
 				},
-				Discovery: Discovery{
+				Discovery: model.Discovery{
 					Enabled:          false,
 					MainNamespace:    "",
 					AnnotationKey:    "",
@@ -77,7 +78,7 @@ datasources:
 
 	for name, testcase := range tests {
 		t.Run(name, func(subt *testing.T) {
-			var dataSourceConfig *DatasourcesConfig
+			var dataSourceConfig *model.DatasourcesConfig
 			err := loadConfig(testcase.input, &dataSourceConfig)
 			if err != nil {
 				subt.Fatalf("error on loading Datasources Config: %s", err.Error())

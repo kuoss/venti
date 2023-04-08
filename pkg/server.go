@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	"github.com/gin-gonic/gin"
-	"github.com/kuoss/venti/pkg/configuration"
 	"github.com/kuoss/venti/pkg/handler"
+	"github.com/kuoss/venti/pkg/model"
 	"github.com/kuoss/venti/pkg/query"
 	"github.com/kuoss/venti/pkg/store"
 )
@@ -17,7 +17,7 @@ type Stores struct {
 	*store.UserStore
 }
 
-func LoadStores(config *configuration.Config) (*Stores, error) {
+func LoadStores(cfg *model.Config) (*Stores, error) {
 	dashboardStore, err := store.NewDashboardStore("etc/dashboards/**/*.yaml")
 	if err != nil {
 		return nil, fmt.Errorf("load dashboard configuration failed: %w", err)
@@ -27,12 +27,12 @@ func LoadStores(config *configuration.Config) (*Stores, error) {
 	if err != nil {
 		return nil, fmt.Errorf("load alertrule configuration failed: %w", err)
 	}
-	datasourceStore, err := store.NewDatasourceStore(config.DatasourcesConfig)
+	datasourceStore, err := store.NewDatasourceStore(cfg.DatasourcesConfig)
 	if err != nil {
 		return nil, fmt.Errorf("load datasource configuration failed: %w", err)
 	}
 
-	userStore, err := store.NewUserStore("./data/venti.sqlite3", config.UserConfig)
+	userStore, err := store.NewUserStore("./data/venti.sqlite3", cfg.UserConfig)
 	if err != nil {
 		return nil, fmt.Errorf("load user configuration failed: %w", err)
 	}
@@ -48,7 +48,7 @@ func LoadStores(config *configuration.Config) (*Stores, error) {
 // TODO: add to routerGroup routes
 // routerGroup.Use(tokenRequired)
 
-func LoadRouter(s *Stores, config *configuration.Config) *gin.Engine {
+func LoadRouter(s *Stores, config *model.Config) *gin.Engine {
 
 	ch := handler.NewConfigHandler(config)
 	ah := handler.NewAlertHandler(s.AlertRuleStore)
@@ -56,11 +56,11 @@ func LoadRouter(s *Stores, config *configuration.Config) *gin.Engine {
 	dsh := handler.NewDatasourceHandler(s.DatasourceStore)
 	us := handler.NewAuthHandler(s.UserStore)
 
-	mainLethe, _ := s.DatasourceStore.GetMainDatasourceWithType(configuration.DatasourceTypeLethe)
+	mainLethe, _ := s.DatasourceStore.GetMainDatasourceWithType(model.DatasourceTypeLethe)
 	letheQuerier := query.NewHttpQuerier(mainLethe, config.DatasourcesConfig.QueryTimeout)
 	lh := handler.NewLetheHandler(letheQuerier)
 
-	mainPrometheus, _ := s.DatasourceStore.GetMainDatasourceWithType(configuration.DatasourceTypePrometheus)
+	mainPrometheus, _ := s.DatasourceStore.GetMainDatasourceWithType(model.DatasourceTypePrometheus)
 	prometheusQuerier := query.NewHttpQuerier(mainPrometheus, config.DatasourcesConfig.QueryTimeout)
 	ph := handler.NewPrometheusHandler(prometheusQuerier)
 
