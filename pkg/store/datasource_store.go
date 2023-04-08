@@ -36,7 +36,17 @@ func (s *DatasourceStore) load() error {
 
 	// load from discovery
 	if s.config.Discovery.Enabled {
-		discoveredDatasources, err := s.discoverDatasources()
+
+		clusterCfg, err := rest.InClusterConfig()
+		if err != nil {
+			return fmt.Errorf("cannot InClusterConfig: %w", err)
+		}
+		clientset, err := kubernetes.NewForConfig(clusterCfg)
+		if err != nil {
+			return fmt.Errorf("cannot NewForConfig: %w", err)
+		}
+
+		discoveredDatasources, err := s.discoverDatasources(clientset)
 		if err != nil {
 			log.Fatalf("error on discoverDatasources: %s", err)
 		}
@@ -48,25 +58,17 @@ func (s *DatasourceStore) load() error {
 	return nil
 }
 
-func (s *DatasourceStore) discoverDatasources() ([]configuration.Datasource, error) {
-	services, err := listServices()
+func (s *DatasourceStore) discoverDatasources(clientset *kubernetes.Clientset) ([]configuration.Datasource, error) {
+	services, err := listServices(clientset)
 	if err != nil {
 		return nil, fmt.Errorf("error on listServices: %s", err)
 	}
 	return s.getDatasourcesFromServices(services), nil
 }
 
-func listServices() ([]v1.Service, error) {
-	config, err := rest.InClusterConfig()
-	if err != nil {
-		return nil, fmt.Errorf("cannot InClusterConfig: %w", err)
-	}
-	clientset, err := kubernetes.NewForConfig(config)
-	if err != nil {
-		return nil, fmt.Errorf("cannot NewForConfig: %w", err)
-	}
+func listServices(clientset *kubernetes.Clientset) ([]v1.Service, error) {
 
-	services, err := clientset.CoreV1().Services("").List(context.TODO(), metav1.ListOptions{})
+	services, err := clientset.CoreV1().Services("").List(context.Background(), metav1.ListOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("cannot ListServices: %w", err)
 	}
