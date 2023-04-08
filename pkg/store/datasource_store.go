@@ -67,37 +67,14 @@ func (s *DatasourceStore) discoverDatasources(clientset kubernetes.Interface) ([
 	return s.getDatasourcesFromServices(services.Items), nil
 }
 
-// get datasources from k8s services
+// get datasources from k8s servicesWithoutAnnotation
 // recognize as a datasource by annotation or name
 func (s *DatasourceStore) getDatasourcesFromServices(services []v1.Service) []configuration.Datasource {
 	var datasources []configuration.Datasource
 
 	for _, service := range services {
-		datasourceType := configuration.DatasourceTypeNone
+		datasourceType := getDatasourceTypeByConfig(service, s.config.Discovery)
 
-		// recognize as a datasource by annotation of k8s service
-		for key, value := range service.Annotations {
-			if key != s.config.Discovery.AnnotationKey {
-				continue
-			}
-			if value == string(configuration.DatasourceTypePrometheus) {
-				datasourceType = configuration.DatasourceTypePrometheus
-				break
-			}
-			if value == string(configuration.DatasourceTypeLethe) {
-				datasourceType = configuration.DatasourceTypeLethe
-				break
-			}
-		}
-		// recognize as a datasource by name 'prometheus'
-		if datasourceType == configuration.DatasourceTypeNone && s.config.Discovery.ByNamePrometheus && service.Name == "prometheus" {
-			datasourceType = configuration.DatasourceTypePrometheus
-		}
-
-		// recognize as a datasource by name 'lethe'
-		if datasourceType == configuration.DatasourceTypeNone && s.config.Discovery.ByNameLethe && service.Name == "lethe" {
-			datasourceType = configuration.DatasourceTypeLethe
-		}
 		// the service is not a datasource
 		if datasourceType == configuration.DatasourceTypeNone {
 			continue
@@ -122,6 +99,37 @@ func (s *DatasourceStore) getDatasourcesFromServices(services []v1.Service) []co
 		})
 	}
 	return datasources
+}
+
+// getDatasourceTypeByConfig return DatasourceType.
+// 1. If configured within config.Discovery.ByNamePrometheus or config.Discovery.ByNameLethe return if service has matched name.
+// 2. If configured within config.Discovery.AnnotationKey matched with service's annotation key and also value is
+// one of promethe or lethe.
+func getDatasourceTypeByConfig(service v1.Service, cfg configuration.Discovery) configuration.DatasourceType {
+
+	// recognize as a datasource by name 'prometheus'
+	if cfg.ByNamePrometheus && service.Name == "prometheus" {
+		return configuration.DatasourceTypePrometheus
+	}
+	// recognize as a datasource by name 'lethe'
+	if cfg.ByNameLethe && service.Name == "lethe" {
+		return configuration.DatasourceTypeLethe
+	}
+
+	// recognize as a datasource by annotation of k8s service
+	for key, value := range service.Annotations {
+		if key != cfg.AnnotationKey {
+			continue
+		}
+		if value == string(configuration.DatasourceTypePrometheus) {
+			return configuration.DatasourceTypePrometheus
+		}
+		if value == string(configuration.DatasourceTypeLethe) {
+			return configuration.DatasourceTypeLethe
+		}
+	}
+
+	return configuration.DatasourceTypeNone
 }
 
 // return port number within "http" named port. if not exist return service's first port number
