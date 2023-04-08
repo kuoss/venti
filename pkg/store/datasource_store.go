@@ -58,21 +58,13 @@ func (s *DatasourceStore) load() error {
 	return nil
 }
 
-func (s *DatasourceStore) discoverDatasources(clientset *kubernetes.Clientset) ([]configuration.Datasource, error) {
-	services, err := listServices(clientset)
-	if err != nil {
-		return nil, fmt.Errorf("error on listServices: %s", err)
-	}
-	return s.getDatasourcesFromServices(services), nil
-}
-
-func listServices(clientset *kubernetes.Clientset) ([]v1.Service, error) {
+func (s *DatasourceStore) discoverDatasources(clientset kubernetes.Interface) ([]configuration.Datasource, error) {
 
 	services, err := clientset.CoreV1().Services("").List(context.Background(), metav1.ListOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("cannot ListServices: %w", err)
 	}
-	return services.Items, nil
+	return s.getDatasourcesFromServices(services.Items), nil
 }
 
 // get datasources from k8s services
