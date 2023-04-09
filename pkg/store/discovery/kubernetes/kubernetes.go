@@ -105,7 +105,7 @@ func getDatasourceTypeByConfig(service v1.Service, cfg model.Discovery) model.Da
 // return port number within "http" named port. if not exist return service's first port number
 func getPortNumberFromService(service v1.Service) (int32, error) {
 	if len(service.Spec.Ports) < 1 {
-		return 0, fmt.Errorf("service %s/%s have any port", service.Name, service.Namespace)
+		return 0, fmt.Errorf("service %s/%s have any port", service.Namespace, service.Name)
 	}
 
 	for _, port := range service.Spec.Ports {
