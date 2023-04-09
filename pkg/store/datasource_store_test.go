@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kuoss/venti/pkg/configuration"
+	"github.com/kuoss/venti/pkg/model"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -43,18 +43,18 @@ func makeService(name string, namespace string, multiport bool, annotation map[s
 }
 
 func TestNewDatasourceStore(t *testing.T) {
-	datasources := []configuration.Datasource{
-		{Type: configuration.DatasourceTypePrometheus, Name: "Prometheus", URL: "http://prometheus:9090", BasicAuth: false, BasicAuthUser: "", BasicAuthPassword: "", IsMain: false, IsDiscovered: false},
-		{Type: configuration.DatasourceTypeLethe, Name: "Lethe", URL: "http://lethe:3100", BasicAuth: false, BasicAuthUser: "", BasicAuthPassword: "", IsMain: false, IsDiscovered: false},
+	datasources := []model.Datasource{
+		{Type: model.DatasourceTypePrometheus, Name: "Prometheus", URL: "http://prometheus:9090", BasicAuth: false, BasicAuthUser: "", BasicAuthPassword: "", IsMain: false, IsDiscovered: false},
+		{Type: model.DatasourceTypeLethe, Name: "Lethe", URL: "http://lethe:3100", BasicAuth: false, BasicAuthUser: "", BasicAuthPassword: "", IsMain: false, IsDiscovered: false},
 	}
-	datasourcesPointer := []*configuration.Datasource{
-		{Type: configuration.DatasourceTypePrometheus, Name: "Prometheus", URL: "http://prometheus:9090", BasicAuth: false, BasicAuthUser: "", BasicAuthPassword: "", IsMain: false, IsDiscovered: false},
-		{Type: configuration.DatasourceTypeLethe, Name: "Lethe", URL: "http://lethe:3100", BasicAuth: false, BasicAuthUser: "", BasicAuthPassword: "", IsMain: false, IsDiscovered: false},
+	datasourcesPointer := []*model.Datasource{
+		{Type: model.DatasourceTypePrometheus, Name: "Prometheus", URL: "http://prometheus:9090", BasicAuth: false, BasicAuthUser: "", BasicAuthPassword: "", IsMain: false, IsDiscovered: false},
+		{Type: model.DatasourceTypeLethe, Name: "Lethe", URL: "http://lethe:3100", BasicAuth: false, BasicAuthUser: "", BasicAuthPassword: "", IsMain: false, IsDiscovered: false},
 	}
-	datasourcesConfig := &configuration.DatasourcesConfig{
+	datasourcesConfig := &model.DatasourcesConfig{
 		QueryTimeout: time.Second * 10,
 		Datasources:  datasourcesPointer,
-		Discovery: configuration.Discovery{
+		Discovery: model.Discovery{
 			Enabled:          false,
 			ByNamePrometheus: true,
 			ByNameLethe:      true,
@@ -75,16 +75,16 @@ var servicesWithoutAnnotation = []runtime.Object{
 }
 
 func TestDiscoverDatasourcesByName(t *testing.T) {
-	datasourcesConfig := &configuration.DatasourcesConfig{
+	datasourcesConfig := &model.DatasourcesConfig{
 		QueryTimeout: time.Second * 10,
-		Datasources:  []*configuration.Datasource{},
-		Discovery: configuration.Discovery{
+		Datasources:  []*model.Datasource{},
+		Discovery: model.Discovery{
 			Enabled:          false,
 			ByNamePrometheus: true,
 			ByNameLethe:      true,
 		},
 	}
-	want := []configuration.Datasource{
+	want := []model.Datasource{
 		{
 			Type:         "lethe",
 			Name:         "lethe.kube-system",
@@ -147,17 +147,17 @@ var servicesWithAnnotation = []runtime.Object{
 }
 
 func TestDiscoverDatasourcesByAnnotationKey(t *testing.T) {
-	datasourcesConfig := &configuration.DatasourcesConfig{
+	datasourcesConfig := &model.DatasourcesConfig{
 		QueryTimeout: time.Second * 10,
-		Datasources:  []*configuration.Datasource{},
-		Discovery: configuration.Discovery{
+		Datasources:  []*model.Datasource{},
+		Discovery: model.Discovery{
 			Enabled:          false, // cheat
 			AnnotationKey:    "kuoss.org/datasource-type",
 			ByNamePrometheus: false,
 			ByNameLethe:      false,
 		},
 	}
-	want := []configuration.Datasource{
+	want := []model.Datasource{
 		{
 			Type:         "lethe",
 			Name:         "lethe.kube-system",

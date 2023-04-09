@@ -3,7 +3,7 @@ package query
 import (
 	"context"
 	"fmt"
-	"github.com/kuoss/venti/pkg/configuration"
+	"github.com/kuoss/venti/pkg/model"
 	"io"
 	"net/http"
 	"net/url"
@@ -18,10 +18,10 @@ type httpQuerier struct {
 	*http.Client
 	url        string
 	timeout    time.Duration
-	datasource configuration.Datasource
+	datasource model.Datasource
 }
 
-func NewHttpQuerier(ds configuration.Datasource, timeout time.Duration) *httpQuerier {
+func NewHttpQuerier(ds model.Datasource, timeout time.Duration) *httpQuerier {
 	return &httpQuerier{
 		Client:     &http.Client{},
 		url:        ds.URL,

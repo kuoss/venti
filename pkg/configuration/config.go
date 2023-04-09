@@ -5,65 +5,14 @@ import (
 	"io"
 	"log"
 	"os"
-	"time"
 
+	"github.com/kuoss/venti/pkg/model"
 	"gopkg.in/yaml.v3"
 )
 
-type Config struct {
-	Version           string
-	UserConfig        UsersConfig
-	DatasourcesConfig *DatasourcesConfig
-	//Dashboards        []Dashboard
-	//AlertRuleGroups   []AlertRuleGroup
-}
-
-type UsersConfig struct {
-	EtcUsers []EtcUser `yaml:"users"`
-}
-
-type EtcUser struct {
-	Username string `yaml:"username"`
-	Hash     string `yaml:"hash"`
-	IsAdmin  bool   `yaml:"isAdmin,omitempty"`
-}
-
-const (
-	DatasourceTypeNone       DatasourceType = ""
-	DatasourceTypePrometheus DatasourceType = "prometheus"
-	DatasourceTypeLethe      DatasourceType = "lethe"
-)
-
-type DatasourcesConfig struct {
-	QueryTimeout time.Duration `json:"queryTimeout,omitempty" yaml:"queryTimeout,omitempty"`
-	Datasources  []*Datasource `json:"datasources" yaml:"datasources,omitempty"`
-	Discovery    Discovery     `json:"discovery,omitempty" yaml:"discovery,omitempty"`
-}
-
-type DatasourceType string
-
-type Datasource struct {
-	Type              DatasourceType `json:"type" yaml:"type"`
-	Name              string         `json:"name" yaml:"name"`
-	URL               string         `json:"url" yaml:"url"`
-	BasicAuth         bool           `json:"basicAuth" yaml:"basicAuth"`
-	BasicAuthUser     string         `json:"basicAuthUser" yaml:"basicAuthUser"`
-	BasicAuthPassword string         `json:"basicAuthPassword" yaml:"basicAuthPassword"`
-	IsMain            bool           `json:"isMain,omitempty" yaml:"isMain,omitempty"`
-	IsDiscovered      bool           `json:"isDiscovered,omitempty" yaml:"isDiscovered,omitempty"`
-}
-
-type Discovery struct {
-	Enabled          bool   `json:"enabled,omitempty" yaml:"enabled,omitempty"`                   // default: false
-	MainNamespace    string `json:"mainNamespace,omitempty" yaml:"mainNamespace,omitempty"`       // default: ''
-	AnnotationKey    string `json:"annotationKey,omitempty" yaml:"annotationKey,omitempty"`       // default: kuoss.org/datasource-type
-	ByNamePrometheus bool   `json:"byNamePrometheus,omitempty" yaml:"byNamePrometheus,omitempty"` // deprecated
-	ByNameLethe      bool   `json:"byNameLethe,omitempty" yaml:"byNameLethe,omitempty"`           // deprecated
-}
-
 // Load EtcUser,DatasourceConfig files only.
 // TODO each Config filepath could be parameter.
-func Load(version string) (*Config, error) {
+func Load(version string) (*model.Config, error) {
 
 	log.Println("Loading configurations...")
 
@@ -73,7 +22,7 @@ func Load(version string) (*Config, error) {
 	}
 	defer userConfigFile.Close()
 
-	var userConf UsersConfig
+	var userConf model.UsersConfig
 	err = loadConfig(userConfigFile, &userConf)
 	if err != nil {
 		return nil, fmt.Errorf("error on loading User Config: %w", err)
@@ -85,13 +34,13 @@ func Load(version string) (*Config, error) {
 	}
 	defer dsConfigFile.Close()
 
-	var dataSourceConfig *DatasourcesConfig
+	var dataSourceConfig *model.DatasourcesConfig
 	err = loadConfig(dsConfigFile, &dataSourceConfig)
 	if err != nil {
 		return nil, fmt.Errorf("error on loading Datasources Config: %w", err)
 	}
 
-	return &Config{
+	return &model.Config{
 		Version:           version,
 		UserConfig:        userConf,
 		DatasourcesConfig: dataSourceConfig,
