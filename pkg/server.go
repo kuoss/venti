@@ -2,6 +2,8 @@ package pkg
 
 import (
 	"fmt"
+	"github.com/kuoss/venti/pkg/store/discovery"
+	"github.com/kuoss/venti/pkg/store/discovery/kubernetes"
 
 	"github.com/gin-gonic/gin"
 	"github.com/kuoss/venti/pkg/handler"
@@ -33,9 +35,9 @@ func LoadStores(cfg *model.Config) (*Stores, error) {
 		return nil, fmt.Errorf("load user configuration failed: %w", err)
 	}
 
-	var discoverer store.Discoverer
+	var discoverer discovery.Discoverer
 	if cfg.DatasourcesConfig.Discovery.Enabled {
-		discoverer, err = store.NewK8sStore()
+		discoverer, err = kubernetes.NewK8sStore()
 		if err != nil {
 			return nil, fmt.Errorf("load discoverer k8sStore failed: %w", err)
 		}

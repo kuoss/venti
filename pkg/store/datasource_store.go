@@ -2,6 +2,7 @@ package store
 
 import (
 	"fmt"
+	"github.com/kuoss/venti/pkg/store/discovery"
 	"log"
 
 	"github.com/kuoss/venti/pkg/model"
@@ -11,11 +12,11 @@ import (
 type DatasourceStore struct {
 	config      *model.DatasourcesConfig
 	datasources []model.Datasource
-	discoverer  Discoverer
+	discoverer  discovery.Discoverer
 }
 
 // NewDatasourceStore return *DatasourceStore after service discovery (with k8s service)
-func NewDatasourceStore(cfg *model.DatasourcesConfig, discoverer Discoverer) (*DatasourceStore, error) {
+func NewDatasourceStore(cfg *model.DatasourcesConfig, discoverer discovery.Discoverer) (*DatasourceStore, error) {
 	store := &DatasourceStore{cfg, nil, discoverer}
 	err := store.load()
 	if err != nil {
