@@ -1,8 +1,9 @@
 package main
 
 import (
-	"github.com/kuoss/venti/pkg"
 	"github.com/kuoss/venti/pkg/configuration"
+	"github.com/kuoss/venti/pkg/handler"
+	"github.com/kuoss/venti/pkg/store"
 	"log"
 )
 
@@ -13,18 +14,17 @@ var (
 
 func main() {
 	//load configuration
-	config, err := configuration.Load(Version)
+	cfg, err := configuration.Load(Version)
 	if err != nil {
-		log.Fatalf("configuration load failed. %s", err.Error())
+		log.Fatalf("config load failed. %s", err.Error())
 	}
-	s, err := pkg.LoadStores(config)
+	stores, err := store.LoadStores(cfg)
 	if err != nil {
 		log.Fatalf("load store failed. %s", err.Error())
 	}
-
-	r := pkg.LoadRouter(s, config)
+	router := handler.SetupRouter(cfg, stores)
 
 	// run
 	log.Printf("venti running.... version %s", Version)
-	_ = r.Run() // :8080
+	_ = router.Run() // :8080
 }
