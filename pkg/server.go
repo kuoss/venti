@@ -27,14 +27,22 @@ func LoadStores(cfg *model.Config) (*Stores, error) {
 	if err != nil {
 		return nil, fmt.Errorf("load alertrule configuration failed: %w", err)
 	}
-	datasourceStore, err := store.NewDatasourceStore(cfg.DatasourcesConfig)
-	if err != nil {
-		return nil, fmt.Errorf("load datasource configuration failed: %w", err)
-	}
 
 	userStore, err := store.NewUserStore("./data/venti.sqlite3", cfg.UserConfig)
 	if err != nil {
 		return nil, fmt.Errorf("load user configuration failed: %w", err)
+	}
+
+	var discoverer store.Discoverer
+	if cfg.DatasourcesConfig.Discovery.Enabled {
+		discoverer, err = store.NewK8sStore()
+		if err != nil {
+			return nil, fmt.Errorf("load discoverer k8sStore failed: %w", err)
+		}
+	}
+	datasourceStore, err := store.NewDatasourceStore(cfg.DatasourcesConfig, discoverer)
+	if err != nil {
+		return nil, fmt.Errorf("load datasource configuration failed: %w", err)
 	}
 
 	return &Stores{
