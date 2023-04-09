@@ -1,4 +1,4 @@
-package store
+package kubernetes
 
 import (
 	"context"
@@ -8,11 +8,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
+	"log"
 )
-
-type Discoverer interface {
-	Do(discovery model.Discovery) ([]model.Datasource, error)
-}
 
 type k8sStore struct {
 	client kubernetes.Interface
@@ -57,8 +54,11 @@ func (s *k8sStore) getDatasourcesFromServices(services []v1.Service, discovery m
 		}
 
 		// get port number of datasource from k8s service
-		portNumber := getPortNumberFromService(service)
-
+		portNumber, err := getPortNumberFromService(service)
+		if err != nil {
+			log.Printf("extract port number from service failed. %s", err)
+			continue
+		}
 		// append to datasources
 		datasources = append(datasources, model.Datasource{
 			Name:         fmt.Sprintf("%s.%s", service.Name, service.Namespace),
@@ -103,12 +103,15 @@ func getDatasourceTypeByConfig(service v1.Service, cfg model.Discovery) model.Da
 }
 
 // return port number within "http" named port. if not exist return service's first port number
-func getPortNumberFromService(service v1.Service) int32 {
+func getPortNumberFromService(service v1.Service) (int32, error) {
+	if len(service.Spec.Ports) < 1 {
+		return 0, fmt.Errorf("service %v have any port", service)
+	}
 
 	for _, port := range service.Spec.Ports {
 		if port.Name == "http" {
-			return port.Port
+			return port.Port, nil
 		}
 	}
-	return service.Spec.Ports[0].Port
+	return service.Spec.Ports[0].Port, nil
 }
