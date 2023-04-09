@@ -21,7 +21,7 @@ var (
 )
 
 func init() {
-	ts = mock.MockPrometheusServer()
+	ts = mock.PrometheusServer()
 	timeout = 30 * time.Second
 	remoteStore = NewRemoteStore(&http.Client{}, timeout)
 	ctx = (&http.Request{}).Context()

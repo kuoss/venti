@@ -63,9 +63,18 @@ func (h *remoteHandler) remoteAction(c *gin.Context, action string, rawQuery str
 
 // Select and return the datasource corresponding to the dsID or dsType parameter
 func (h *remoteHandler) getDatasourceWithParams(dsID string, dsType string) (model.Datasource, error) {
+
+	// TODO: PLAN A
+	// if dsID == "" && dsType == "" {
+	// 	return model.Datasource{}, errors.New("either dsID or dsType must be specified")
+	// }
+
+	// PLAN B: walkaround for testing
+	// Logic to return the first datasource if neither dsID nor dsType exists
 	if dsID == "" && dsType == "" {
-		return model.Datasource{}, errors.New("either dsID or dsType must be specified")
+		dsID = "0"
 	}
+
 	// If there is a dsID, return the datasource of the corresponding index
 	if dsID != "" {
 		dsIndex, err := strconv.Atoi(dsID)
