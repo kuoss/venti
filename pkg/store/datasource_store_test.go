@@ -60,7 +60,8 @@ func TestNewDatasourceStore(t *testing.T) {
 			ByNameLethe:      true,
 		},
 	}
-	store, err := NewDatasourceStore(datasourcesConfig)
+	var defaultDiscoverer Discoverer
+	store, err := NewDatasourceStore(datasourcesConfig, defaultDiscoverer)
 	assert.Nil(t, err)
 	assert.Equal(t, store.config, datasourcesConfig)
 	assert.ElementsMatch(t, store.datasources, datasources)
@@ -120,8 +121,11 @@ func TestDiscoverDatasourcesByName(t *testing.T) {
 			IsMain:       false,
 			IsDiscovered: true,
 		}}
-	store, _ := NewDatasourceStore(datasourcesConfig)
-	got, err := store.discoverDatasources(fake.NewSimpleClientset(servicesWithoutAnnotation...))
+
+	k8sStore := &k8sStore{fake.NewSimpleClientset(servicesWithoutAnnotation...)}
+
+	store, _ := NewDatasourceStore(datasourcesConfig, k8sStore)
+	got, err := store.discoverer.Do(datasourcesConfig.Discovery)
 	if err != nil {
 		return
 	}
@@ -151,7 +155,7 @@ func TestDiscoverDatasourcesByAnnotationKey(t *testing.T) {
 		QueryTimeout: time.Second * 10,
 		Datasources:  []*model.Datasource{},
 		Discovery: model.Discovery{
-			Enabled:          false, // cheat
+			Enabled:          true,
 			AnnotationKey:    "kuoss.org/datasource-type",
 			ByNamePrometheus: false,
 			ByNameLethe:      false,
@@ -193,8 +197,12 @@ func TestDiscoverDatasourcesByAnnotationKey(t *testing.T) {
 			IsMain:       false,
 			IsDiscovered: true,
 		}}
-	store, _ := NewDatasourceStore(datasourcesConfig)
-	got, err := store.discoverDatasources(fake.NewSimpleClientset(servicesWithAnnotation...))
+
+	k8sStore := &k8sStore{fake.NewSimpleClientset(servicesWithAnnotation...)}
+
+	store, _ := NewDatasourceStore(datasourcesConfig, k8sStore)
+
+	got, err := store.discoverer.Do(datasourcesConfig.Discovery)
 	if err != nil {
 		return
 	}
