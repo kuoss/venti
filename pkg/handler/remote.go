@@ -61,10 +61,13 @@ func (h *remoteHandler) remoteAction(c *gin.Context, action string, rawQuery str
 	c.String(200, result)
 }
 
+// Select and return the datasource corresponding to the dsID or dsType parameter
 func (h *remoteHandler) getDatasourceWithParams(dsID string, dsType string) (model.Datasource, error) {
+	// Logic to return the first datasource if neither dsID nor dsType exists
 	if dsID == "" && dsType == "" {
 		dsID = "0"
 	}
+	// If there is a dsID, return the datasource of the corresponding index
 	if dsID != "" {
 		dsIndex, err := strconv.Atoi(dsID)
 		if err != nil {
@@ -76,9 +79,12 @@ func (h *remoteHandler) getDatasourceWithParams(dsID string, dsType string) (mod
 		}
 		return datasource, nil
 	}
+	// The following handles cases where there is no dsID...
+	// Invalid if dsType is neither lethe nor prometheus
 	if dsType != string(model.DatasourceTypeLethe) && dsType != string(model.DatasourceTypePrometheus) {
 		return model.Datasource{}, errors.New("invalid dstype")
 	}
+	// Returns the main datasource for the requested dsType
 	datasource, err := h.datasourceStore.GetMainDatasourceByType(model.DatasourceType(dsType))
 	if err != nil {
 		return model.Datasource{}, fmt.Errorf("error on GetMainDatasourceByType: %w", err)
