@@ -19,7 +19,7 @@ func TestNewRemoteHandler(t *testing.T) {
 
 func TestMetadata(t *testing.T) {
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/api/remote/metadata", nil)
+	req, _ := http.NewRequest("GET", "/api/remote/metadata?dsid=0", nil)
 	router.ServeHTTP(w, req)
 
 	assert.Equal(t, 200, w.Code)
@@ -47,7 +47,7 @@ func TestQuery(t *testing.T) {
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("#%d - %s", i, tc.rawQuery), func(tt *testing.T) {
 			w := httptest.NewRecorder()
-			req, _ := http.NewRequest("GET", "/api/remote/query?"+tc.rawQuery, nil)
+			req, _ := http.NewRequest("GET", "/api/remote/query?dsid=0&"+tc.rawQuery, nil)
 			router.ServeHTTP(w, req)
 
 			assert.Equal(t, 200, w.Code)
@@ -93,7 +93,7 @@ func TestQueryRange(t *testing.T) {
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("#%d - %s", i, tc.rawQuery), func(tt *testing.T) {
 			w := httptest.NewRecorder()
-			req, _ := http.NewRequest("GET", "/api/remote/query_range?"+tc.rawQuery, nil)
+			req, _ := http.NewRequest("GET", "/api/remote/query_range?dsid=0&"+tc.rawQuery, nil)
 			router.ServeHTTP(w, req)
 
 			assert.Equal(t, 200, w.Code)
