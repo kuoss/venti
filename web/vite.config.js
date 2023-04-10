@@ -16,7 +16,7 @@ export default defineConfig({
     host: true,
     proxy: {
       "/api": { target: "http://localhost:8080" },
-      "/user": { target: "http://localhost:8080" },
+      "/auth": { target: "http://localhost:8080" },
     },
   },
 });

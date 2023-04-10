@@ -13,7 +13,7 @@ export const useAuthStore = defineStore("auth", {
       formData.append("username", credentials.username);
       formData.append("password", credentials.password);
 
-      const response = await fetch("/user/login", {
+      const response = await fetch("/auth/login", {
         body: formData,
         method: "post",
       });
@@ -32,7 +32,7 @@ export const useAuthStore = defineStore("auth", {
       }
     },
     async logout() {
-      const response = await fetch("/user/logout", { method: "post" });
+      const response = await fetch("/auth/logout", { method: "post" });
       const data = await response.json();
       if (data) {
         localStorage.removeItem("token");
