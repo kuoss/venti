@@ -20,7 +20,7 @@ export const useDashboardStore = defineStore("dashboard", {
     async loadData() {
       this.status.loading = true;
       try {
-        const response = await fetch("/api/dashboard");
+        const response = await fetch("/api/dashboards");
         this.dashboards = await response.json();
         this.status.loaded = true;
       } catch (error) {

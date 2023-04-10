@@ -23,7 +23,7 @@ func SetupRouter(cfg *model.Config, stores *store.Stores) *gin.Engine {
 	{
 		api.GET("/alerts", handlers.alertHandler.AlertRuleGroupsList)
 		api.GET("/config/version", handlers.configHandler.Version)
-		api.GET("/dashboard", handlers.dashboardHandler.Dashboards)
+		api.GET("/dashboards", handlers.dashboardHandler.Dashboards)
 		api.GET("/datasources", handlers.datasourceHandler.Datasources)
 		api.GET("/datasources/targets", handlers.datasourceHandler.Targets)
 		api.GET("/remote/metadata", handlers.remoteHandler.Metadata)
