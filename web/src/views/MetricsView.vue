@@ -1,5 +1,7 @@
 <script>
 import { useTimeStore } from "@/stores/time";
+import { useDatatsourceStore } from "@/stores/datasource";
+
 import TimeRangePicker from "@/components/TimeRangePicker.vue";
 import RunButton from "@/components/RunButton.vue";
 import UplotVue from "uplot-vue";
@@ -31,6 +33,7 @@ export default {
   data() {
     return {
       timeStore: useTimeStore(),
+      datasourceStore: useDatatsourceStore(),
       searchMode: false,
       cursorIdx: null,
       cursorTime: null,

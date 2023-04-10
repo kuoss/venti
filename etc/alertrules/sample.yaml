@@ -1,3 +1,5 @@
+datasourceSelector:
+
 groups:
 - name: sample
   datasource: prometheus
