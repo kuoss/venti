@@ -1,12 +1,11 @@
 package store
 
 import (
-	"os"
-	"testing"
-
 	"github.com/prometheus/prometheus/model/rulefmt"
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/yaml.v3"
+	"os"
+	"testing"
 )
 
 func init() {

@@ -1,6 +1,7 @@
 package store
 
 import (
+	"errors"
 	"fmt"
 	"github.com/kuoss/venti/pkg/store/discovery"
 	"log"
@@ -96,11 +97,22 @@ func (s *DatasourceStore) GetDatasources() []model.Datasource {
 	return s.datasources
 }
 
-func (s *DatasourceStore) GetMainDatasourceWithType(typ model.DatasourceType) (model.Datasource, error) {
+func (s *DatasourceStore) GetMainDatasourceByType(typ model.DatasourceType) (model.Datasource, error) {
 	for _, ds := range s.datasources {
 		if ds.Type == typ && ds.IsMain {
 			return ds, nil
 		}
 	}
 	return model.Datasource{}, fmt.Errorf("datasource of type %s not found", typ)
+}
+
+func (s *DatasourceStore) GetDatasourceByIndex(index int) (model.Datasource, error) {
+	cnt := len(s.datasources)
+	if cnt < 1 {
+		return model.Datasource{}, errors.New("no datasource")
+	}
+	if index >= len(s.datasources) {
+		return model.Datasource{}, fmt.Errorf("datasource index[%d] not exists", index)
+	}
+	return s.datasources[index], nil
 }
