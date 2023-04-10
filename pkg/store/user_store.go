@@ -3,10 +3,8 @@ package store
 import (
 	"fmt"
 	"log"
-
 	"github.com/kuoss/venti/pkg/model"
-
-	"gorm.io/driver/sqlite"
+	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"
 )
 

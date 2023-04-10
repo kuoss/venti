@@ -18,3 +18,17 @@ const (
 	DatasourceTypePrometheus DatasourceType = "prometheus"
 	DatasourceTypeLethe      DatasourceType = "lethe"
 )
+
+type DatasourceSelector struct {
+	System DatasourceSystem `json:"system" yaml:"system"`
+	Type   DatasourceType   `json:"type" yaml:"type"`
+}
+
+type DatasourceSystem string
+
+const (
+	DatasourceSystemNone DatasourceSystem = ""
+	DatasourceSystemMain DatasourceSystem = "main"
+	DatasourceSystemSub  DatasourceSystem = "sub"
+	DatasourceSystemAll  DatasourceSystem = "all"
+)

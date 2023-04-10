@@ -12,7 +12,7 @@ install-dev:
 # dev server (port 5173)
 run-dev: run-dev-go run-dev-web
 run-dev-go:
-	API_ONLY=1 VENTI_VERSION=${VENTI_VERSION} air
+	air
 run-dev-web:
 	cd web && npm run dev --clearScreen=false
 

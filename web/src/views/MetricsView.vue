@@ -196,7 +196,7 @@ export default {
       this.lastExecuted = { expr: this.expr, range: lastRange };
       this.loading = true;
       try {
-        const response = await fetch('/api/prometheus/query_range?' + new URLSearchParams({
+        const response = await fetch('/api/remote/query_range?dstype=prometheus&' + new URLSearchParams({
             query: this.expr,
             start: timeRange[0],
             end: timeRange[1],
@@ -303,7 +303,7 @@ export default {
     },
     async fetchMetadata() {
       try {
-        const response = await fetch("/api/prometheus/metadata");
+        const response = await fetch("/api/remote/metadata?dstype=prometheus");
         const data = await response.json();
         this.metadata = data.data;
         this.metaDict = Object.keys(this.metadata).reduce((a, k) => {

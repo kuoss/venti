@@ -2,15 +2,17 @@ package store
 
 import (
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"path/filepath"
 
-	"github.com/prometheus/prometheus/model/rulefmt"
+	"github.com/kuoss/venti/pkg/model"
+	"gopkg.in/yaml.v2"
 )
 
 type AlertRuleStore struct {
-	ruleGroupsList []rulefmt.RuleGroups
+	ruleGroupsList []model.RuleGroups
 }
 
 func NewAlertRuleStore(pattern string) (*AlertRuleStore, error) {
@@ -19,23 +21,35 @@ func NewAlertRuleStore(pattern string) (*AlertRuleStore, error) {
 	if err != nil {
 		return nil, err
 	}
-	var ruleGroupsList []rulefmt.RuleGroups
+	var ruleGroupsList []model.RuleGroups
 	for _, filename := range files {
-		log.Printf("alertRule file: %s\n", filename)
-		f, err := os.Open(filename)
+		ruleGroups, err := loadAlertRuleGroupsFromFile(filename)
 		if err != nil {
-			return nil, fmt.Errorf("error on Open: %w", err)
-		}
-		var ruleGroups *rulefmt.RuleGroups
-		err = loadYaml(f, &ruleGroups)
-		if err != nil {
-			return nil, fmt.Errorf("error on loadYaml: %w", err)
+			log.Printf("Warning: error on loadAlertRuleGroupsFromFile(skipped): %s", err)
+			continue
 		}
 		ruleGroupsList = append(ruleGroupsList, *ruleGroups)
 	}
 	return &AlertRuleStore{ruleGroupsList: ruleGroupsList}, nil
 }
 
-func (ars *AlertRuleStore) RuleGroupsList() []rulefmt.RuleGroups {
-	return ars.ruleGroupsList
+func loadAlertRuleGroupsFromFile(filename string) (*model.RuleGroups, error) {
+	log.Printf("load alertrules file: %s\n", filename)
+	f, err := os.Open(filename)
+	if err != nil {
+		return nil, fmt.Errorf("error on Open: %w", err)
+	}
+	var ruleGroups *model.RuleGroups
+	yamlBytes, err := io.ReadAll(f)
+	if err != nil {
+		return nil, fmt.Errorf("error on ReadAll: %w", err)
+	}
+	if err := yaml.UnmarshalStrict(yamlBytes, &ruleGroups); err != nil {
+		return nil, fmt.Errorf("error on UnmarshalStrict: %w", err)
+	}
+	return ruleGroups, nil
+}
+
+func (s *AlertRuleStore) RuleGroupsList() []model.RuleGroups {
+	return s.ruleGroupsList
 }
