@@ -3,6 +3,8 @@ package store
 import (
 	"fmt"
 	"github.com/kuoss/venti/pkg/model"
+	"github.com/kuoss/venti/pkg/store/discovery"
+	"github.com/kuoss/venti/pkg/store/discovery/kubernetes"
 	"gopkg.in/yaml.v3"
 	"io"
 	"net/http"
@@ -26,7 +28,14 @@ func LoadStores(cfg *model.Config) (*Stores, error) {
 	if err != nil {
 		return nil, fmt.Errorf("load alertrule configuration failed: %w", err)
 	}
-	datasourceStore, err := NewDatasourceStore(cfg.DatasourcesConfig)
+	var discoverer discovery.Discoverer
+	if cfg.DatasourcesConfig.Discovery.Enabled {
+		discoverer, err = kubernetes.NewK8sStore()
+		if err != nil {
+			return nil, fmt.Errorf("load discoverer k8sStore failed: %w", err)
+		}
+	}
+	datasourceStore, err := NewDatasourceStore(cfg.DatasourcesConfig, discoverer)
 	if err != nil {
 		return nil, fmt.Errorf("load datasource configuration failed: %w", err)
 	}
