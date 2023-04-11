@@ -5,16 +5,14 @@ import (
 )
 
 type RuleFile struct {
+	Kind               string             `json:"kind,omitempty" yaml:"kind,omitempty"`
+	CommonLabels       map[string]string  `json:"commonLabels,omitempty" yaml:"commonLabels,omitempty"`
 	DatasourceSelector DatasourceSelector `json:"datasourceSelector" yaml:"datasourceSelector"`
-	RuleGroups         RuleGroups         `json:"groups" yaml:"groups"`
+	Groups             []RuleGroup        `json:"groups" yaml:"groups"`
 }
 
 // Prometheus rulefmt doesn't have json annotations.
 // https://github.com/prometheus/prometheus/blob/main/model/rulefmt/rulefmt.go
-
-type RuleGroups struct {
-	Groups []RuleGroup `json:"groups" yaml:"groups"`
-}
 
 // RuleGroup is a list of sequentially evaluated recording and alerting rules.
 type RuleGroup struct {
@@ -31,6 +29,6 @@ type Rule struct {
 	Expr          string               `json:"expr" yaml:"expr"`
 	For           commonModel.Duration `json:"for,omitempty" yaml:"for,omitempty"`
 	KeepFiringFor commonModel.Duration `json:"keep_firing_for,omitempty" yaml:"keep_firing_for,omitempty"`
-	Labels        map[string]string    `json:"abels,omitempty" yaml:"labels,omitempty"`
+	Labels        map[string]string    `json:"labels,omitempty" yaml:"labels,omitempty"`
 	Annotations   map[string]string    `json:"annotations,omitempty" yaml:"annotations,omitempty"`
 }

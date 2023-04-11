@@ -2,10 +2,10 @@ package store
 
 import (
 	"fmt"
-	"log"
-	"github.com/kuoss/venti/pkg/model"
 	"github.com/glebarez/sqlite"
+	"github.com/kuoss/venti/pkg/model"
 	"gorm.io/gorm"
+	"log"
 )
 
 // todo remove

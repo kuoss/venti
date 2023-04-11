@@ -6,13 +6,13 @@ import (
 )
 
 type alertHandler struct {
-	*store.AlertRuleStore
+	alertRuleStore *store.AlertRuleStore
 }
 
-func NewAlertHandler(r *store.AlertRuleStore) *alertHandler {
-	return &alertHandler{r}
+func NewAlertHandler(s *store.AlertRuleStore) *alertHandler {
+	return &alertHandler{s}
 }
 
-func (ah *alertHandler) AlertRuleGroupsList(c *gin.Context) {
-	c.JSON(200, ah.AlertRuleStore.RuleGroupsList())
+func (h *alertHandler) AlertRuleFiles(c *gin.Context) {
+	c.JSON(200, h.alertRuleStore.AlertRuleFiles())
 }

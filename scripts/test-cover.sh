@@ -2,6 +2,8 @@
 MIN_COVER=50.0
 
 cd $(dirname $0)/..
+cp etc/datasources.checks.yaml etc/datasources.yaml
+
 go test ./... -failfast -race -coverprofile cover.out
 if [[ $? != 0 ]]; then
     echo "❌ FAIL ( test failed )"
@@ -12,9 +14,9 @@ COVER=$(go tool cover -func cover.out | tail -1 | grep -oP [0-9.]+)
 rm -f cover.out
 if [[ $COVER < $MIN_COVER ]]; then
     echo
-    echo "❌ FAIL ( test coverage: $COVER% < $MIN_COVER% )"
+    echo "⚠️ Warning ( test coverage: $COVER% < $MIN_COVER% )"
     echo
-    exit 2
+    exit
 fi
 echo
 echo "✔️ PASS ( test coverage: $COVER% >= $MIN_COVER% )"

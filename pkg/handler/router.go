@@ -21,7 +21,7 @@ func SetupRouter(cfg *model.Config, stores *store.Stores) *gin.Engine {
 	api := router.Group("/api")
 	// TODO: api.Use(tokenRequired)
 	{
-		api.GET("/alerts", handlers.alertHandler.AlertRuleGroupsList)
+		api.GET("/alerts", handlers.alertHandler.AlertRuleFiles)
 		api.GET("/config/version", handlers.configHandler.Version)
 		api.GET("/dashboards", handlers.dashboardHandler.Dashboards)
 		api.GET("/datasources", handlers.datasourceHandler.Datasources)

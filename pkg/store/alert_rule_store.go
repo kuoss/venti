@@ -12,7 +12,7 @@ import (
 )
 
 type AlertRuleStore struct {
-	ruleGroupsList []model.RuleGroups
+	alertRuleFiles []model.RuleFile
 }
 
 func NewAlertRuleStore(pattern string) (*AlertRuleStore, error) {
@@ -21,35 +21,35 @@ func NewAlertRuleStore(pattern string) (*AlertRuleStore, error) {
 	if err != nil {
 		return nil, err
 	}
-	var ruleGroupsList []model.RuleGroups
+	var alertRuleFiles []model.RuleFile
 	for _, filename := range files {
-		ruleGroups, err := loadAlertRuleGroupsFromFile(filename)
+		alertRuleFile, err := loadAlertRuleFileFromFilename(filename)
 		if err != nil {
 			log.Printf("Warning: error on loadAlertRuleGroupsFromFile(skipped): %s", err)
 			continue
 		}
-		ruleGroupsList = append(ruleGroupsList, *ruleGroups)
+		alertRuleFiles = append(alertRuleFiles, *alertRuleFile)
 	}
-	return &AlertRuleStore{ruleGroupsList: ruleGroupsList}, nil
+	return &AlertRuleStore{alertRuleFiles: alertRuleFiles}, nil
 }
 
-func loadAlertRuleGroupsFromFile(filename string) (*model.RuleGroups, error) {
-	log.Printf("load alertrules file: %s\n", filename)
+func loadAlertRuleFileFromFilename(filename string) (*model.RuleFile, error) {
+	log.Printf("load alertrule file: %s\n", filename)
 	f, err := os.Open(filename)
 	if err != nil {
 		return nil, fmt.Errorf("error on Open: %w", err)
 	}
-	var ruleGroups *model.RuleGroups
+	var alertRuleFile *model.RuleFile
 	yamlBytes, err := io.ReadAll(f)
 	if err != nil {
 		return nil, fmt.Errorf("error on ReadAll: %w", err)
 	}
-	if err := yaml.UnmarshalStrict(yamlBytes, &ruleGroups); err != nil {
+	if err := yaml.UnmarshalStrict(yamlBytes, &alertRuleFile); err != nil {
 		return nil, fmt.Errorf("error on UnmarshalStrict: %w", err)
 	}
-	return ruleGroups, nil
+	return alertRuleFile, nil
 }
 
-func (s *AlertRuleStore) RuleGroupsList() []model.RuleGroups {
-	return s.ruleGroupsList
+func (s *AlertRuleStore) AlertRuleFiles() []model.RuleFile {
+	return s.alertRuleFiles
 }

@@ -9,6 +9,9 @@ install-dev:
 	cd web && npm install
 	go install github.com/cosmtrek/air@latest
 
+mock-prometheus:
+	docker rm -f prometheus; docker run -d -p9090:9090 --name prometheus prom/prometheus
+
 # dev server (port 5173)
 run-dev: run-dev-go run-dev-web
 run-dev-go:
