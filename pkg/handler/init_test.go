@@ -5,6 +5,7 @@ import (
 	"github.com/kuoss/venti/pkg/mock"
 	"github.com/kuoss/venti/pkg/model"
 	"github.com/kuoss/venti/pkg/store"
+	"github.com/kuoss/venti/pkg/store/discovery"
 	"net/http"
 	"os"
 	"time"
@@ -36,7 +37,8 @@ func init() {
 		UserConfig:        model.UsersConfig{},
 		DatasourcesConfig: datasourcesConfig,
 	}
-	datatsourceStore, _ := store.NewDatasourceStore(datasourcesConfig)
+	var discoverer discovery.Discoverer
+	datatsourceStore, _ := store.NewDatasourceStore(datasourcesConfig, discoverer)
 	remoteStore := store.NewRemoteStore(&http.Client{}, datasourcesConfig.QueryTimeout)
 	stores = &store.Stores{
 		AlertRuleStore:  &store.AlertRuleStore{},
