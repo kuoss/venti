@@ -63,3 +63,5 @@ golangci-lint:
 test-cover:
 	./scripts/test-cover.sh
 
+go-licenses:
+	./scripts/go-licenses.sh
