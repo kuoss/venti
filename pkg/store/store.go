@@ -2,13 +2,11 @@ package store
 
 import (
 	"fmt"
-	"io"
 	"net/http"
 
-  "github.com/kuoss/venti/pkg/model"
+	"github.com/kuoss/venti/pkg/model"
 	"github.com/kuoss/venti/pkg/store/discovery"
 	"github.com/kuoss/venti/pkg/store/discovery/kubernetes"
-	"gopkg.in/yaml.v3"
 )
 
 type Stores struct {
