@@ -1,13 +1,14 @@
 package kubernetes
 
 import (
+	"testing"
+
 	"github.com/kuoss/venti/pkg/model"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/fake"
-	"testing"
 )
 
 func makeService(name string, namespace string, multiport bool, annotation map[string]string) runtime.Object {

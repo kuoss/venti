@@ -1,9 +1,10 @@
 package handler
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	"github.com/kuoss/venti/pkg/model"
-	"net/http"
 )
 
 type configHandler struct {

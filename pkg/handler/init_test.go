@@ -1,14 +1,15 @@
 package handler
 
 import (
+	"net/http"
+	"os"
+	"time"
+
 	"github.com/gin-gonic/gin"
 	"github.com/kuoss/venti/pkg/mock"
 	"github.com/kuoss/venti/pkg/model"
 	"github.com/kuoss/venti/pkg/store"
 	"github.com/kuoss/venti/pkg/store/discovery"
-	"net/http"
-	"os"
-	"time"
 )
 
 var (

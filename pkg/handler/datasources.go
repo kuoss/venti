@@ -2,9 +2,10 @@ package handler
 
 import (
 	"fmt"
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	"github.com/kuoss/venti/pkg/store"
-	"net/http"
 )
 
 type datasourceHandler struct {

@@ -1,9 +1,10 @@
 package store
 
 import (
-	"github.com/kuoss/venti/pkg/store/discovery"
 	"testing"
 	"time"
+
+	"github.com/kuoss/venti/pkg/store/discovery"
 
 	"github.com/kuoss/venti/pkg/model"
 	"github.com/stretchr/testify/assert"

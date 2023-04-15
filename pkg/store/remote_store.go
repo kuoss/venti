@@ -3,11 +3,12 @@ package store
 import (
 	"context"
 	"fmt"
-	"github.com/kuoss/venti/pkg/model"
 	"io"
 	"net/http"
 	"net/url"
 	"time"
+
+	"github.com/kuoss/venti/pkg/model"
 )
 
 type RemoteStore struct {

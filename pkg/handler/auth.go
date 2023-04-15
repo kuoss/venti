@@ -3,12 +3,13 @@ package handler
 import (
 	"crypto/rand"
 	"fmt"
-	"github.com/kuoss/venti/pkg/model"
-	"github.com/kuoss/venti/pkg/store"
 	"log"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/kuoss/venti/pkg/model"
+	"github.com/kuoss/venti/pkg/store"
 
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
