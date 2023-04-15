@@ -3,12 +3,13 @@ package kubernetes
 import (
 	"context"
 	"fmt"
+	"log"
+
 	"github.com/kuoss/venti/pkg/model"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
-	"log"
 )
 
 type k8sStore struct {

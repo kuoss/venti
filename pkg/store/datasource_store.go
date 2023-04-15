@@ -3,8 +3,9 @@ package store
 import (
 	"errors"
 	"fmt"
-	"github.com/kuoss/venti/pkg/store/discovery"
 	"log"
+
+	"github.com/kuoss/venti/pkg/store/discovery"
 
 	"github.com/kuoss/venti/pkg/model"
 )

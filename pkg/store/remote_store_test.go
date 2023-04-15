@@ -3,13 +3,14 @@ package store
 import (
 	"context"
 	"fmt"
-	"github.com/kuoss/venti/pkg/mock"
-	"github.com/kuoss/venti/pkg/model"
-	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
+
+	"github.com/kuoss/venti/pkg/mock"
+	"github.com/kuoss/venti/pkg/model"
+	"github.com/stretchr/testify/assert"
 )
 
 var (

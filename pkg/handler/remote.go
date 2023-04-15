@@ -3,11 +3,12 @@ package handler
 import (
 	"errors"
 	"fmt"
+	"net/url"
+	"strconv"
+
 	"github.com/gin-gonic/gin"
 	"github.com/kuoss/venti/pkg/model"
 	"github.com/kuoss/venti/pkg/store"
-	"net/url"
-	"strconv"
 )
 
 type remoteHandler struct {

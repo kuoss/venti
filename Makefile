@@ -1,8 +1,5 @@
-VENTI_VERSION=v0.1.13
-IMAGE_REPO=ghcr.io/kuoss
-
-LDFLAGS += -X "main.ventiVersion=$(VENTI_VERSION)"
-MAKEFLAGS += -j2
+VERSION := v0.1.13
+IMAGE := ghcr.io/kuoss/venti:$(VERSION)
 
 install-dev:
 	go mod tidy
@@ -11,6 +8,7 @@ install-dev:
 
 mock-prometheus:
 	docker rm -f prometheus; docker run -d -p9090:9090 --name prometheus prom/prometheus
+
 
 # dev server (port 5173)
 run-dev: run-dev-go run-dev-web
@@ -31,34 +29,17 @@ run-air:
 	cd web && npm run build
 	air
 
-# on codespace
-stage:
-	skaffold dev --namespace=kube-system --default-repo=ghcr.io/kuoss
 
-#go-build:
-#	go mod download -x && go build -ldflags '$(LDFLAGS)' -o /app/venti
-
-docker-build:
-	docker build -t ${IMAGE_REPO}/venti:${VENTI_VERSION} --build-arg VENTI_VERSION=${VENTI_VERSION} . && docker push ${IMAGE_REPO}/venti:${VENTI_VERSION} 
+docker:
+	docker build -t $(IMAGE) --build-arg VERSION=$(VERSION) . && docker push $(IMAGE)
 
 pre-checks:
 	go install honnef.co/go/tools/cmd/staticcheck@latest
 	go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+	go install golang.org/x/tools/cmd/goimports@latest
 
 checks:
 	./hack/checks.sh
-
-fmt:
-	go fmt ./...
-
-vet:
-	go vet ./...
-
-staticcheck:
-	staticcheck ./...
-
-golangci-lint:
-	golangci-lint run --timeout 5m
 
 test-cover:
 	./hack/test-cover.sh
