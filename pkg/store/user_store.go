@@ -2,12 +2,10 @@ package store
 
 import (
 	"fmt"
-	"log"
-
+	"github.com/glebarez/sqlite"
 	"github.com/kuoss/venti/pkg/model"
-
-	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+	"log"
 )
 
 // todo remove

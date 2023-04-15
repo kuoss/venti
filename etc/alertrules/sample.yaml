@@ -1,8 +1,10 @@
+kind: AlertRuleFile
+commonLabels:
+  severity: silence
+datasourceSelector:
+  type: prometheus
 groups:
 - name: sample
-  datasource: prometheus
-  commonLabels:
-    severity: silence
   rules:
   - alert: S00-AlwaysOn
     expr: vector(1234)

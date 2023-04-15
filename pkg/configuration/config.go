@@ -5,6 +5,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"time"
 
 	"github.com/kuoss/venti/pkg/model"
 	"gopkg.in/yaml.v3"
@@ -38,6 +39,11 @@ func Load(version string) (*model.Config, error) {
 	err = loadConfig(dsConfigFile, &dataSourceConfig)
 	if err != nil {
 		return nil, fmt.Errorf("error on loading Datasources Config: %w", err)
+	}
+
+	// QueryTimeout default 30 seconds
+	if dataSourceConfig.QueryTimeout == 0 {
+		dataSourceConfig.QueryTimeout = 30 * time.Second
 	}
 
 	return &model.Config{

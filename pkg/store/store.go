@@ -2,12 +2,11 @@ package store
 
 import (
 	"fmt"
+	"net/http"
+
 	"github.com/kuoss/venti/pkg/model"
 	"github.com/kuoss/venti/pkg/store/discovery"
 	"github.com/kuoss/venti/pkg/store/discovery/kubernetes"
-	"gopkg.in/yaml.v3"
-	"io"
-	"net/http"
 )
 
 type Stores struct {
@@ -53,15 +52,4 @@ func LoadStores(cfg *model.Config) (*Stores, error) {
 		userStore,
 		remoteStore,
 	}, nil
-}
-
-func loadYaml(r io.Reader, y interface{}) error {
-	b, err := io.ReadAll(r)
-	if err != nil {
-		return fmt.Errorf("cannot ReadFile: %w", err)
-	}
-	if err := yaml.Unmarshal(b, y); err != nil {
-		return fmt.Errorf("cannot Unmarshal: %w", err)
-	}
-	return nil
 }

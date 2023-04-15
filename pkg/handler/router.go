@@ -11,40 +11,24 @@ func SetupRouter(cfg *model.Config, stores *store.Stores) *gin.Engine {
 
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()
-	// token not required
+
 	authGroup := router.Group("/auth")
 	{
 		authGroup.POST("/login", handlers.authHandler.Login)
 		authGroup.POST("/logout", handlers.authHandler.Logout)
 	}
 
-	// routerGroup routes
 	api := router.Group("/api")
+	// TODO: api.Use(tokenRequired)
 	{
-		// TODO: api.Use(tokenRequired)
-		alertGroup := api.Group("/alerts")
-		{
-			alertGroup.GET("/", handlers.alertHandler.AlertRuleGroupsList)
-		}
-		configGroup := api.Group("/config")
-		{
-			configGroup.GET("/version", handlers.configHandler.Version)
-		}
-		dashboardGroup := api.Group("/dashboards")
-		{
-			dashboardGroup.GET("/", handlers.dashboardHandler.Dashboards)
-		}
-		datasourceGroup := api.Group("/datasource")
-		{
-			datasourceGroup.GET("/", handlers.datasourceHandler.Datasources)
-			datasourceGroup.GET("/targets", handlers.datasourceHandler.Targets)
-		}
-		remoteGroup := api.Group("/remote")
-		{
-			remoteGroup.GET("/metadata", handlers.remoteHandler.Metadata)
-			remoteGroup.GET("/query", handlers.remoteHandler.Query)
-			remoteGroup.GET("/query_range", handlers.remoteHandler.QueryRange)
-		}
+		api.GET("/alerts", handlers.alertHandler.AlertRuleFiles)
+		api.GET("/config/version", handlers.configHandler.Version)
+		api.GET("/dashboards", handlers.dashboardHandler.Dashboards)
+		api.GET("/datasources", handlers.datasourceHandler.Datasources)
+		api.GET("/datasources/targets", handlers.datasourceHandler.Targets)
+		api.GET("/remote/metadata", handlers.remoteHandler.Metadata)
+		api.GET("/remote/query", handlers.remoteHandler.Query)
+		api.GET("/remote/query_range", handlers.remoteHandler.QueryRange)
 	}
 	router.Use(handleSPA())
 	return router

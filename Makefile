@@ -9,10 +9,13 @@ install-dev:
 	cd web && npm install
 	go install github.com/cosmtrek/air@latest
 
+mock-prometheus:
+	docker rm -f prometheus; docker run -d -p9090:9090 --name prometheus prom/prometheus
+
 # dev server (port 5173)
 run-dev: run-dev-go run-dev-web
 run-dev-go:
-	API_ONLY=1 VENTI_VERSION=${VENTI_VERSION} air
+	air
 run-dev-web:
 	cd web && npm run dev --clearScreen=false
 
@@ -43,7 +46,7 @@ pre-checks:
 	go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 
 checks:
-	./scripts/checks.sh
+	./hack/checks.sh
 
 fmt:
 	go fmt ./...
@@ -58,5 +61,7 @@ golangci-lint:
 	golangci-lint run --timeout 5m
 
 test-cover:
-	./scripts/test-cover.sh
+	./hack/test-cover.sh
 
+go-licenses:
+	./hack/go-licenses.sh

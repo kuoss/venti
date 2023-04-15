@@ -7,37 +7,15 @@ import (
 	"github.com/kuoss/venti/pkg/store"
 )
 
-// todo moved from config handler *should* modify web router path
-// 1. /config/dashboards -> GET /dashboards
-// 2. /config/dashboards/yaml -> should we return yaml bytes?
-
 type dashboardHandler struct {
-	*store.DashboardStore
+	dashboardStore *store.DashboardStore
 }
 
-func NewDashboardHandler(ds *store.DashboardStore) *dashboardHandler {
-	return &dashboardHandler{ds}
+func NewDashboardHandler(s *store.DashboardStore) *dashboardHandler {
+	return &dashboardHandler{s}
 }
 
 // GET /dashboards
-func (dh *dashboardHandler) Dashboards(c *gin.Context) {
-	c.JSON(http.StatusOK, dh.DashboardStore.Dashboards())
+func (h *dashboardHandler) Dashboards(c *gin.Context) {
+	c.JSON(http.StatusOK, h.dashboardStore.Dashboards())
 }
-
-/*
-	api.GET("/config/dashboards", func(c *gin.Context) {
-		c.JSON(200, configuration.GetConfig().Dashboards)
-	})
-
-	api.GET("/config/dashboards/yaml", func(c *gin.Context) {
-		bytes, err := yaml.Marshal(configuration.GetConfig().Dashboards)
-		if err != nil {
-			c.JSON(500, "cannot marshal")
-		}
-		c.JSON(200, gin.H{
-			"yaml": string(bytes),
-		})
-	})
-}
-
-*/

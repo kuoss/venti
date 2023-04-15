@@ -2,15 +2,17 @@ package store
 
 import (
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"path/filepath"
 
-	"github.com/prometheus/prometheus/model/rulefmt"
+	"github.com/kuoss/venti/pkg/model"
+	"gopkg.in/yaml.v2"
 )
 
 type AlertRuleStore struct {
-	ruleGroupsList []rulefmt.RuleGroups
+	alertRuleFiles []model.RuleFile
 }
 
 func NewAlertRuleStore(pattern string) (*AlertRuleStore, error) {
@@ -19,23 +21,35 @@ func NewAlertRuleStore(pattern string) (*AlertRuleStore, error) {
 	if err != nil {
 		return nil, err
 	}
-	var ruleGroupsList []rulefmt.RuleGroups
+	var alertRuleFiles []model.RuleFile
 	for _, filename := range files {
-		log.Printf("alertRule file: %s\n", filename)
-		f, err := os.Open(filename)
+		alertRuleFile, err := loadAlertRuleFileFromFilename(filename)
 		if err != nil {
-			return nil, fmt.Errorf("error on Open: %w", err)
+			log.Printf("Warning: error on loadAlertRuleGroupsFromFile(skipped): %s", err)
+			continue
 		}
-		var ruleGroups *rulefmt.RuleGroups
-		err = loadYaml(f, &ruleGroups)
-		if err != nil {
-			return nil, fmt.Errorf("error on loadYaml: %w", err)
-		}
-		ruleGroupsList = append(ruleGroupsList, *ruleGroups)
+		alertRuleFiles = append(alertRuleFiles, *alertRuleFile)
 	}
-	return &AlertRuleStore{ruleGroupsList: ruleGroupsList}, nil
+	return &AlertRuleStore{alertRuleFiles: alertRuleFiles}, nil
 }
 
-func (ars *AlertRuleStore) RuleGroupsList() []rulefmt.RuleGroups {
-	return ars.ruleGroupsList
+func loadAlertRuleFileFromFilename(filename string) (*model.RuleFile, error) {
+	log.Printf("load alertrule file: %s\n", filename)
+	f, err := os.Open(filename)
+	if err != nil {
+		return nil, fmt.Errorf("error on Open: %w", err)
+	}
+	var alertRuleFile *model.RuleFile
+	yamlBytes, err := io.ReadAll(f)
+	if err != nil {
+		return nil, fmt.Errorf("error on ReadAll: %w", err)
+	}
+	if err := yaml.UnmarshalStrict(yamlBytes, &alertRuleFile); err != nil {
+		return nil, fmt.Errorf("error on UnmarshalStrict: %w", err)
+	}
+	return alertRuleFile, nil
+}
+
+func (s *AlertRuleStore) AlertRuleFiles() []model.RuleFile {
+	return s.alertRuleFiles
 }
