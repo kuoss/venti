@@ -14,8 +14,6 @@ RUN cd web && npm install --force
 RUN cd web && npm run build
 RUN mkdir -p             /app/web/
 RUN cp -a /temp/web/dist /app/web/
-RUN cp -a ./tools        /app/
-RUN mkdir -p             /app/data
 
 FROM alpine:3.17
 COPY --from=base2 /app /app
