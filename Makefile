@@ -46,7 +46,7 @@ pre-checks:
 	go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 
 checks:
-	./scripts/checks.sh
+	./hack/checks.sh
 
 fmt:
 	go fmt ./...
@@ -61,7 +61,7 @@ golangci-lint:
 	golangci-lint run --timeout 5m
 
 test-cover:
-	./scripts/test-cover.sh
+	./hack/test-cover.sh
 
 go-licenses:
-	./scripts/go-licenses.sh
+	./hack/go-licenses.sh
