@@ -4,7 +4,7 @@ WORKDIR /temp/
 RUN apk add --no-cache git npm make gcc musl-dev
 COPY . ./
 RUN go mod download -x
-RUN go build -X "main.Version=$VERSION" -o /app/venti
+RUN go build -ldflags="-X 'main.Version=$VERSION'" -o /app/venti
 
 FROM node:lts-alpine AS base2
 COPY --from=base1 /app/venti /app/
