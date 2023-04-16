@@ -47,7 +47,7 @@ func loadDatasourceConfigFromFilepath(filepath string) (*model.DatasourceConfig,
 		datasourceConfig.QueryTimeout = 30 * time.Second
 	}
 	if datasourceConfig.Discovery.AnnotationKey == "" {
-		datasourceConfig.Discovery.AnnotationKey = "kuoss.org/datasource"
+		datasourceConfig.Discovery.AnnotationKey = "kuoss.org/datasource-type"
 	}
 	return datasourceConfig, nil
 }

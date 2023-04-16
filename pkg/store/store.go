@@ -39,7 +39,7 @@ func LoadStores(cfg *model.Config) (*Stores, error) {
 		return nil, fmt.Errorf("load datasource configuration failed: %w", err)
 	}
 
-	userStore, err := NewUserStore("./data/venti.sqlite3", cfg.UserConfig)
+	userStore, err := NewUserStore("./data/venti.sqlite3", *cfg.UserConfig)
 	if err != nil {
 		return nil, fmt.Errorf("load user configuration failed: %w", err)
 	}

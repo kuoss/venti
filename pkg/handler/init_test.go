@@ -35,7 +35,7 @@ func init() {
 	}
 	cfg := &model.Config{
 		Version:          "Unknown",
-		UserConfig:       model.UserConfig{},
+		UserConfig:       &model.UserConfig{},
 		DatasourceConfig: datasourceConfig,
 	}
 	var discoverer discovery.Discoverer

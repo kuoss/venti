@@ -5,9 +5,8 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/kuoss/venti/pkg/store/discovery"
-
 	"github.com/kuoss/venti/pkg/model"
+	"github.com/kuoss/venti/pkg/store/discovery"
 )
 
 // DatasourceStore
@@ -94,10 +93,7 @@ func (s *DatasourceStore) setMainDatasources() {
 	}
 }
 
-func (s *DatasourceStore) GetDatasources() []model.Datasource {
-	return s.datasources
-}
-
+// return single datasource
 func (s *DatasourceStore) GetMainDatasourceByType(typ model.DatasourceType) (model.Datasource, error) {
 	for _, ds := range s.datasources {
 		if ds.Type == typ && ds.IsMain {
@@ -116,4 +112,42 @@ func (s *DatasourceStore) GetDatasourceByIndex(index int) (model.Datasource, err
 		return model.Datasource{}, fmt.Errorf("datasource index[%d] not exists", index)
 	}
 	return s.datasources[index], nil
+}
+
+// return multiple datasources
+func (s *DatasourceStore) GetDatasources() []model.Datasource {
+	return s.datasources
+}
+
+func (s *DatasourceStore) GetDatasourcesWithSelector(selector model.DatasourceSelector) []model.Datasource {
+	outputs := s.datasources
+	outputs = s.filterBySystem(outputs, selector.System)
+	outputs = s.filterByType(outputs, selector.Type)
+	return outputs
+}
+
+func (s *DatasourceStore) filterBySystem(inputs []model.Datasource, system model.DatasourceSystem) []model.Datasource {
+	if system == model.DatasourceSystemNone {
+		return inputs
+	}
+	outputs := []model.Datasource{}
+	for _, input := range inputs {
+		if input.IsMain == (system == model.DatasourceSystemMain) {
+			outputs = append(outputs, input)
+		}
+	}
+	return outputs
+}
+
+func (s *DatasourceStore) filterByType(inputs []model.Datasource, typ model.DatasourceType) []model.Datasource {
+	if typ == model.DatasourceTypeNone {
+		return inputs
+	}
+	outputs := []model.Datasource{}
+	for _, input := range inputs {
+		if input.Type == typ {
+			outputs = append(outputs, input)
+		}
+	}
+	return outputs
 }
