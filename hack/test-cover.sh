@@ -14,7 +14,7 @@ fi
 
 COVERAGE=$(go tool cover -func /tmp/cover.out | tail -1 | grep -oP [0-9.]+)
 rm -f /tmp/cover.out
-if [[ $COVER < $MIN_COVERAGE ]]; then
+if [[ $COVERAGE < $MIN_COVERAGE ]]; then
     echo "⚠️ WARN - total coverage: ${COVERAGE}% (<${MIN_COVERAGE}%)"
     exit
 fi
