@@ -1,5 +1,5 @@
 #!/bin/bash
-MIN_COVERAGE=50.0
+MIN_COVER=50.0
 
 cd $(dirname $0)/..
 export PS4='[$(basename $0):$LINENO] '
@@ -12,10 +12,10 @@ if [[ $? != 0 ]]; then
     exit 1
 fi
 
-COVERAGE=$(go tool cover -func /tmp/cover.out | tail -1 | grep -oP [0-9.]+)
+COVER=$(go tool cover -func /tmp/cover.out | tail -1 | grep -oP [0-9.]+)
 rm -f /tmp/cover.out
-if [[ $COVERAGE < $MIN_COVERAGE ]]; then
-    echo "⚠️ WARN - total coverage: ${COVERAGE}% (<${MIN_COVERAGE}%)"
+if [[ $COVER < $MIN_COVER ]]; then
+    echo "⚠️ WARN - total coverage: ${COVER}% (<${MIN_COVER}%)"
     exit
 fi
-echo "✔️ OK - total coverage: ${COVERAGE}% (>=${MIN_COVERAGE}%)"
+echo "✔️ OK - total coverage: ${COVER}% (>=${MIN_COVER}%)"
