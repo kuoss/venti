@@ -28,13 +28,13 @@ func LoadStores(cfg *model.Config) (*Stores, error) {
 		return nil, fmt.Errorf("load alertrule configuration failed: %w", err)
 	}
 	var discoverer discovery.Discoverer
-	if cfg.DatasourcesConfig.Discovery.Enabled {
+	if cfg.DatasourceConfig.Discovery.Enabled {
 		discoverer, err = kubernetes.NewK8sStore()
 		if err != nil {
 			return nil, fmt.Errorf("load discoverer k8sStore failed: %w", err)
 		}
 	}
-	datasourceStore, err := NewDatasourceStore(cfg.DatasourcesConfig, discoverer)
+	datasourceStore, err := NewDatasourceStore(cfg.DatasourceConfig, discoverer)
 	if err != nil {
 		return nil, fmt.Errorf("load datasource configuration failed: %w", err)
 	}
@@ -43,7 +43,7 @@ func LoadStores(cfg *model.Config) (*Stores, error) {
 	if err != nil {
 		return nil, fmt.Errorf("load user configuration failed: %w", err)
 	}
-	remoteStore := NewRemoteStore(&http.Client{}, cfg.DatasourcesConfig.QueryTimeout)
+	remoteStore := NewRemoteStore(&http.Client{}, cfg.DatasourceConfig.QueryTimeout)
 
 	return &Stores{
 		alertRuleStore,

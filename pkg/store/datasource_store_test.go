@@ -15,13 +15,13 @@ func TestNewDatasourceStore(t *testing.T) {
 		{Type: model.DatasourceTypePrometheus, Name: "Prometheus", URL: "http://prometheus:9090", BasicAuth: false, BasicAuthUser: "", BasicAuthPassword: "", IsMain: false, IsDiscovered: false},
 		{Type: model.DatasourceTypeLethe, Name: "Lethe", URL: "http://lethe:3100", BasicAuth: false, BasicAuthUser: "", BasicAuthPassword: "", IsMain: false, IsDiscovered: false},
 	}
-	datasourcesPointer := []*model.Datasource{
+	datasourcePointers := []*model.Datasource{
 		{Type: model.DatasourceTypePrometheus, Name: "Prometheus", URL: "http://prometheus:9090", BasicAuth: false, BasicAuthUser: "", BasicAuthPassword: "", IsMain: false, IsDiscovered: false},
 		{Type: model.DatasourceTypeLethe, Name: "Lethe", URL: "http://lethe:3100", BasicAuth: false, BasicAuthUser: "", BasicAuthPassword: "", IsMain: false, IsDiscovered: false},
 	}
-	datasourcesConfig := &model.DatasourcesConfig{
+	datasourceConfig := &model.DatasourceConfig{
 		QueryTimeout: time.Second * 10,
-		Datasources:  datasourcesPointer,
+		Datasources:  datasourcePointers,
 		Discovery: model.Discovery{
 			Enabled:          false,
 			ByNamePrometheus: true,
@@ -29,8 +29,8 @@ func TestNewDatasourceStore(t *testing.T) {
 		},
 	}
 	var defaultDiscoverer discovery.Discoverer
-	store, err := NewDatasourceStore(datasourcesConfig, defaultDiscoverer)
+	store, err := NewDatasourceStore(datasourceConfig, defaultDiscoverer)
 	assert.Nil(t, err)
-	assert.Equal(t, store.config, datasourcesConfig)
+	assert.Equal(t, store.config, datasourceConfig)
 	assert.ElementsMatch(t, store.datasources, datasources)
 }

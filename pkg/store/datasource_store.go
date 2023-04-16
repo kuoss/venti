@@ -12,13 +12,13 @@ import (
 
 // DatasourceStore
 type DatasourceStore struct {
-	config      *model.DatasourcesConfig
+	config      *model.DatasourceConfig
 	datasources []model.Datasource
 	discoverer  discovery.Discoverer
 }
 
 // NewDatasourceStore return *DatasourceStore after service discovery (with k8s service)
-func NewDatasourceStore(cfg *model.DatasourcesConfig, discoverer discovery.Discoverer) (*DatasourceStore, error) {
+func NewDatasourceStore(cfg *model.DatasourceConfig, discoverer discovery.Discoverer) (*DatasourceStore, error) {
 	store := &DatasourceStore{cfg, nil, discoverer}
 	err := store.load()
 	if err != nil {

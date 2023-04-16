@@ -1,90 +1,43 @@
-package alert
+package alerter
 
-type ValueType string
-
-// todo : is this type of prometheus api?
-// https://prometheus.io/docs/prometheus/latest/querying/api/#range-queries
-const (
-	ValueTypeNone   ValueType = "none"
-	ValueTypeVector ValueType = "vector"
-	ValueTypeScalar ValueType = "scalar"
-	ValueTypeMatrix ValueType = "matrix"
-	ValueTypeString ValueType = "string"
+import (
+	"github.com/gin-gonic/gin"
+	"github.com/kuoss/venti/pkg/model"
+	"github.com/kuoss/venti/pkg/store"
 )
 
-/*
-type AlertRuleGroupList struct {
-	Groups []AlertRuleGroup `json:"groups"`
+type alerter struct {
+	alertRuleStore *store.AlertRuleStore
+	datasourceStore *store.DatasourceStore
 }
 
-type AlertRuleGroup struct {
-	Name           string             `json:"name"`
-	Rules          []AlertRule        `json:"rules"`
-	DatasourceType pkg.DatasourceType `json:"datasource" yaml:"datasource"`
-	CommonLabels   map[string]string  `json:"commonLabels,omitempty" yaml:"commonLabels,omitempty"`
+func NewAlerter(stores *store.Stores) *alerter {
+	return &alerter{stores.AlertRuleStore}
 }
 
-type AlertRule struct {
-	Alert       string            `json:"alert,omitempty"`
-	Expr        string            `json:"expr"`
-	For         time.Duration     `json:"for,omitempty"`
-	Labels      map[string]string `json:"labels,omitempty"`
-	Annotations map[string]string `json:"annotations,omitempty"`
-	State       AlertState        `json:"state,omitempty"`
-	ActiveAt    time.Time         `json:"activeStartTime,omitempty"`
+func (a *alerter) Start() {
+	log.Println("starting alerter...")
+	go a.loop()
 }
 
-type AlertState string
-
-const (
-	AlertStateInactive AlertState = "inactive"
-	AlertStatePending  AlertState = "pending"
-	AlertStateFiring   AlertState = "firing"
-)
-
-type Sample struct {
-	Vaue   []interface{}     `json:"value"`
-	Metric map[string]string `json:"metric"`
-}
-
-type Vector []Sample
-
-// {"data":{"result":[],"resultType":"logs"},"status":"success"}
-// {"status":"success","data":{"resultType":"vector","result":[]}}
-type QueryResult struct {
-	Data   QueryData `json:"data"`
-	Status string    `json:"status"`
-}
-type QueryData struct {
-	ResultType ValueType `json:"resultType"`
-	Result     Vector    `json:"result"`
-}
-
-type Alert struct {
-	Status       string            `json:"status"`
-	Labels       map[string]string `json:"labels,omitempty"`
-	Annotations  map[string]string `json:"annotations,omitempty"`
-	GeneratorURL string            `json:"generatorURL,omitempty"`
-}
-
-func StartAlertDaemon() {
-	log.Println("starting alert daemon...")
-	go alertTaskLoop()
-}
-
-func alertTaskLoop() {
+func (a *alerter) loop() {
 	for {
-		log.Println("alert task at", time.Now())
-		alertTask()
-		time.Sleep(time.Duration(30) * time.Second)
+		a.task()
+		time.Sleep(30 * time.Second)
 	}
 }
 
-func alertTask() {
-	alertRuleGroups := configuration.GetAlertRuleGroups()
-	firingAlerts := []Alert{}
+func (a *alert) task() {
+	log.Println("alerter task at", time.Now())
+	for _, alertRuleFile := range a.alertRuleStore.AlertRuleFiles() {
+		for _, datasource := range a.datasourceStore.GetDatasourcesWithDatasourceSelector(alertRuleFile.DatasourceSelector) {
+			fireAlerts(evaluateAlertGroupsForDatasource(alalertRuleFile.Groups, datasource))
+		}
+	}
+}
+
+func (a *alerter) evaluateAlertRuleFiles() []Alert {
 	for i, group := range alertRuleGroups {
-		datasourceType := group.DatasourceType
 		for j, rule := range group.Rules {
 			time.Sleep(time.Duration(500) * time.Millisecond)
 			now := time.Now()
@@ -126,7 +79,12 @@ func alertTask() {
 			firingAlerts = append(firingAlerts, renderAlerts(rule, queryResult)...)
 		}
 	}
+	// evaluate
 	fireAlerts(firingAlerts)
+}
+
+func evaluateRule(datasources []model.Datasource, rule model.Rule) {
+
 }
 
 func renderTemplate(tmplString string, labels map[string]string, value string) string {

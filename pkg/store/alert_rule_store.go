@@ -2,7 +2,6 @@ package store
 
 import (
 	"fmt"
-	"io"
 	"log"
 	"os"
 	"path/filepath"
@@ -35,15 +34,11 @@ func NewAlertRuleStore(pattern string) (*AlertRuleStore, error) {
 
 func loadAlertRuleFileFromFilename(filename string) (*model.RuleFile, error) {
 	log.Printf("load alertrule file: %s\n", filename)
-	f, err := os.Open(filename)
+	yamlBytes, err := os.ReadFile(filename)
 	if err != nil {
-		return nil, fmt.Errorf("error on Open: %w", err)
+		return nil, fmt.Errorf("error on ReadFile: %w", err)
 	}
 	var alertRuleFile *model.RuleFile
-	yamlBytes, err := io.ReadAll(f)
-	if err != nil {
-		return nil, fmt.Errorf("error on ReadAll: %w", err)
-	}
 	if err := yaml.UnmarshalStrict(yamlBytes, &alertRuleFile); err != nil {
 		return nil, fmt.Errorf("error on UnmarshalStrict: %w", err)
 	}
