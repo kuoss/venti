@@ -7,6 +7,7 @@ require (
 	github.com/gin-gonic/gin v1.7.7
 	github.com/glebarez/sqlite v1.7.0
 	github.com/prometheus/common v0.42.0
+	github.com/sirupsen/logrus v1.9.0
 	github.com/stretchr/testify v1.8.2
 	golang.org/x/crypto v0.7.0
 	gopkg.in/yaml.v2 v2.4.0
