@@ -1,5 +1,6 @@
 kind: AlertRuleFile
 commonLabels:
+  rulefile: sample-v3
   severity: silence
 datasourceSelector:
   type: prometheus

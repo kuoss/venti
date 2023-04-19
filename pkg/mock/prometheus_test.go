@@ -16,7 +16,7 @@ var (
 )
 
 func init() {
-	mockPrometheus = PrometheusServer()
+	mockPrometheus = Prometheus()
 }
 
 func TestMetadata(t *testing.T) {

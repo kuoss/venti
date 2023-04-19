@@ -22,6 +22,7 @@ func NewRemoteStore(httpClient *http.Client, timeout time.Duration) *RemoteStore
 		timeout:    timeout,
 	}
 }
+
 func (r *RemoteStore) Get(ctx context.Context, datasource model.Datasource, action string, rawQuery string) (string, error) {
 	u, err := url.Parse(datasource.URL)
 	if err != nil {

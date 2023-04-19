@@ -6,7 +6,7 @@ import (
 	"github.com/kuoss/venti/pkg/store"
 )
 
-func SetupRouter(cfg *model.Config, stores *store.Stores) *gin.Engine {
+func NewRouter(cfg *model.Config, stores *store.Stores) *gin.Engine {
 	handlers := loadHandlers(cfg, stores)
 
 	gin.SetMode(gin.ReleaseMode)

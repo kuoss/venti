@@ -16,7 +16,7 @@ type UserStore struct {
 	db *gorm.DB
 }
 
-func NewUserStore(filepath string, config model.UsersConfig) (*UserStore, error) {
+func NewUserStore(filepath string, config model.UserConfig) (*UserStore, error) {
 	log.Println("Initializing database...")
 
 	db, err := gorm.Open(sqlite.Open(filepath), &gorm.Config{})
@@ -32,7 +32,7 @@ func NewUserStore(filepath string, config model.UsersConfig) (*UserStore, error)
 	return &UserStore{db}, nil
 }
 
-func setEtcUsers(db *gorm.DB, config model.UsersConfig) {
+func setEtcUsers(db *gorm.DB, config model.UserConfig) {
 
 	for _, etcUser := range config.EtcUsers {
 		var user model.User

@@ -2,7 +2,6 @@ package store
 
 import (
 	"fmt"
-	"io"
 	"log"
 	"os"
 	"path/filepath"
@@ -36,15 +35,11 @@ func NewDashboardStore(pattern string) (*DashboardStore, error) {
 
 func loadDashboardFromFile(filename string) (*model.Dashboard, error) {
 	log.Printf("load dashboard file: %s\n", filename)
-	f, err := os.Open(filename)
+	yamlBytes, err := os.ReadFile(filename)
 	if err != nil {
-		return nil, fmt.Errorf("error on Open: %w", err)
+		return nil, fmt.Errorf("error on ReadFile: %w", err)
 	}
 	var dashboard *model.Dashboard
-	yamlBytes, err := io.ReadAll(f)
-	if err != nil {
-		return nil, fmt.Errorf("error on ReadAll: %w", err)
-	}
 	if err := yaml.UnmarshalStrict(yamlBytes, &dashboard); err != nil {
 		return nil, fmt.Errorf("error on UnmarshalStrict: %w", err)
 	}
