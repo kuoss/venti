@@ -75,40 +75,43 @@ func (a *alerter) SetAlertmanagerURL(url string) {
 }
 
 func (a *alerter) Start() {
-	log.Println("starting alerter...")
+	log.Printf("starting alerter...")
 	a.repeat = true
-	go a.run()
+	go a.loop()
 }
 
 func (a *alerter) Stop() {
-	log.Println("stopping alerter...")
+	log.Printf("stopping alerter...")
 	a.repeat = false
 }
 
-func (a *alerter) run() {
+func (a *alerter) loop() {
 	for {
 		if !a.repeat {
-			log.Println("alerter stopped")
+			log.Printf("alerter stopped")
 			return
 		}
-		log.Println("alerter task")
 		a.Once()
 		time.Sleep(20 * time.Second)
 	}
 }
 
 func (a *alerter) Once() {
-	a.processAlertFiles()
+	log.Printf("processAlertFiles")
+	err := a.processAlertFiles()
+	if err != nil {
+		log.Printf("error on processAlertFiles: %s", err)
+	}
 }
 
-func (a *alerter) processAlertFiles() {
+func (a *alerter) processAlertFiles() error {
 	totalFires := []model.Fire{}
 	for i := range a.alertFiles {
 		for j := range a.alertFiles[i].AlertGroups {
 			for k := range a.alertFiles[i].AlertGroups[j].Alerts {
 				fires, err := a.processAlert(&a.alertFiles[i].AlertGroups[j].Alerts[k], &a.alertFiles[i].Datasource)
 				if err != nil {
-					log.Fatalf("error on processAlert: %s", err.Error())
+					log.Printf("error on processAlert: %s", err)
 					continue
 				}
 				totalFires = append(totalFires, fires...)
@@ -118,8 +121,9 @@ func (a *alerter) processAlertFiles() {
 	}
 	err := a.sendFires(totalFires)
 	if err != nil {
-		log.Fatalf("error on sendFires: %s", err.Error())
+		return fmt.Errorf("error on sendFires: %w", err)
 	}
+	return nil
 }
 
 func (a *alerter) processAlert(alert *model.Alert, datasource *model.Datasource) ([]model.Fire, error) {
@@ -195,7 +199,7 @@ func getFires(alert *model.Alert, data model.QueryData) []model.Fire {
 		alert.Annotations["summary"] = "dummy summary from venti"
 	}
 	if data.ResultType != commonModel.ValVector {
-		log.Println("resultType is not vector")
+		log.Printf("resultType is not vector")
 		return []model.Fire{{
 			State:       "firing",
 			Labels:      alert.Labels,
@@ -229,13 +233,9 @@ func renderSummary(tmplString string, sample *commonModel.Sample) string {
 	var buf bytes.Buffer
 	t, err := template.New("t1").Parse(result)
 	if err != nil {
-		log.Fatalf("error on Parse: %s", err)
+		log.Printf("error on Parse: %s", err)
 		return result
 	}
-	fmt.Println("====")
-	fmt.Println("tmplString=", tmplString)
-	fmt.Println("result=", result)
-	fmt.Println("sample.Metric=")
 
 	labels := map[string]string{}
 	for k, v := range sample.Metric {
@@ -244,7 +244,7 @@ func renderSummary(tmplString string, sample *commonModel.Sample) string {
 	err = t.Execute(&buf, labels)
 
 	if err != nil {
-		log.Fatalf("error on Execute: %s", err)
+		log.Printf("error on Execute: %s", err)
 		return result
 	}
 	return buf.String()

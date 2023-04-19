@@ -121,12 +121,12 @@ func (s *DatasourceStore) GetDatasources() []model.Datasource {
 
 func (s *DatasourceStore) GetDatasourcesWithSelector(selector model.DatasourceSelector) []model.Datasource {
 	outputs := s.datasources
-	outputs = s.filterBySystem(outputs, selector.System)
-	outputs = s.filterByType(outputs, selector.Type)
+	outputs = filterBySystem(outputs, selector.System)
+	outputs = filterByType(outputs, selector.Type)
 	return outputs
 }
 
-func (s *DatasourceStore) filterBySystem(inputs []model.Datasource, system model.DatasourceSystem) []model.Datasource {
+func filterBySystem(inputs []model.Datasource, system model.DatasourceSystem) []model.Datasource {
 	if system == model.DatasourceSystemNone {
 		return inputs
 	}
@@ -139,7 +139,7 @@ func (s *DatasourceStore) filterBySystem(inputs []model.Datasource, system model
 	return outputs
 }
 
-func (s *DatasourceStore) filterByType(inputs []model.Datasource, typ model.DatasourceType) []model.Datasource {
+func filterByType(inputs []model.Datasource, typ model.DatasourceType) []model.Datasource {
 	if typ == model.DatasourceTypeNone {
 		return inputs
 	}
