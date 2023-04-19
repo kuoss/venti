@@ -6,8 +6,8 @@ require (
 	github.com/gin-gonic/contrib v0.0.0-20221130124618-7e01895a63f2
 	github.com/gin-gonic/gin v1.7.7
 	github.com/glebarez/sqlite v1.7.0
+	github.com/kuoss/common v0.1.0
 	github.com/prometheus/common v0.42.0
-	github.com/sirupsen/logrus v1.9.0
 	github.com/prometheus/prometheus v0.43.0
 	github.com/stretchr/testify v1.8.2
 	golang.org/x/crypto v0.7.0
@@ -91,6 +91,7 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/prometheus/alertmanager v0.25.0 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230126093431-47fa9a501578 // indirect
+	github.com/sirupsen/logrus v1.9.0 // indirect
 	github.com/ugorji/go/codec v1.1.7 // indirect
 	golang.org/x/net v0.8.0 // indirect
 	golang.org/x/oauth2 v0.6.0 // indirect
