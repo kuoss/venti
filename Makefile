@@ -4,7 +4,8 @@ IMAGE := ghcr.io/kuoss/venti:$(VERSION)
 install-dev:
 	go mod tidy
 	cd web && npm install
-	which air || go install github.com/cosmtrek/air@latest
+	which air   || go install github.com/cosmtrek/air@latest
+	which godef || go install github.com/rogpeppe/godef@lates
 
 mock-prometheus:
 	docker rm -f prometheus; docker run -d -p9090:9090 --name prometheus prom/prometheus
@@ -32,11 +33,9 @@ run-air:
 docker:
 	docker build -t $(IMAGE) --build-arg VERSION=$(VERSION) . && docker push $(IMAGE)
 
+test:
+	hack/test-failfast.sh
+
 checks:
-	./hack/checks.sh
+	hack/checks.sh
 
-test-cover:
-	./hack/test-cover.sh
-
-go-licenses:
-	./hack/go-licenses.sh

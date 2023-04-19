@@ -1,15 +1,17 @@
 package main
 
 import (
-	"github.com/kuoss/venti/pkg/configuration"
+	"log"
+
+	"github.com/kuoss/venti/pkg/alerter"
+	"github.com/kuoss/venti/pkg/config"
 	"github.com/kuoss/venti/pkg/handler"
 	"github.com/kuoss/venti/pkg/logger"
 	"github.com/kuoss/venti/pkg/store"
 )
 
-// Version will be overwrited by ldflags
 var (
-	Version = "unknown"
+	Version = "unknown" // Version will be overwrited by ldflags
 )
 
 func main() {
@@ -23,9 +25,13 @@ func main() {
 	if err != nil {
 		log.Errorf("load store failed: %s", err.Error())
 	}
-	router := handler.SetupRouter(cfg, stores)
 
 	// run
 	log.Infof("💨 venti running.... version %s", Version)
+
+  alerter := alerter.NewAlerter(stores)
+	alerter.Start()
+
+	router := handler.NewRouter(cfg, stores)
 	_ = router.Run() // :8080
 }

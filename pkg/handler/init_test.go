@@ -13,34 +13,34 @@ import (
 )
 
 var (
-	handlers          *Handlers
-	datasource        *model.Datasource
-	datasourcesConfig *model.DatasourcesConfig
-	router            *gin.Engine
-	stores            *store.Stores
+	handlers         *Handlers
+	datasource       *model.Datasource
+	datasourceConfig *model.DatasourceConfig
+	router           *gin.Engine
+	stores           *store.Stores
 )
 
 func init() {
 	_ = os.Chdir("../..")
-	ts := mock.PrometheusServer()
+	ts := mock.Prometheus()
 	datasource = &model.Datasource{
 		Type:   model.DatasourceTypePrometheus,
 		Name:   "prometheus",
 		URL:    ts.URL,
 		IsMain: true,
 	}
-	datasourcesConfig = &model.DatasourcesConfig{
+	datasourceConfig = &model.DatasourceConfig{
 		Datasources:  []*model.Datasource{datasource},
 		QueryTimeout: 30 * time.Second,
 	}
 	cfg := &model.Config{
-		Version:           "Unknown",
-		UserConfig:        model.UsersConfig{},
-		DatasourcesConfig: datasourcesConfig,
+		Version:          "Unknown",
+		UserConfig:       &model.UserConfig{},
+		DatasourceConfig: datasourceConfig,
 	}
 	var discoverer discovery.Discoverer
-	datatsourceStore, _ := store.NewDatasourceStore(datasourcesConfig, discoverer)
-	remoteStore := store.NewRemoteStore(&http.Client{}, datasourcesConfig.QueryTimeout)
+	datatsourceStore, _ := store.NewDatasourceStore(datasourceConfig, discoverer)
+	remoteStore := store.NewRemoteStore(&http.Client{}, datasourceConfig.QueryTimeout)
 	stores = &store.Stores{
 		AlertRuleStore:  &store.AlertRuleStore{},
 		DashboardStore:  &store.DashboardStore{},
@@ -49,5 +49,5 @@ func init() {
 		RemoteStore:     remoteStore,
 	}
 	handlers = loadHandlers(cfg, stores)
-	router = SetupRouter(cfg, stores)
+	router = NewRouter(cfg, stores)
 }

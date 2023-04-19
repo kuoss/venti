@@ -12,7 +12,7 @@ func response(w http.ResponseWriter, code int, body string) {
 	fmt.Fprint(w, body)
 }
 
-func PrometheusServer() *httptest.Server {
+func Prometheus() *httptest.Server {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/api/v1/metadata", func(w http.ResponseWriter, r *http.Request) {
 		response(w, 200, `{"status":"success","data":{"apiserver_audit_event_total":[{"type":"counter","help":"[ALPHA] Counter of audit events generated and sent to the audit backend.","unit":""}]}}`)

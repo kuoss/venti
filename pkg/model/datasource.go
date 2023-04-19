@@ -30,5 +30,4 @@ const (
 	DatasourceSystemNone DatasourceSystem = ""
 	DatasourceSystemMain DatasourceSystem = "main"
 	DatasourceSystemSub  DatasourceSystem = "sub"
-	DatasourceSystemAll  DatasourceSystem = "all"
 )

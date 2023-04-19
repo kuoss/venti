@@ -3,12 +3,12 @@ package model
 import "time"
 
 type Config struct {
-	Version           string
-	UserConfig        UsersConfig
-	DatasourcesConfig *DatasourcesConfig
+	Version          string
+	DatasourceConfig *DatasourceConfig
+	UserConfig       *UserConfig
 }
 
-type UsersConfig struct {
+type UserConfig struct {
 	EtcUsers []EtcUser `yaml:"users"`
 }
 
@@ -18,7 +18,7 @@ type EtcUser struct {
 	IsAdmin  bool   `yaml:"isAdmin,omitempty"`
 }
 
-type DatasourcesConfig struct {
+type DatasourceConfig struct {
 	QueryTimeout time.Duration `json:"queryTimeout,omitempty" yaml:"queryTimeout,omitempty"`
 	Datasources  []*Datasource `json:"datasources" yaml:"datasources,omitempty"`
 	Discovery    Discovery     `json:"discovery,omitempty" yaml:"discovery,omitempty"`
