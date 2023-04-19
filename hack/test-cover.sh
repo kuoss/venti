@@ -18,4 +18,4 @@ if [[ $COVER < $MIN_COVER ]]; then
     echo "⚠️ WARN - total coverage: ${COVER}% (<${MIN_COVER}%)"
     exit
 fi
-echo "✔️ OK - total coverage: ${COVER}% (>=${MIN_COVER}%) )"
+echo "✔️ OK - total coverage: ${COVER}% (>=${MIN_COVER}%)"
