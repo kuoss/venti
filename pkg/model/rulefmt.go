@@ -47,7 +47,6 @@ type Alert struct {
 	Labels      map[string]string
 	Annotations map[string]string
 	ActiveAt    commonModel.Time
-	QueryData   QueryData
 }
 
 type Fire struct {

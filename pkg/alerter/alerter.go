@@ -9,7 +9,6 @@ import (
 	"log"
 	"net/http"
 	"net/url"
-	"reflect"
 	"strings"
 	"time"
 
@@ -20,15 +19,17 @@ import (
 )
 
 type alerter struct {
-	alertFiles  []model.AlertFile
-	remoteStore *store.RemoteStore
-	repeat      bool
+	alertFiles      []model.AlertFile
+	remoteStore     *store.RemoteStore
+	repeat          bool
+	alertmanagerURL string
 }
 
 func NewAlerter(stores *store.Stores) *alerter {
 	return &alerter{
-		alertFiles:  getAlertFiles(stores),
-		remoteStore: stores.RemoteStore,
+		alertFiles:      getAlertFiles(stores),
+		remoteStore:     stores.RemoteStore,
+		alertmanagerURL: "http://alertmanager:9093",
 	}
 }
 
@@ -45,12 +46,16 @@ func getAlertFiles(stores *store.Stores) []model.AlertFile {
 			for _, ruleGroup := range ruleFile.RuleGroups {
 				alerts := []model.Alert{}
 				for _, rule := range ruleGroup.Rules {
+					labels := ruleFile.CommonLabels
+					for k, v := range rule.Labels {
+						labels[k] = v
+					}
 					alerts = append(alerts, model.Alert{
 						State:       promRule.StateInactive,
 						Name:        rule.Alert,
 						Expr:        rule.Expr,
 						For:         rule.For,
-						Labels:      rule.Labels,
+						Labels:      labels,
 						Annotations: rule.Annotations,
 					})
 				}
@@ -63,6 +68,10 @@ func getAlertFiles(stores *store.Stores) []model.AlertFile {
 		}
 	}
 	return alertFiles
+}
+
+func (a *alerter) SetAlertmanagerURL(url string) {
+	a.alertmanagerURL = url
 }
 
 func (a *alerter) Start() {
@@ -89,93 +98,103 @@ func (a *alerter) run() {
 }
 
 func (a *alerter) Once() {
-	a.evaluateAlertFiles()
-	a.fireAlertFiles()
+	a.processAlertFiles()
 }
 
-func (a *alerter) evaluateAlertFiles() {
+func (a *alerter) processAlertFiles() {
+	totalFires := []model.Fire{}
 	for i := range a.alertFiles {
 		for j := range a.alertFiles[i].AlertGroups {
 			for k := range a.alertFiles[i].AlertGroups[j].Alerts {
-				err := a.evaluateAlert(&a.alertFiles[i].AlertGroups[j].Alerts[k], a.alertFiles[i].Datasource)
+				fires, err := a.processAlert(&a.alertFiles[i].AlertGroups[j].Alerts[k], &a.alertFiles[i].Datasource)
 				if err != nil {
-					log.Fatalf("error on evaluateAlert: %s", err.Error())
+					log.Fatalf("error on processAlert: %s", err.Error())
+					continue
 				}
+				totalFires = append(totalFires, fires...)
 				time.Sleep(time.Duration(500) * time.Millisecond)
 			}
 		}
 	}
+	err := a.sendFires(totalFires)
+	if err != nil {
+		log.Fatalf("error on sendFires: %s", err.Error())
+	}
 }
 
-func (a *alerter) evaluateAlert(alert *model.Alert, datasource model.Datasource) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-	resultString, err := a.remoteStore.Get(ctx, datasource, "query", "query="+url.QueryEscape(alert.Expr))
+func (a *alerter) processAlert(alert *model.Alert, datasource *model.Datasource) ([]model.Fire, error) {
+	var zero []model.Fire
+	queryData, err := a.queryAlert(alert, datasource)
 	if err != nil {
-		return fmt.Errorf("error on remoteStore.Get: %w", err)
+		return zero, fmt.Errorf("error on queryAlert: %s", err)
+	}
+	fires, err := evaluateAlert(alert, queryData)
+	if err != nil {
+		return zero, fmt.Errorf("error on evaluateAlert: %s", err)
+	}
+	return fires, nil
+}
+
+func (a *alerter) queryAlert(alert *model.Alert, datasource *model.Datasource) (model.QueryData, error) {
+	var zero model.QueryData
+	ctx, cancel := context.WithTimeout(context.TODO(), 10*time.Second)
+	defer cancel()
+	resultString, err := a.remoteStore.Get(ctx, *datasource, "query", "query="+url.QueryEscape(alert.Expr))
+	if err != nil {
+		return zero, fmt.Errorf("error on remoteStore.Get: %w", err)
 	}
 	var queryResult model.QueryResult
 	//  resultString: {"status":"success","data":{"resultType":"vector","result":[]}}
 	err = json.Unmarshal([]byte(resultString), &queryResult)
 	if err != nil {
-		return fmt.Errorf("error on Unmarshal: %w", err)
+		return zero, fmt.Errorf("error on Unmarshal: %w", err)
 	}
 	if queryResult.Status != "success" {
-		return fmt.Errorf("query status is not success")
+		return zero, fmt.Errorf("query status is not success")
 	}
+	return queryResult.Data, nil
+}
+
+func evaluateAlert(alert *model.Alert, queryData model.QueryData) ([]model.Fire, error) {
+	var zero []model.Fire
 
 	// inactive
-	if len(queryResult.Data.Result) < 1 {
+	if len(queryData.Result) < 1 {
 		alert.State = promRule.StateInactive
 		alert.ActiveAt = 0
-		return nil
+		return zero, nil
 	}
 
-	// set ActiveAt if it is zero
-	if reflect.ValueOf(alert.ActiveAt).IsZero() {
+	if alert.ActiveAt == 0 {
+		// now active
 		alert.ActiveAt = commonModel.Now()
 	}
 	// pending
 	if alert.ActiveAt.Add(time.Duration(alert.For)).After(commonModel.Now()) {
 		alert.State = promRule.StatePending
-		return nil
+		return zero, nil
 	}
-	// firing: add to firing alerts
-	alert.QueryData = queryResult.Data
+	// firing
 	alert.State = promRule.StateFiring
-	return nil
+	return getFires(alert, queryData), nil
 }
 
-func (a *alerter) fireAlertFiles() {
-	fires := []model.Fire{}
-	for _, alertFile := range a.alertFiles {
-		for _, group := range alertFile.AlertGroups {
-			for _, alert := range group.Alerts {
-				if alert.State == promRule.StateFiring {
-					fires = append(fires, a.getFiresFromAlert(alert)...)
-				}
-			}
-		}
+func getFires(alert *model.Alert, data model.QueryData) []model.Fire {
+	if len(alert.Labels) < 1 {
+		alert.Labels = map[string]string{}
 	}
-	cnt := len(fires)
-	if cnt < 1 {
-		return
+	if len(alert.Annotations) < 1 {
+		alert.Annotations = map[string]string{}
 	}
-	err := a.fireFires(fires)
-	if err != nil {
-		log.Fatalf("error on fireFires: %s", err.Error())
-		return
-	}
-	log.Printf("fireFires success: %d fires\n", cnt)
-}
-
-func (a *alerter) getFiresFromAlert(alert model.Alert) []model.Fire {
 	alert.Labels["alertname"] = alert.Name
 	alert.Labels["firer"] = "venti"
 	if _, exists := alert.Annotations["summary"]; !exists {
+		if len(alert.Annotations) == 0 {
+			alert.Annotations = map[string]string{}
+		}
 		alert.Annotations["summary"] = "dummy summary from venti"
 	}
-	if alert.QueryData.ResultType != commonModel.ValVector {
+	if data.ResultType != commonModel.ValVector {
 		log.Println("resultType is not vector")
 		return []model.Fire{{
 			State:       "firing",
@@ -183,24 +202,26 @@ func (a *alerter) getFiresFromAlert(alert model.Alert) []model.Fire {
 			Annotations: alert.Annotations,
 		}}
 	}
-
 	fires := []model.Fire{}
-	for _, sample := range alert.QueryData.Result {
-		// deep copy alert
-		fire := model.Fire{State: "firing", Labels: map[string]string{}, Annotations: map[string]string{}}
+	for _, sample := range data.Result {
+		fire := model.Fire{
+			State:       "firing",
+			Labels:      map[string]string{},
+			Annotations: map[string]string{},
+		}
 		for k, v := range alert.Labels {
 			fire.Labels[k] = v
 		}
 		for k, v := range alert.Annotations {
 			fire.Annotations[k] = v
 		}
-		fire.Annotations["summary"] = a.renderSummary(alert.Annotations["summary"], &sample)
+		fire.Annotations["summary"] = renderSummary(alert.Annotations["summary"], &sample)
 		fires = append(fires, fire)
 	}
 	return fires
 }
 
-func (a *alerter) renderSummary(tmplString string, sample *commonModel.Sample) string {
+func renderSummary(tmplString string, sample *commonModel.Sample) string {
 	result := tmplString
 	result = strings.ReplaceAll(result, "$value", sample.Value.String())
 	result = strings.ReplaceAll(result, "$labels.", ".")
@@ -208,24 +229,34 @@ func (a *alerter) renderSummary(tmplString string, sample *commonModel.Sample) s
 	var buf bytes.Buffer
 	t, err := template.New("t1").Parse(result)
 	if err != nil {
-		log.Printf("warn: cannot render: %s", tmplString)
+		log.Fatalf("error on Parse: %s", err)
 		return result
 	}
-	err = t.Execute(&buf, sample.Metric)
+	fmt.Println("====")
+	fmt.Println("tmplString=", tmplString)
+	fmt.Println("result=", result)
+	fmt.Println("sample.Metric=")
+
+	labels := map[string]string{}
+	for k, v := range sample.Metric {
+		labels[string(k)] = string(v)
+	}
+	err = t.Execute(&buf, labels)
+
 	if err != nil {
-		log.Printf("warn: cannot render: %s", tmplString)
+		log.Fatalf("error on Execute: %s", err)
 		return result
 	}
 	return buf.String()
 }
 
-func (a *alerter) fireFires(shots []model.Fire) error {
-	pbytes, err := json.Marshal(shots)
+func (a *alerter) sendFires(fires []model.Fire) error {
+	pbytes, err := json.Marshal(fires)
 	if err != nil {
 		return fmt.Errorf("error on Marshal: %w", err)
 	}
 	buff := bytes.NewBuffer(pbytes)
-	resp, err := http.Post("http://alertmanager:9093/api/v1/alerts", "application/json", buff)
+	resp, err := http.Post(a.alertmanagerURL+"/api/v1/alerts", "application/json", buff)
 	if err != nil {
 		return fmt.Errorf("error on Post: %w", err)
 	}

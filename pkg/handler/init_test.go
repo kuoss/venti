@@ -22,7 +22,7 @@ var (
 
 func init() {
 	_ = os.Chdir("../..")
-	ts := mock.PrometheusServer()
+	ts := mock.Prometheus()
 	datasource = &model.Datasource{
 		Type:   model.DatasourceTypePrometheus,
 		Name:   "prometheus",

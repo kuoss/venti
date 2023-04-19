@@ -6,7 +6,7 @@ func AlertRuleFiles() []model.RuleFile {
 	return []model.RuleFile{
 		{
 			Kind:               "AlertRuleFile",
-			CommonLabels:       map[string]string{"severity": "silence"},
+			CommonLabels:       map[string]string{"rulefile": "sample-v3", "severity": "silence"},
 			DatasourceSelector: model.DatasourceSelector{Type: model.DatasourceTypePrometheus},
 			RuleGroups: []model.RuleGroup{{
 				Name:     "sample",
