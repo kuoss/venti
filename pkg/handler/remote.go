@@ -9,14 +9,15 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/kuoss/venti/pkg/model"
 	"github.com/kuoss/venti/pkg/store"
+	"github.com/kuoss/venti/pkg/store/remote"
 )
 
 type remoteHandler struct {
 	datasourceStore *store.DatasourceStore
-	remoteStore     *store.RemoteStore
+	remoteStore     *remote.RemoteStore
 }
 
-func NewRemoteHandler(datasourceStore *store.DatasourceStore, remoteStore *store.RemoteStore) *remoteHandler {
+func NewRemoteHandler(datasourceStore *store.DatasourceStore, remoteStore *remote.RemoteStore) *remoteHandler {
 	return &remoteHandler{
 		datasourceStore,
 		remoteStore,
@@ -54,12 +55,12 @@ func (h *remoteHandler) remoteAction(c *gin.Context, action string, rawQuery str
 		responseAPIError(c, &apiError{errorInternal, fmt.Errorf("error on getDatasourceWithParams: %w", err)})
 		return
 	}
-	result, err := h.remoteStore.Get(c.Request.Context(), datasource, action, rawQuery)
+	code, body, err := h.remoteStore.GET(c.Request.Context(), &datasource, action, rawQuery)
 	if err != nil {
-		responseAPIError(c, &apiError{errorInternal, fmt.Errorf("error on remoteStore.Get: %w", err)})
+		responseAPIError(c, &apiError{errorInternal, fmt.Errorf("error on GET: %w", err)})
 		return
 	}
-	c.String(200, result)
+	c.String(code, body)
 }
 
 // Select and return the datasource corresponding to the dsID or dsType parameter

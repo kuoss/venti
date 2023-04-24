@@ -1,8 +1,6 @@
 package main
 
 import (
-	"os"
-
 	"github.com/kuoss/common/logger"
 	"github.com/kuoss/venti/pkg/alerter"
 	"github.com/kuoss/venti/pkg/config"
@@ -18,19 +16,17 @@ func main() {
 	// load configuration
 	cfg, err := config.Load(Version)
 	if err != nil {
-		logger.Errorf("config load failed: %s", err)
-		os.Exit(1)
+		logger.Fatalf("config load failed: %s", err)
 	}
 	stores, err := store.LoadStores(cfg)
 	if err != nil {
-		logger.Errorf("load store failed: %s", err)
-		os.Exit(2)
+		logger.Fatalf("load store failed: %s", err)
 	}
 
 	// starting
 	logger.Infof("💨 venti starting.... version %s", Version)
 
-	alerter := alerter.NewAlerter(stores)
+	alerter := alerter.New(stores)
 	alerter.Start()
 
 	router := handler.NewRouter(cfg, stores)

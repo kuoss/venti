@@ -1,11 +1,11 @@
-package store
+package alertrule
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 
+	"github.com/kuoss/common/logger"
 	"github.com/kuoss/venti/pkg/model"
 	"gopkg.in/yaml.v2"
 )
@@ -14,26 +14,28 @@ type AlertRuleStore struct {
 	alertRuleFiles []model.RuleFile
 }
 
-func NewAlertRuleStore(pattern string) (*AlertRuleStore, error) {
-	log.Println("Loading alertRules...")
+func New(pattern string) (alertRuleStore *AlertRuleStore, err error) {
+	logger.Infof("loading alertrules...")
 	files, err := filepath.Glob(pattern)
 	if err != nil {
-		return nil, err
+		err = fmt.Errorf("error on Glob: %w", err)
+		return
 	}
 	var alertRuleFiles []model.RuleFile
 	for _, filename := range files {
 		alertRuleFile, err := loadAlertRuleFileFromFilename(filename)
 		if err != nil {
-			log.Printf("Warning: error on loadAlertRuleGroupsFromFile(skipped): %s", err)
+			logger.Warnf("error on loadAlertRuleGroupsFromFile(skipped): %s", err)
 			continue
 		}
 		alertRuleFiles = append(alertRuleFiles, *alertRuleFile)
 	}
-	return &AlertRuleStore{alertRuleFiles: alertRuleFiles}, nil
+	alertRuleStore = &AlertRuleStore{alertRuleFiles: alertRuleFiles}
+	return
 }
 
 func loadAlertRuleFileFromFilename(filename string) (*model.RuleFile, error) {
-	log.Printf("load alertrule file: %s\n", filename)
+	logger.Infof("load alertrule file: %s", filename)
 	yamlBytes, err := os.ReadFile(filename)
 	if err != nil {
 		return nil, fmt.Errorf("error on ReadFile: %w", err)

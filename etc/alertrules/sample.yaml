@@ -12,6 +12,8 @@ groups:
     for: 0m
     annotations:
       summary: "AlwaysOn value={{ $value }}"
+    labels:
+      hello: world
   - alert: S01-Monday
     expr: day_of_week() == 1 and hour() < 2
     for: 0m
