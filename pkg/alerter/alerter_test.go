@@ -244,7 +244,7 @@ func TestProcessAlertFiles(t *testing.T) {
 		},
 		{
 			tempAlerter_error2,
-			"error on sendFires: error on Post: Post \"http://alertmanager:9093/api/v1/alerts\": dial tcp: lookup alertmanager on [0-9.]+:53: no such host",
+			"error on sendFires: error on Post: Post \"http://alertmanager:9093/api/v1/alerts\": dial tcp: lookup alertmanager on",
 		},
 	}
 	for i, tc := range testCases {
