@@ -221,8 +221,8 @@ func TestProcessAlertFiles(t *testing.T) {
 	tempAlerter_error2 := New(&store.Stores{AlertRuleStore: alertRuleStore, DatasourceStore: datasourceStore_error2, RemoteStore: remoteStore})
 
 	testCases := []struct {
-		alerter   *alerter
-		wantError string
+		alerter         *alerter
+		wantErrorRegexp string
 	}{
 		// ok
 		{
@@ -244,16 +244,16 @@ func TestProcessAlertFiles(t *testing.T) {
 		},
 		{
 			tempAlerter_error2,
-			"error on sendFires: error on Post: Post \"http://alertmanager:9093/api/v1/alerts\": dial tcp: lookup alertmanager on 169.254.169.254:53: no such host",
+			"error on sendFires: error on Post: Post \"http://alertmanager:9093/api/v1/alerts\": dial tcp: lookup alertmanager on [0-9.]+:53: no such host",
 		},
 	}
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("#%d", i), func(tt *testing.T) {
 			err := tc.alerter.processAlertFiles()
-			if tc.wantError == "" {
+			if tc.wantErrorRegexp == "" {
 				assert.NoError(tt, err)
 			} else {
-				assert.EqualError(tt, err, tc.wantError)
+				assert.Regexp(tt, tc.wantErrorRegexp, err.Error())
 			}
 		})
 	}
