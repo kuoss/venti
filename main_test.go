@@ -9,7 +9,8 @@ import (
 )
 
 func Test_main(t *testing.T) {
-	_ = os.Chdir("/tmp")
+	err := os.Chdir("/tmp")
+	assert.NoError(t, err)
 	stdout, stderr, err := tester.CaptureChildTest(func() {
 		main()
 	})
