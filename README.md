@@ -1,6 +1,7 @@
 # venti
 Metrics and logs data visualizer
 
+[![release](https://github.com/kuoss/venti/actions/workflows/release.yml/badge.svg)](https://github.com/kuoss/venti/actions)
 [![pull-request](https://github.com/kuoss/venti/actions/workflows/pull-request.yml/badge.svg)](https://github.com/kuoss/venti/actions)
 [![Coverage Status](https://coveralls.io/repos/github/kuoss/venti/badge.svg?branch=main)](https://coveralls.io/github/kuoss/venti?branch=main)
 [![codecov](https://codecov.io/gh/kuoss/venti/branch/main/graph/badge.svg?token=EXPE6OS8HJ)](https://codecov.io/gh/kuoss/venti)
