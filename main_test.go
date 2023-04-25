@@ -11,6 +11,7 @@ import (
 func Test_main(t *testing.T) {
 	err := os.Chdir("/tmp")
 	assert.NoError(t, err)
+
 	stdout, stderr, err := tester.CaptureChildTest(func() {
 		main()
 	})
