@@ -23,13 +23,7 @@ func New(httpClient *http.Client, timeout time.Duration) *RemoteStore {
 	}
 }
 
-// GET does http get
-//
-// Returns:
-//   - `code int`    / http response status code
-//   - `body string` / http body
-//   - `err  error`  / error
-func (r *RemoteStore) GET(ctx context.Context, datasource *model.Datasource, action string, rawQuery string) (int, string, error) {
+func (r *RemoteStore) GET(ctx context.Context, datasource *model.Datasource, action string, rawQuery string) (code int, body string, err error) {
 	u, err := url.Parse(datasource.URL)
 	if err != nil {
 		return 0, "", fmt.Errorf("error on Parse: %w", err)
@@ -53,7 +47,7 @@ func (r *RemoteStore) GET(ctx context.Context, datasource *model.Datasource, act
 	if err != nil {
 		return 0, "", fmt.Errorf("error on Do: %w", err)
 	}
-	code := resp.StatusCode
+	code = resp.StatusCode
 	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
 		//go:cover ignore - hardly reachable
