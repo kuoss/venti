@@ -147,7 +147,6 @@ func (a *alerter) queryAlert(alert *model.Alert, datasource *model.Datasource) (
 	ctx, cancel := context.WithTimeout(context.TODO(), 10*time.Second)
 	defer cancel()
 
-	// _ => queryResult.Status
 	code, body, err := a.remoteStore.GET(ctx, datasource, "query", "query="+url.QueryEscape(alert.Expr))
 	if err != nil {
 		return zero, fmt.Errorf("error on GET: %w", err)
@@ -165,7 +164,7 @@ func (a *alerter) queryAlert(alert *model.Alert, datasource *model.Datasource) (
 		err = fmt.Errorf("not success status (status=%s, code=%d)", queryResult.Status, code)
 	} else {
 		if code != http.StatusOK {
-			// maybe not reachable
+			// test not reachable: non-200 {"status":"success"}
 			err = fmt.Errorf("not ok (code=%d)", code)
 		}
 	}

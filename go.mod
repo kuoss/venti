@@ -6,7 +6,7 @@ require (
 	github.com/gin-gonic/contrib v0.0.0-20221130124618-7e01895a63f2
 	github.com/gin-gonic/gin v1.7.7
 	github.com/glebarez/sqlite v1.7.0
-	github.com/kuoss/common v0.1.2
+	github.com/kuoss/common v0.1.3
 	github.com/prometheus/common v0.42.0
 	github.com/prometheus/prometheus v0.43.0
 	github.com/stretchr/testify v1.8.2

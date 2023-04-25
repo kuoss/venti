@@ -57,94 +57,103 @@ func TestNew(t *testing.T) {
 	assert.Equal(t, 15*time.Second, remoteStore.timeout)
 }
 
-func TestGET_zero(t *testing.T) {
-	datasource := datasources[4]
-	action := ""
-	code, body, err := remoteStore.GET(context.TODO(), datasource, action, "")
-	assert.NoError(t, err)
-	assert.Equal(t, 404, code)
-	assert.Equal(t, "404 page not found\n", body)
-}
-
-func TestGET_error_on_Parse(t *testing.T) {
-	datasource := &model.Datasource{}
-	action := ""
-	var err error
-
-	datasource.URL = "http://{@example.com"
-	code, body, err := remoteStore.GET(context.TODO(), datasource, action, "")
-	assert.EqualError(t, err, `error on Parse: parse "http://{@example.com": net/url: invalid userinfo`)
-	assert.Equal(t, 0, code)
-	assert.Equal(t, "", body)
-}
-
-func TestGET_error_on_Do(t *testing.T) {
-	datasource := &model.Datasource{}
-	action := ""
-
-	var code int
-	var body string
-	var err error
-
-	datasource.URL = "wrongURL"
-	code, body, err = remoteStore.GET(context.TODO(), datasource, action, "")
-	assert.EqualError(t, err, `error on Do: Get "/api/v1/": unsupported protocol scheme ""`)
-	assert.Equal(t, 0, code)
-	assert.Equal(t, "", body)
-
-	datasource.URL = "http://0.0.0.0:1111"
-	code, body, err = remoteStore.GET(context.TODO(), datasource, action, "")
-	assert.EqualError(t, err, `error on Do: Get "http://0.0.0.0:1111/api/v1/": dial tcp 0.0.0.0:1111: connect: connection refused`)
-	assert.Equal(t, 0, code)
-	assert.Equal(t, "", body)
-
-	datasource.URL = "http://127.0.0.1:99999"
-	code, body, err = remoteStore.GET(context.TODO(), datasource, action, "")
-	assert.EqualError(t, err, `error on Do: Get "http://127.0.0.1:99999/api/v1/": dial tcp: address 99999: invalid port`)
-	assert.Equal(t, 0, code)
-	assert.Equal(t, "", body)
-}
-
-func TestGET_metadata(t *testing.T) {
-	datasource := datasources[4]
-	action := "metadata"
-	code, body, err := remoteStore.GET(context.TODO(), datasource, action, "")
-	assert.NoError(t, err)
-	assert.Equal(t, 200, code)
-	assert.Equal(t, `{"status":"success","data":{"apiserver_audit_event_total":[{"type":"counter","help":"[ALPHA] Counter of audit events generated and sent to the audit backend.","unit":""}]}}`, body)
-}
-
-func TestGET_query(t *testing.T) {
-	datasource := datasources[4]
-	action := "query"
+func TestGET(t *testing.T) {
 	testCases := []struct {
+		url       string
+		action    string
 		rawQuery  string
 		wantCode  int
 		wantBody  string
 		wantError string
 	}{
+		// no action
 		{
+			datasources[4].URL, "", "",
+			404, "404 page not found\n", "",
+		},
+		{
+			"http://{@example.com", "", "",
+			0, "", `error on Parse: parse "http://{@example.com": net/url: invalid userinfo`,
+		},
+		{
+			"wrongURL", "", "",
+			0, "", `error on Do: Get "/api/v1/": unsupported protocol scheme ""`,
+		},
+		{
+			"http://0.0.0.0:1111", "", "",
+			0, "", `error on Do: Get "http://0.0.0.0:1111/api/v1/": dial tcp 0.0.0.0:1111: connect: connection refused`,
+		},
+		{
+			"http://127.0.0.1:99999", "", "",
+			0, "", `error on Do: Get "http://127.0.0.1:99999/api/v1/": dial tcp: address 99999: invalid port`,
+		},
+		// metadata
+		{
+			datasources[4].URL, "metadata", "",
+			200, `{"status":"success","data":{"apiserver_audit_event_total":[{"type":"counter","help":"[ALPHA] Counter of audit events generated and sent to the audit backend.","unit":""}]}}`,
 			"",
-			405,
-			`{"status":"error","errorType":"bad_data","error":"invalid parameter \"query\": 1:1: parse error: no expression found in input"}`,
+		},
+		// query
+		{
+			datasources[4].URL, "query", "",
+			405, `{"status":"error","errorType":"bad_data","error":"invalid parameter \"query\": 1:1: parse error: no expression found in input"}`,
 			"",
 		},
 		{
-			"query=up",
-			200,
-			`{"status":"success","data":{"resultType":"vector","result":[{"metric":{"__name__":"up","job":"prometheus","instance":"localhost:9090"},"value":[1435781451.781,"1"]}]}}`,
+			datasources[4].URL, "query", "query=up",
+			200, `{"status":"success","data":{"resultType":"vector","result":[{"metric":{"__name__":"up","job":"prometheus","instance":"localhost:9090"},"value":[1435781451.781,"1"]}]}}`,
 			"",
 		},
 		{
-			"query=not_exists",
-			200,
-			`{"status":"success","data":{"resultType":"vector","result":[]}}`,
+			datasources[4].URL, "query", "query=not_exists",
+			200, `{"status":"success","data":{"resultType":"vector","result":[]}}`,
+			"",
+		},
+		{
+			servers.GetServersByType(ms.TypeAlertmanager)[0].URL, "query", "query=up",
+			404, "404 page not found\n",
+			"",
+		},
+		// query_range
+		{
+			datasources[4].URL, "query_range", "",
+			405, `{"status":"error","errorType":"bad_data","error":"invalid parameter \"start\": cannot parse \"\" to a valid timestamp"}`,
+			"",
+		},
+		{
+			datasources[4].URL, "query_range", "query=up",
+			405, `{"status":"error","errorType":"bad_data","error":"invalid parameter \"start\": cannot parse \"\" to a valid timestamp"}`,
+			"",
+		},
+		{
+			datasources[4].URL, "query_range", "query=not_exists",
+			405, `{"status":"error","errorType":"bad_data","error":"invalid parameter \"start\": cannot parse \"\" to a valid timestamp"}`,
+			"",
+		},
+		{
+			datasources[4].URL, "query_range", "query=not_exists&start=2015-07-01T20:10:30.781Z",
+			405, `{"status":"error","errorType":"bad_data","error":"invalid parameter \"end\": cannot parse \"\" to a valid timestamp"}`,
+			"",
+		},
+		{
+			datasources[4].URL, "query_range", "query=not_exists&start=2015-07-01T20:10:30.781Z&end=2015-07-01T20:11:00.781Z",
+			405, `{"status":"error","errorType":"bad_data","error":"invalid parameter \"step\": cannot parse \"\" to a valid duration"}`,
+			"",
+		},
+		{
+			datasources[4].URL, "query_range", "query=not_exists&start=2015-07-01T20:10:30.781Z&end=2015-07-01T20:11:00.781Z&step=15s",
+			200, `{"status":"success","data":{"resultType":"matrix","result":[]}}`,
+			"",
+		},
+		{
+			datasources[4].URL, "query_range", "query=up&start=2015-07-01T20:10:30.781Z&end=2015-07-01T20:11:00.781Z&step=15s",
+			200, `{"status":"success","data":{"resultType":"matrix","result":[{"metric":{"__name__":"up","job":"prometheus","instance":"localhost:9090"},"values":[[1435781430.781,"1"],[1435781445.781,"1"],[1435781460.781,"1"]]}]}}`,
 			"",
 		},
 	}
 	for i, tc := range testCases {
-		t.Run(fmt.Sprintf("#%d - %s", i, tc.rawQuery), func(tt *testing.T) {
-			code, body, err := remoteStore.GET(context.TODO(), datasource, action, tc.rawQuery)
+		t.Run(fmt.Sprintf("#%d", i), func(tt *testing.T) {
+			code, body, err := remoteStore.GET(context.TODO(), &model.Datasource{URL: tc.url}, tc.action, tc.rawQuery)
 			if tc.wantError == "" {
 				assert.NoError(tt, err)
 			} else {
@@ -157,16 +166,6 @@ func TestGET_query(t *testing.T) {
 }
 
 func TestGET_basicAuth(t *testing.T) {
-	tempDatasource1 := &model.Datasource{
-		URL: servers.Svrs[4].Server.URL,
-	}
-	tempDatasource2 := &model.Datasource{
-		URL:               servers.Svrs[4].Server.URL,
-		BasicAuth:         true,
-		BasicAuthUser:     "abc",
-		BasicAuthPassword: "123",
-	}
-
 	testCases := []struct {
 		datasource *model.Datasource
 		wantCode   int
@@ -174,15 +173,13 @@ func TestGET_basicAuth(t *testing.T) {
 		wantError  string
 	}{
 		{
-			tempDatasource1,
-			401,
-			"401 unauthorized\n",
+			&model.Datasource{URL: datasources[3].URL},
+			401, "401 unauthorized\n",
 			"",
 		},
 		{
-			tempDatasource2,
-			200,
-			`{"status":"success","data":{"resultType":"vector","result":[{"metric":{"__name__":"up","job":"prometheus","instance":"localhost:9090"},"value":[1435781451.781,"1"]}]}}`,
+			&model.Datasource{URL: datasources[3].URL, BasicAuth: true, BasicAuthUser: "abc", BasicAuthPassword: "123"},
+			200, `{"status":"success","data":{"resultType":"vector","result":[{"metric":{"__name__":"up","job":"prometheus","instance":"localhost:9090"},"value":[1435781451.781,"1"]}]}}`,
 			"",
 		},
 	}
@@ -194,84 +191,6 @@ func TestGET_basicAuth(t *testing.T) {
 			} else {
 				assert.EqualError(tt, err, tc.wantError)
 			}
-			assert.Equal(tt, tc.wantCode, code)
-			assert.Equal(tt, tc.wantBody, body)
-		})
-	}
-}
-
-func TestGET_query_404(t *testing.T) {
-	datasource := &model.Datasource{}
-	datasource.URL = servers.GetServersByType(ms.TypeAlertmanager)[0].URL
-	action := "query"
-	testCases := []struct {
-		rawQuery string
-		wantCode int
-		wantBody string
-	}{
-		{
-			"query=up",
-			404,
-			"404 page not found\n",
-		},
-	}
-	for i, tc := range testCases {
-		t.Run(fmt.Sprintf("#%d - %s", i, tc.rawQuery), func(tt *testing.T) {
-			code, body, err := remoteStore.GET(context.TODO(), datasource, action, tc.rawQuery)
-			assert.Nil(tt, err)
-			assert.Equal(tt, tc.wantCode, code)
-			assert.Equal(tt, tc.wantBody, body)
-		})
-	}
-}
-func TestGET_query_range(t *testing.T) {
-	datasource := datasources[4]
-	action := "query_range"
-	testCases := []struct {
-		rawQuery string
-		wantCode int
-		wantBody string
-	}{
-		{
-			"",
-			405,
-			`{"status":"error","errorType":"bad_data","error":"invalid parameter \"start\": cannot parse \"\" to a valid timestamp"}`,
-		},
-		{
-			"query=up",
-			405,
-			`{"status":"error","errorType":"bad_data","error":"invalid parameter \"start\": cannot parse \"\" to a valid timestamp"}`,
-		},
-		{
-			"query=not_exists",
-			405,
-			`{"status":"error","errorType":"bad_data","error":"invalid parameter \"start\": cannot parse \"\" to a valid timestamp"}`,
-		},
-		{
-			"query=not_exists&start=2015-07-01T20:10:30.781Z",
-			405,
-			`{"status":"error","errorType":"bad_data","error":"invalid parameter \"end\": cannot parse \"\" to a valid timestamp"}`,
-		},
-		{
-			"query=not_exists&start=2015-07-01T20:10:30.781Z&end=2015-07-01T20:11:00.781Z",
-			405,
-			`{"status":"error","errorType":"bad_data","error":"invalid parameter \"step\": cannot parse \"\" to a valid duration"}`,
-		},
-		{
-			"query=not_exists&start=2015-07-01T20:10:30.781Z&end=2015-07-01T20:11:00.781Z&step=15s",
-			200,
-			`{"status":"success","data":{"resultType":"matrix","result":[]}}`,
-		},
-		{
-			"query=up&start=2015-07-01T20:10:30.781Z&end=2015-07-01T20:11:00.781Z&step=15s",
-			200,
-			`{"status":"success","data":{"resultType":"matrix","result":[{"metric":{"__name__":"up","job":"prometheus","instance":"localhost:9090"},"values":[[1435781430.781,"1"],[1435781445.781,"1"],[1435781460.781,"1"]]}]}}`,
-		},
-	}
-	for i, tc := range testCases {
-		t.Run(fmt.Sprintf("#%d - %s", i, tc.rawQuery), func(tt *testing.T) {
-			code, body, err := remoteStore.GET(context.TODO(), datasource, action, tc.rawQuery)
-			assert.NoError(tt, err)
 			assert.Equal(tt, tc.wantCode, code)
 			assert.Equal(tt, tc.wantBody, body)
 		})
