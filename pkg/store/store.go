@@ -5,16 +5,18 @@ import (
 	"net/http"
 
 	"github.com/kuoss/venti/pkg/model"
+	"github.com/kuoss/venti/pkg/store/alertrule"
 	"github.com/kuoss/venti/pkg/store/discovery"
 	"github.com/kuoss/venti/pkg/store/discovery/kubernetes"
+	"github.com/kuoss/venti/pkg/store/remote"
 )
 
 type Stores struct {
-	*AlertRuleStore
+	*alertrule.AlertRuleStore
 	*DashboardStore
 	*DatasourceStore
 	*UserStore
-	*RemoteStore
+	*remote.RemoteStore
 }
 
 func LoadStores(cfg *model.Config) (*Stores, error) {
@@ -23,7 +25,7 @@ func LoadStores(cfg *model.Config) (*Stores, error) {
 		return nil, fmt.Errorf("load dashboard configuration failed: %w", err)
 	}
 
-	alertRuleStore, err := NewAlertRuleStore("etc/alertrules/*.yaml")
+	alertRuleStore, err := alertrule.New("etc/alertrules/*.yaml")
 	if err != nil {
 		return nil, fmt.Errorf("load alertrule configuration failed: %w", err)
 	}
@@ -43,7 +45,7 @@ func LoadStores(cfg *model.Config) (*Stores, error) {
 	if err != nil {
 		return nil, fmt.Errorf("load user configuration failed: %w", err)
 	}
-	remoteStore := NewRemoteStore(&http.Client{}, cfg.DatasourceConfig.QueryTimeout)
+	remoteStore := remote.New(&http.Client{}, cfg.DatasourceConfig.QueryTimeout)
 
 	return &Stores{
 		alertRuleStore,

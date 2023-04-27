@@ -1,4 +1,4 @@
-package store
+package remote
 
 import (
 	"context"
@@ -16,37 +16,42 @@ type RemoteStore struct {
 	timeout    time.Duration
 }
 
-func NewRemoteStore(httpClient *http.Client, timeout time.Duration) *RemoteStore {
+func New(httpClient *http.Client, timeout time.Duration) *RemoteStore {
 	return &RemoteStore{
 		httpClient: httpClient,
 		timeout:    timeout,
 	}
 }
 
-func (r *RemoteStore) Get(ctx context.Context, datasource model.Datasource, action string, rawQuery string) (string, error) {
+func (r *RemoteStore) GET(ctx context.Context, datasource *model.Datasource, action string, rawQuery string) (code int, body string, err error) {
 	u, err := url.Parse(datasource.URL)
 	if err != nil {
-		return "", fmt.Errorf("error on url.Parse: %w", err)
+		return 0, "", fmt.Errorf("error on Parse: %w", err)
 	}
+
 	u.Path = fmt.Sprintf("/api/v1/%s", action)
 	u.RawQuery = rawQuery
 	ctx, cancel := context.WithTimeout(ctx, r.timeout)
 	defer cancel()
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), nil)
 	if err != nil {
-		return "", fmt.Errorf("error on http.NewRequest: %w", err)
+		//go:cover ignore - hardly reachable
+		return 0, "", fmt.Errorf("error on NewRequest: %w", err)
 	}
 
 	if datasource.BasicAuth {
+		// TODO: test cover
 		req.SetBasicAuth(datasource.BasicAuthUser, datasource.BasicAuthPassword)
 	}
 	resp, err := r.httpClient.Do(req)
 	if err != nil {
-		return "", fmt.Errorf("error on client.Do: %w", err)
+		return 0, "", fmt.Errorf("error on Do: %w", err)
 	}
-	body, err := io.ReadAll(resp.Body)
+	code = resp.StatusCode
+	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return "", fmt.Errorf("error on io.ReadAll: %w", err)
+		//go:cover ignore - hardly reachable
+		return code, "", fmt.Errorf("error on ReadAll: %w", err)
 	}
-	return string(body), nil
+	return code, string(bodyBytes), nil
 }

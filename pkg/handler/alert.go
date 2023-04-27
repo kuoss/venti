@@ -2,14 +2,14 @@ package handler
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/kuoss/venti/pkg/store"
+	"github.com/kuoss/venti/pkg/store/alertrule"
 )
 
 type alertHandler struct {
-	alertRuleStore *store.AlertRuleStore
+	alertRuleStore *alertrule.AlertRuleStore
 }
 
-func NewAlertHandler(s *store.AlertRuleStore) *alertHandler {
+func NewAlertHandler(s *alertrule.AlertRuleStore) *alertHandler {
 	return &alertHandler{s}
 }
 

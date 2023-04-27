@@ -6,10 +6,11 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/kuoss/venti/pkg/mock"
 	"github.com/kuoss/venti/pkg/model"
 	"github.com/kuoss/venti/pkg/store"
+	"github.com/kuoss/venti/pkg/store/alertrule"
 	"github.com/kuoss/venti/pkg/store/discovery"
+	"github.com/kuoss/venti/pkg/store/remote"
 )
 
 var (
@@ -22,11 +23,12 @@ var (
 
 func init() {
 	_ = os.Chdir("../..")
-	ts := mock.Prometheus()
+	// servers := server.GetServers()
+
 	datasource = &model.Datasource{
-		Type:   model.DatasourceTypePrometheus,
-		Name:   "prometheus",
-		URL:    ts.URL,
+		Type: model.DatasourceTypePrometheus,
+		Name: "prometheus",
+		// URL:    servers.Prometheus1.URL,
 		IsMain: true,
 	}
 	datasourceConfig = &model.DatasourceConfig{
@@ -40,9 +42,9 @@ func init() {
 	}
 	var discoverer discovery.Discoverer
 	datatsourceStore, _ := store.NewDatasourceStore(datasourceConfig, discoverer)
-	remoteStore := store.NewRemoteStore(&http.Client{}, datasourceConfig.QueryTimeout)
+	remoteStore := remote.New(&http.Client{}, datasourceConfig.QueryTimeout)
 	stores = &store.Stores{
-		AlertRuleStore:  &store.AlertRuleStore{},
+		AlertRuleStore:  &alertrule.AlertRuleStore{},
 		DashboardStore:  &store.DashboardStore{},
 		DatasourceStore: datatsourceStore,
 		UserStore:       &store.UserStore{},

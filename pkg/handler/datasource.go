@@ -6,31 +6,32 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/kuoss/venti/pkg/store"
+	"github.com/kuoss/venti/pkg/store/remote"
 )
 
 type datasourceHandler struct {
 	datasourceStore *store.DatasourceStore
-	remoteStore     *store.RemoteStore
+	remoteStore     *remote.RemoteStore
 }
 
-func NewDatasourceHandler(datasourceStore *store.DatasourceStore, remoteStore *store.RemoteStore) *datasourceHandler {
+func NewDatasourceHandler(datasourceStore *store.DatasourceStore, remoteStore *remote.RemoteStore) *datasourceHandler {
 	return &datasourceHandler{datasourceStore, remoteStore}
 }
 
 // GET /datasources
-func (dh *datasourceHandler) Datasources(c *gin.Context) {
-	c.JSON(http.StatusOK, dh.datasourceStore.GetDatasources())
+func (h *datasourceHandler) Datasources(c *gin.Context) {
+	c.JSON(http.StatusOK, h.datasourceStore.GetDatasources())
 }
 
 // GET /datasources/targets
-func (dh *datasourceHandler) Targets(c *gin.Context) {
+func (h *datasourceHandler) Targets(c *gin.Context) {
 	var results []string
-	for _, datasource := range dh.datasourceStore.GetDatasources() {
-		result, err := dh.remoteStore.Get(c.Request.Context(), datasource, "targets", "state=active")
+	for _, datasource := range h.datasourceStore.GetDatasources() {
+		_, body, err := h.remoteStore.GET(c.Request.Context(), &datasource, "targets", "state=active")
 		if err != nil {
-			result = fmt.Sprintf(`{"status":"error","errorType":"%s"}`, err.Error())
+			body = fmt.Sprintf(`{"status":"error","errorType":"%s","error":"%q"}`, errorExec, err.Error())
 		}
-		results = append(results, result)
+		results = append(results, body)
 	}
 	c.JSON(http.StatusOK, results)
 }
