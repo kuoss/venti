@@ -18,5 +18,5 @@ func Test_main(t *testing.T) {
 	assert.Error(t, err)
 	assert.EqualError(t, err, "exit status 1")
 	assert.Equal(t, "", stdout)
-	assert.Contains(t, stderr, "config load failed: error on loadDatasourceConfigFromFilepath: error on ReadFile: open etc/datasources.yaml: no such file or directory")
+	assert.Contains(t, stderr, "config load failed: error on loadDatasourceConfigFile: error on ReadFile: open etc/datasources.yml: no such file or directory")
 }

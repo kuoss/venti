@@ -3,6 +3,8 @@ package alertrule
 import (
 	"fmt"
 	"os"
+	"runtime"
+	"strings"
 	"testing"
 
 	"github.com/kuoss/venti/pkg/model"
@@ -27,63 +29,99 @@ func init() {
 
 }
 
+func line() string {
+	_, file, line, _ := runtime.Caller(1)
+	return fmt.Sprintf("%s:%d", file[strings.LastIndex(file, "/")+1:], line)
+}
+func tcname(i int, line string) string {
+	return fmt.Sprintf("TESTCASE#%d:%s", i, line)
+}
+
 func TestNew(t *testing.T) {
 	testCases := []struct {
+		line      string
 		pattern   string
 		want      *AlertRuleStore
 		wantError string
 	}{
 		// ok
 		{
-			"etc/alertrules/*.yaml",
+			line(),
+			"etc/alertrules/*.y*ml",
 			&AlertRuleStore{alertRuleFiles: alertRuleFiles},
 			"",
 		},
 		{
+			line(),
 			"",
-			&AlertRuleStore{alertRuleFiles: []model.RuleFile(nil)},
+			&AlertRuleStore{alertRuleFiles: alertRuleFiles},
 			"",
 		},
 		// error
 		{
+			line(),
+			"asdf",
+			&AlertRuleStore{alertRuleFiles: []model.RuleFile(nil)},
+			"",
+		},
+		{
+			line(),
 			"[]",
 			(*AlertRuleStore)(nil),
 			"error on Glob: syntax error in pattern",
 		},
 	}
 	for i, tc := range testCases {
-		t.Run(fmt.Sprintf("#%d", i), func(tt *testing.T) {
+		t.Run(tcname(i, tc.line), func(t *testing.T) {
 			store, err := New(tc.pattern)
 			if tc.wantError == "" {
-				assert.NoError(tt, err)
+				assert.NoError(t, err)
 			} else {
-				assert.EqualError(tt, err, tc.wantError)
+				assert.EqualError(t, err, tc.wantError)
 			}
-			assert.Equal(tt, tc.want, store)
+			assert.Equal(t, tc.want, store)
 		})
 	}
 }
 
 func TestAlertRuleFiles(t *testing.T) {
 	testCases := []struct {
+		line    string
 		pattern string
 		want    []model.RuleFile
 	}{
 		{
-			"etc/alertrules/*.yaml",
+			line(),
+			"",
 			alertRuleFiles,
 		},
 		{
-			"asdf/asdf.yaml",
+			line(),
+			"asdf",
 			[]model.RuleFile(nil),
+		},
+		{
+			line(),
+			"etc/alertrules/*.yml",
+			alertRuleFiles,
+		},
+		{
+			line(),
+			"etc/alertrules/*.yaml",
+			[]model.RuleFile(nil),
+		},
+		{
+			line(),
+			"etc/alertrules/*.y*ml",
+			alertRuleFiles,
 		},
 	}
 	for i, tc := range testCases {
-		t.Run(fmt.Sprintf("#%d", i), func(tt *testing.T) {
+		t.Run(tcname(i, tc.line), func(t *testing.T) {
 			store, err := New(tc.pattern)
 			assert.Nil(t, err)
 			ruleFiles := store.AlertRuleFiles()
-			assert.Equal(tt, tc.want, ruleFiles)
+			assert.Equal(t, tc.want, ruleFiles)
 		})
 	}
 }

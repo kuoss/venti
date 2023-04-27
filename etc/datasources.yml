@@ -1,7 +1,7 @@
 datasources:
-- name: prometheus-docker
+- name: prometheus
   type: prometheus
   url: 	http://localhost:9090
-- name: lethe-dev
+- name: lethe
   type: lethe
-  url: http://localhost:3100
+  url: http://localhost:6060

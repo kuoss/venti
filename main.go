@@ -18,7 +18,7 @@ func main() {
 	if err != nil {
 		logger.Fatalf("config load failed: %s", err)
 	}
-	stores, err := store.LoadStores(cfg)
+	stores, err := store.NewStores(cfg)
 	if err != nil {
 		logger.Fatalf("load store failed: %s", err)
 	}
@@ -27,8 +27,12 @@ func main() {
 	logger.Infof("💨 venti starting.... version %s", Version)
 
 	alerter := alerter.New(stores)
-	alerter.Start()
+	err = alerter.Start()
+	if err != nil {
+		logger.Warnf("error on alerter.Start: %s", err)
+	}
 
 	router := handler.NewRouter(cfg, stores)
+	logger.Infof("listen :8080")
 	_ = router.Run() // :8080
 }

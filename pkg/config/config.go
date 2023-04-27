@@ -2,10 +2,10 @@ package config
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"time"
 
+	"github.com/kuoss/common/logger"
 	"github.com/kuoss/venti/pkg/model"
 	"gopkg.in/yaml.v2"
 )
@@ -13,16 +13,16 @@ import (
 // Load EtcUser, DatasourceConfig files only.
 // TODO: each Config filepath could be parameter.
 func Load(version string) (*model.Config, error) {
-	log.Println("loading configurations...")
+	logger.Infof("loading configurations...")
 
-	datasourceConfig, err := loadDatasourceConfigFromFilepath("etc/datasources.yaml")
+	datasourceConfig, err := loadDatasourceConfigFile("etc/datasources.yml")
 	if err != nil {
-		return nil, fmt.Errorf("error on loadDatasourceConfigFromFilepath: %w", err)
+		return nil, fmt.Errorf("error on loadDatasourceConfigFile: %w", err)
 	}
 
-	userConfig, err := loadUserConfigFromFilepath("etc/users.yaml")
+	userConfig, err := loadUserConfigFile("etc/users.yml")
 	if err != nil {
-		return nil, fmt.Errorf("error on loadUserConfigFromFilepath: %w", err)
+		return nil, fmt.Errorf("error on loadUserConfigFile: %w", err)
 	}
 
 	return &model.Config{
@@ -32,16 +32,17 @@ func Load(version string) (*model.Config, error) {
 	}, nil
 }
 
-func loadDatasourceConfigFromFilepath(filepath string) (*model.DatasourceConfig, error) {
-	log.Println("loading datasource config file:", filepath)
-	yamlBytes, err := os.ReadFile(filepath)
+func loadDatasourceConfigFile(file string) (*model.DatasourceConfig, error) {
+	logger.Infof("loading datasource config file: %s", file)
+	yamlBytes, err := os.ReadFile(file)
 	if err != nil {
-		return nil, fmt.Errorf("error on ReadFile: %s", err)
+		return nil, fmt.Errorf("error on ReadFile: %w", err)
 	}
 	var datasourceConfig *model.DatasourceConfig
 	if err := yaml.UnmarshalStrict(yamlBytes, &datasourceConfig); err != nil {
 		return nil, fmt.Errorf("error on UnmarshalStrict: %w", err)
 	}
+
 	// default
 	if datasourceConfig.QueryTimeout == 0 {
 		datasourceConfig.QueryTimeout = 30 * time.Second
@@ -52,11 +53,11 @@ func loadDatasourceConfigFromFilepath(filepath string) (*model.DatasourceConfig,
 	return datasourceConfig, nil
 }
 
-func loadUserConfigFromFilepath(filepath string) (*model.UserConfig, error) {
-	log.Println("loading user config file:", filepath)
-	yamlBytes, err := os.ReadFile(filepath)
+func loadUserConfigFile(file string) (*model.UserConfig, error) {
+	logger.Infof("loading user config file: %s", file)
+	yamlBytes, err := os.ReadFile(file)
 	if err != nil {
-		return nil, fmt.Errorf("error on ReadFile: %s", err)
+		return nil, fmt.Errorf("error on ReadFile: %w", err)
 	}
 	var userConfig *model.UserConfig
 	if err := yaml.UnmarshalStrict(yamlBytes, &userConfig); err != nil {

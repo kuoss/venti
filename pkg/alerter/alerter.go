@@ -31,8 +31,8 @@ func New(stores *store.Stores) *alerter {
 	return &alerter{
 		alertFiles:         getAlertFiles(stores),
 		remoteStore:        stores.RemoteStore,
-		alertmanagerURL:    "http://alertmanager:9093", // TODO: configurable
-		evaluationInterval: 20 * time.Second,           // TODO: configurable
+		evaluationInterval: 20 * time.Second,                          // TODO: configurable
+		alertmanagerURL:    stores.AlertingStore.GetAlertmanagerURL(), // TODO: multiple alertmanagers
 	}
 }
 
@@ -77,10 +77,17 @@ func (a *alerter) SetAlertmanagerURL(url string) {
 	a.alertmanagerURL = url
 }
 
-func (a *alerter) Start() {
+func (a *alerter) Start() error {
+	if len(a.alertFiles) < 1 {
+		return fmt.Errorf("alertFiles are empty")
+	}
+	if a.alertmanagerURL == "" {
+		logger.Warnf("alertmanagerURL is not set")
+	}
 	logger.Infof("starting alerter...")
 	a.repeat = true
 	go a.loop()
+	return nil
 }
 
 func (a *alerter) Stop() {

@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"os"
 	"testing"
 
@@ -17,46 +18,79 @@ func TestLoad(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, cfg.Version, "Unknown")
 	assert.ElementsMatch(t, []*model.Datasource{
-		{Type: model.DatasourceTypePrometheus, Name: "Prometheus", URL: "http://prometheus:9090", BasicAuth: false, BasicAuthUser: "", BasicAuthPassword: "", IsMain: false, IsDiscovered: false},
-		{Type: model.DatasourceTypeLethe, Name: "Lethe", URL: "http://lethe:3100", BasicAuth: false, BasicAuthUser: "", BasicAuthPassword: "", IsMain: false, IsDiscovered: false},
+		{Type: model.DatasourceTypePrometheus, Name: "prometheus", URL: "http://localhost:9090"},
+		{Type: model.DatasourceTypeLethe, Name: "lethe", URL: "http://localhost:6060"},
 	}, cfg.DatasourceConfig.Datasources)
 	assert.Equal(t, &model.UserConfig{EtcUsers: []model.EtcUser{
 		{Username: "admin", Hash: "$2a$12$VcCDgh2NDk07JGN0rjGbM.Ad41qVR/YFJcgHp0UGns5JDymv..TOG", IsAdmin: true},
 	}}, cfg.UserConfig)
 }
 
-func TestLoadDatasourceConfigFromFilepath(t *testing.T) {
-	want := &model.DatasourceConfig{
-		QueryTimeout: 30000000000,
-		Datasources: []*model.Datasource{
-			{Type: "prometheus",
-				Name:              "Prometheus",
-				URL:               "http://prometheus:9090",
-				BasicAuth:         false,
-				BasicAuthUser:     "",
-				BasicAuthPassword: "",
-				IsMain:            false,
-				IsDiscovered:      false,
-			},
-			{Type: "lethe",
-				Name:              "Lethe",
-				URL:               "http://lethe:3100",
-				BasicAuth:         false,
-				BasicAuthUser:     "",
-				BasicAuthPassword: "",
-				IsMain:            false,
-				IsDiscovered:      false,
-			},
+func TestLoadDatasourceConfigFile(t *testing.T) {
+	testCases := []struct {
+		file      string
+		want      *model.DatasourceConfig
+		wantError string
+	}{
+		{
+			"",
+			nil,
+			"error on ReadFile: open : no such file or directory",
 		},
-		Discovery: model.Discovery{
-			Enabled:          false,
-			MainNamespace:    "",
-			AnnotationKey:    "kuoss.org/datasource-type",
-			ByNamePrometheus: false,
-			ByNameLethe:      false,
+		{
+			"etc/datasources.yml",
+			&model.DatasourceConfig{
+				QueryTimeout: 30000000000,
+				Datasources: []*model.Datasource{
+					{Type: "prometheus", Name: "prometheus", URL: "http://localhost:9090"},
+					{Type: "lethe", Name: "lethe", URL: "http://localhost:6060"},
+				},
+				Discovery: model.Discovery{Enabled: false, MainNamespace: "", AnnotationKey: "kuoss.org/datasource-type"},
+			},
+			"",
 		},
 	}
-	datasourceConfig, err := loadDatasourceConfigFromFilepath("etc/datasources.checks.yaml")
-	assert.Nil(t, err)
-	assert.Equal(t, want, datasourceConfig)
+	for i, tc := range testCases {
+		t.Run(fmt.Sprintf("TESTCASE_#%d", i), func(t *testing.T) {
+			got, err := loadDatasourceConfigFile(tc.file)
+			if tc.wantError == "" {
+				assert.NoError(t, err)
+			} else {
+				assert.EqualError(t, err, tc.wantError)
+			}
+			assert.Equal(t, tc.want, got)
+		})
+	}
+}
+
+func TestLoadUserConfigFile(t *testing.T) {
+	testCases := []struct {
+		file      string
+		want      *model.UserConfig
+		wantError string
+	}{
+		{
+			"",
+			nil,
+			"error on ReadFile: open : no such file or directory",
+		},
+		{
+			"etc/users.yml",
+			&model.UserConfig{EtcUsers: []model.EtcUser{
+				{Username: "admin", Hash: "$2a$12$VcCDgh2NDk07JGN0rjGbM.Ad41qVR/YFJcgHp0UGns5JDymv..TOG", IsAdmin: true},
+			}},
+			"",
+		},
+	}
+	for i, tc := range testCases {
+		t.Run(fmt.Sprintf("TESTCASE_#%d", i), func(t *testing.T) {
+			got, err := loadUserConfigFile(tc.file)
+			if tc.wantError == "" {
+				assert.NoError(t, err)
+			} else {
+				assert.EqualError(t, err, tc.wantError)
+			}
+			assert.Equal(t, tc.want, got)
+		})
+	}
 }

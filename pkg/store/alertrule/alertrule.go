@@ -16,6 +16,9 @@ type AlertRuleStore struct {
 
 func New(pattern string) (alertRuleStore *AlertRuleStore, err error) {
 	logger.Infof("loading alertrules...")
+	if pattern == "" {
+		pattern = "etc/alertrules/*.y*ml"
+	}
 	files, err := filepath.Glob(pattern)
 	if err != nil {
 		err = fmt.Errorf("error on Glob: %w", err)

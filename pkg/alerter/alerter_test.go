@@ -10,6 +10,7 @@ import (
 	ms "github.com/kuoss/venti/pkg/mock/servers"
 	"github.com/kuoss/venti/pkg/model"
 	"github.com/kuoss/venti/pkg/store"
+	"github.com/kuoss/venti/pkg/store/alerting"
 	"github.com/kuoss/venti/pkg/store/alertrule"
 	"github.com/kuoss/venti/pkg/store/discovery"
 	"github.com/kuoss/venti/pkg/store/remote"
@@ -44,11 +45,21 @@ func setup() {
 		Datasources: servers.GetDatasources(),
 	}
 
+	alertingStore := alerting.New("")
+	alertRuleStore, err := alertrule.New("etc/alertrules/*.y*ml")
+	if err != nil {
+		panic(err)
+	}
+
 	var discoverer discovery.Discoverer
-	datasourceStore, _ := store.NewDatasourceStore(&datasourceConfig, discoverer)
+	datasourceStore, err := store.NewDatasourceStore(&datasourceConfig, discoverer)
+	if err != nil {
+		panic(err)
+	}
+
 	remoteStore := remote.New(&http.Client{}, 30*time.Second)
-	alertRuleStore, _ := alertrule.New("etc/alertrules/*.yaml")
 	stores = &store.Stores{
+		AlertingStore:   alertingStore,
 		AlertRuleStore:  alertRuleStore,
 		DatasourceStore: datasourceStore,
 		RemoteStore:     remoteStore,
@@ -86,7 +97,16 @@ func TestNew(t *testing.T) {
 	assert.Equal(t, model.DatasourceSelector{Type: "prometheus"}, alertRuleFiles[0].DatasourceSelector)
 
 	assert.Equal(t, false, alerter1.repeat)
-	assert.Equal(t, 3, len(alerter1.alertFiles))
+
+	wantAlertGroups := []model.AlertGroup{{Alerts: []model.Alert{
+		{State: 0, Name: "S00-AlwaysOn", Expr: "vector(1234)", For: 0, Labels: map[string]string{"hello": "world", "rulefile": "sample-v3", "severity": "silence"}, Annotations: map[string]string{"summary": "AlwaysOn value={{ $value }}"}, ActiveAt: 0},
+		{State: 0, Name: "S01-Monday", Expr: "day_of_week() == 1 and hour() < 2", For: 0, Labels: map[string]string{"hello": "world", "rulefile": "sample-v3", "severity": "silence"}, Annotations: map[string]string{"summary": "Monday"}, ActiveAt: 0},
+		{State: 0, Name: "S02-NewNamespace", Expr: "time() - kube_namespace_created < 120", For: 0, Labels: map[string]string{"hello": "world", "rulefile": "sample-v3", "severity": "silence"}, Annotations: map[string]string{"summary": "labels={{ $labels }} namespace={{ $labels.namespace }} value={{ $value }}"}, ActiveAt: 0},
+	}}}
+	assert.Equal(t, wantAlertGroups, alerter1.alertFiles[0].AlertGroups)
+	assert.Equal(t, wantAlertGroups, alerter1.alertFiles[1].AlertGroups)
+	assert.Equal(t, wantAlertGroups, alerter1.alertFiles[2].AlertGroups)
+
 	assert.Equal(t, "prometheus1", alerter1.alertFiles[0].Datasource.Name)
 	assert.Equal(t, "prometheus2", alerter1.alertFiles[1].Datasource.Name)
 	assert.Equal(t, "prometheus3", alerter1.alertFiles[2].Datasource.Name)
@@ -94,7 +114,7 @@ func TestNew(t *testing.T) {
 
 func TestGetAlertFiles(t *testing.T) {
 	var discoverer discovery.Discoverer
-	alertRuleStore, _ := alertrule.New("etc/alertrules/*.yaml")
+	alertRuleStore, _ := alertrule.New("")
 
 	// stores1
 	datasourceStore1, _ := store.NewDatasourceStore(&model.DatasourceConfig{}, discoverer)
@@ -171,11 +191,19 @@ func TestSetAlertmanagerURL(t *testing.T) {
 
 func TestStartAndStop(t *testing.T) {
 	var discoverer discovery.Discoverer
-	alertRuleStore, _ := alertrule.New("etc/alertrules/*.yaml")
+	alertRuleStore, err := alertrule.New("")
+	assert.NoError(t, err)
 	remoteStore := remote.New(&http.Client{}, 30*time.Second)
 
-	datasourceStore, _ := store.NewDatasourceStore(&model.DatasourceConfig{}, discoverer)
-	tempAlerter := New(&store.Stores{AlertRuleStore: alertRuleStore, DatasourceStore: datasourceStore, RemoteStore: remoteStore})
+	datasourceStore, err := store.NewDatasourceStore(&model.DatasourceConfig{}, discoverer)
+	assert.NoError(t, err)
+	tempAlerter := New(&store.Stores{
+		AlertingStore:   alerting.New(""),
+		AlertRuleStore:  alertRuleStore,
+		DatasourceStore: datasourceStore,
+		RemoteStore:     remoteStore,
+	})
+
 	tempAlerter.SetAlertmanagerURL(servers.Svrs[0].Server.URL)
 	tempAlerter.evaluationInterval = 1000 * time.Millisecond
 
@@ -197,28 +225,37 @@ func TestOnce(t *testing.T) {
 
 func TestProcessAlertFiles(t *testing.T) {
 	var discoverer discovery.Discoverer
-	alertRuleStore, _ := alertrule.New("etc/alertrules/*.yaml")
+	alertingStore := alerting.New("")
+	alertRuleStore, err := alertrule.New("")
+	assert.NoError(t, err)
 	remoteStore := remote.New(&http.Client{}, 30*time.Second)
 
 	// tempAlerter_ok1
 	datasourceStore_ok1, _ := store.NewDatasourceStore(&model.DatasourceConfig{
 		Datasources: []*model.Datasource{{Type: model.DatasourceTypePrometheus, URL: servers.Svrs[2].Server.URL}}}, discoverer)
-	tempAlerter_ok1 := New(&store.Stores{AlertRuleStore: alertRuleStore, DatasourceStore: datasourceStore_ok1, RemoteStore: remoteStore})
+	tempAlerter_ok1 := New(&store.Stores{AlertingStore: alertingStore, AlertRuleStore: alertRuleStore, DatasourceStore: datasourceStore_ok1, RemoteStore: remoteStore})
 	tempAlerter_ok1.SetAlertmanagerURL(servers.Svrs[0].Server.URL)
 
 	// tempAlerter_ok2
-	datasourceStore_ok2, _ := store.NewDatasourceStore(&model.DatasourceConfig{
+	datasourceStore_ok2, err := store.NewDatasourceStore(&model.DatasourceConfig{
 		Datasources: []*model.Datasource{{Type: model.DatasourceTypePrometheus, URL: servers.Svrs[2].Server.URL}}}, discoverer)
-	tempAlerter_ok2 := New(&store.Stores{AlertRuleStore: alertRuleStore, DatasourceStore: datasourceStore_ok2, RemoteStore: remoteStore})
+	assert.NoError(t, err)
+	tempAlerter_ok2 := New(&store.Stores{AlertingStore: alertingStore, AlertRuleStore: alertRuleStore, DatasourceStore: datasourceStore_ok2, RemoteStore: remoteStore})
 	tempAlerter_ok2.SetAlertmanagerURL(servers.Svrs[0].Server.URL)
+	assert.Equal(t, 1, len(datasourceStore_ok2.GetDatasources()))
+	assert.Equal(t, 1, len(tempAlerter_ok2.alertFiles))
+	assert.Equal(t, 3, len(tempAlerter_ok2.alertFiles[0].AlertGroups[0].Alerts))
 	tempAlerter_ok2.alertFiles[0].AlertGroups[0].Alerts[0] = model.Alert{Name: "alert1", Expr: "unmarshalable"}
 
 	// tempAlerter_error1
 	tempAlerter_error1 := &alerter{}
 
 	// tempAlerter_error2
-	datasourceStore_error2, _ := store.NewDatasourceStore(&model.DatasourceConfig{}, discoverer)
-	tempAlerter_error2 := New(&store.Stores{AlertRuleStore: alertRuleStore, DatasourceStore: datasourceStore_error2, RemoteStore: remoteStore})
+	alertingStore_error2 := &alerting.AlertingStore{AlertingFile: &model.AlertingFile{Alertings: []model.Alerting{{Name: "alertmanager", Type: "alertmanager", URL: "http://alertmanager:9093"}}}}
+
+	datasourceStore_error2, err := store.NewDatasourceStore(&model.DatasourceConfig{Datasources: []*model.Datasource{}}, discoverer)
+	assert.NoError(t, err)
+	tempAlerter_error2 := New(&store.Stores{AlertingStore: alertingStore_error2, AlertRuleStore: alertRuleStore, DatasourceStore: datasourceStore_error2, RemoteStore: remoteStore})
 
 	testCases := []struct {
 		alerter         *alerter
@@ -248,12 +285,13 @@ func TestProcessAlertFiles(t *testing.T) {
 		},
 	}
 	for i, tc := range testCases {
-		t.Run(fmt.Sprintf("#%d", i), func(tt *testing.T) {
+		t.Run(fmt.Sprintf("#%d", i), func(t *testing.T) {
 			err := tc.alerter.processAlertFiles()
 			if tc.wantErrorRegexp == "" {
-				assert.NoError(tt, err)
+				assert.NoError(t, err)
 			} else {
-				assert.Regexp(tt, tc.wantErrorRegexp, err.Error())
+				assert.Error(t, err)
+				assert.Regexp(t, tc.wantErrorRegexp, err.Error())
 			}
 		})
 	}
