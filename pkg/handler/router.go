@@ -7,16 +7,10 @@ import (
 )
 
 func NewRouter(cfg *model.Config, stores *store.Stores) *gin.Engine {
-	handlers := loadHandlers(cfg, stores)
 
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()
-
-	authGroup := router.Group("/auth")
-	{
-		authGroup.POST("/login", handlers.authHandler.Login)
-		authGroup.POST("/logout", handlers.authHandler.Logout)
-	}
+	handlers := loadHandlers(cfg, stores)
 
 	api := router.Group("/api")
 	// TODO: api.Use(tokenRequired)
@@ -30,6 +24,14 @@ func NewRouter(cfg *model.Config, stores *store.Stores) *gin.Engine {
 		api.GET("/remote/query", handlers.remoteHandler.Query)
 		api.GET("/remote/query_range", handlers.remoteHandler.QueryRange)
 	}
+
+	router.POST("/auth/login", handlers.authHandler.Login)
+	router.POST("/auth/logout", handlers.authHandler.Logout)
+
+	router.GET("/-/healthy", handlers.probeHandler.Healthy)
+	router.GET("/-/ready", handlers.probeHandler.Ready)
+
 	router.Use(handleSPA())
+
 	return router
 }

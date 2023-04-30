@@ -2,6 +2,6 @@
 
 cd $(dirname $0)/..
 air &
-cd web && npm run dev --clearScreen=false &
+cd web && npm run dev &
 
 wait

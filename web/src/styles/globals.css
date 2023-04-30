@@ -1,0 +1,15 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+      @apply bg-gray-50;
+}
+
+.border {
+  border-color: #8888;
+}
+
+.btn {
+  @apply bg-zinc-200 rounded;
+}
