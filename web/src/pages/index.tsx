@@ -1,12 +1,11 @@
 import { Inter } from 'next/font/google'
-import { useContext } from 'react';
-import { AuthContext } from '../lib/auth';
+import { useAuth } from '../lib/auth';
 
 const inter = Inter({ subsets: ['latin'] })
 
 function DisplayAuthenticated() {
-  const { authenticated } = useContext(AuthContext);
-  return <p>{authenticated ? 'true' : 'false'}</p>;
+  const auth = useAuth();
+  return <p>{auth.authenticated ? 'true' : 'false'}</p>;
 }
 
 

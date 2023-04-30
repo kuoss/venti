@@ -1,3 +1,14 @@
 {
-  "extends": "next/core-web-vitals"
+  "ignorePatterns": ["node_modules/"],
+  "parser": "@typescript-eslint/parser",
+  "plugins": [
+    "@typescript-eslint",
+    "prettier"
+  ],
+  "extends": [
+    "next/core-web-vitals",
+    "plugin:@typescript-eslint/recommended",
+    "plugin:prettier/recommended",
+    "prettier"
+  ]
 }

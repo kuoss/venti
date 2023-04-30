@@ -1,12 +1,11 @@
-import { useContext } from 'react'
 import { useRouter } from 'next/router'
-import { AuthContext } from '../lib/auth'
+import { useAuth } from '../lib/auth'
 
 function LoginButton() {
   const router = useRouter()
-  const { setAuthenticated } = useContext(AuthContext)
+  const auth = useAuth()
   function handleClick() {
-    setAuthenticated(true)
+    auth.setAuthenticated(true)
     router.push('/')
   }
   return (

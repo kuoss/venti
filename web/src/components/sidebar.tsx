@@ -1,8 +1,7 @@
-import { useContext } from "react";
 import { useTheme } from "next-themes";
 import { useRouter } from 'next/router';
 import Link from 'next/link';
-import { AuthContext } from '../lib/auth'
+import { useAuth } from "../lib/auth";
 
 const ThemeButton = () => {
   const { theme, setTheme } = useTheme();
@@ -16,11 +15,11 @@ const ThemeButton = () => {
 
 const LogoutButton = () => {
   const router = useRouter();
-  const { setAuthenticated } = useContext(AuthContext);
+  const auth = useAuth();
 
   function handleClick() {
     console.log('logout clicked')
-    setAuthenticated(false)
+    auth.setAuthenticated(false)
     console.log('logout clicked 2')
     router.push("/")
   }
