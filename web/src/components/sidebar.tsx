@@ -1,31 +1,35 @@
-import { useTheme } from "next-themes";
-import { useRouter } from 'next/router';
-import Link from 'next/link';
-import { useAuth } from "../lib/auth";
+import { useTheme } from 'next-themes'
+import { useRouter } from 'next/router'
+import Link from 'next/link'
+import { useAuth } from '../lib/auth'
 
 const ThemeButton = () => {
-  const { theme, setTheme } = useTheme();
+  const { theme, setTheme } = useTheme()
   return (
-    <button onClick={() => theme == "dark" ? setTheme('light') : setTheme("dark")}
-      className='w-full bg-gray-300 hover:bg-gray-200 transition-all duration-100 text-white p-2'>
+    <button
+      onClick={() => (theme === 'dark' ? setTheme('light') : setTheme('dark'))}
+      className="w-full bg-gray-300 hover:bg-gray-200 transition-all duration-100 text-white p-2"
+    >
       Dark
     </button>
   )
 }
 
 const LogoutButton = () => {
-  const router = useRouter();
-  const auth = useAuth();
+  const router = useRouter()
+  const auth = useAuth()
 
   function handleClick() {
     console.log('logout clicked')
     auth.setAuthenticated(false)
     console.log('logout clicked 2')
-    router.push("/")
+    router.push('/')
   }
   return (
-    <button onClick={handleClick}
-      className='w-full bg-gray-300 hover:bg-gray-200 transition-all duration-100 text-white p-2'>
+    <button
+      onClick={handleClick}
+      className="w-full bg-gray-300 hover:bg-gray-200 transition-all duration-100 text-white p-2"
+    >
       Log out
     </button>
   )
@@ -35,14 +39,12 @@ export default function Navbar() {
   return (
     <div className="h-screen grid grid-rows-[1fr_4fr_1fr]">
       <LogoutButton />
-      <div className="p-3 text-center">
-        Venti
-      </div>
+      <div className="p-3 text-center">Venti</div>
       <div>
-        <div className="p-4" >
+        <div className="p-4">
           <Link href="/dashboards">dashboards</Link>
         </div>
-        <div className="p-4" >
+        <div className="p-4">
           <Link href="/datasources">datasources</Link>
         </div>
       </div>
@@ -50,5 +52,5 @@ export default function Navbar() {
         <ThemeButton />
       </div>
     </div>
-  );
+  )
 }

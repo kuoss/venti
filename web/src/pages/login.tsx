@@ -8,13 +8,8 @@ function LoginButton() {
     auth.setAuthenticated(true)
     router.push('/')
   }
-  return (
-    <button onClick={handleClick}>
-      Log in
-    </button>
-  )
+  return <button onClick={handleClick}>Log in</button>
 }
-
 
 export default function Login() {
   return (

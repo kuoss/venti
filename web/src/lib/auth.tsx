@@ -7,29 +7,37 @@ import {
   useContext,
   useMemo,
   useState,
-} from "react";
+} from 'react'
 
 type AuthContextType = {
-  authenticated: boolean;
-  setAuthenticated: Dispatch<SetStateAction<boolean>>;
-};
+  authenticated: boolean
+  setAuthenticated: Dispatch<SetStateAction<boolean>>
+}
 
 export const AuthContext = createContext<AuthContextType>({
   authenticated: false,
-  setAuthenticated: () => { },
-});
+  setAuthenticated: () => {},
+})
 
-export const useAuth = () => useContext(AuthContext);
+export const useAuth = () => useContext(AuthContext)
 
 type AuthContextProviderProps = {
-  defaultAuthenticated: boolean;
-  children: ReactNode;
-};
+  defaultAuthenticated: boolean
+  children: ReactNode
+}
 
-const AuthContextProvider: FC<AuthContextProviderProps> = ({ defaultAuthenticated, children }) => {
-  const [authenticated, setAuthenticated] = useState(defaultAuthenticated);
-  const contextValue = useMemo(() => ({ authenticated, setAuthenticated }), [authenticated]);
-  return <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>
+const AuthContextProvider: FC<AuthContextProviderProps> = ({
+  defaultAuthenticated,
+  children,
+}) => {
+  const [authenticated, setAuthenticated] = useState(defaultAuthenticated)
+  const contextValue = useMemo(
+    () => ({ authenticated, setAuthenticated }),
+    [authenticated]
+  )
+  return (
+    <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>
+  )
 }
 
 function AuthProvider({ children }: { children: ReactNode }) {
@@ -37,7 +45,7 @@ function AuthProvider({ children }: { children: ReactNode }) {
     <AuthContextProvider defaultAuthenticated={false}>
       {children}
     </AuthContextProvider>
-  );
+  )
 }
 
-export default AuthProvider;
+export default AuthProvider
