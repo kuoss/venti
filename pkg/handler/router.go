@@ -18,11 +18,15 @@ func NewRouter(cfg *model.Config, stores *store.Stores) *gin.Engine {
 		api.GET("/alerts", handlers.alertHandler.AlertRuleFiles)
 		api.GET("/config/version", handlers.configHandler.Version)
 		api.GET("/dashboards", handlers.dashboardHandler.Dashboards)
+
 		api.GET("/datasources", handlers.datasourceHandler.Datasources)
 		api.GET("/datasources/targets", handlers.datasourceHandler.Targets)
+
 		api.GET("/remote/metadata", handlers.remoteHandler.Metadata)
 		api.GET("/remote/query", handlers.remoteHandler.Query)
 		api.GET("/remote/query_range", handlers.remoteHandler.QueryRange)
+
+		api.GET("/status/buildinfo", handlers.statusHandler.BuildInfo)
 	}
 
 	router.POST("/auth/login", handlers.authHandler.Login)

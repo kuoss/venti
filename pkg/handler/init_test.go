@@ -22,8 +22,10 @@ var (
 )
 
 func init() {
-	_ = os.Chdir("../..")
-	// servers := server.GetServers()
+	err := os.Chdir("../..")
+	if err != nil {
+		panic(err)
+	}
 
 	datasource = &model.Datasource{
 		Type: model.DatasourceTypePrometheus,

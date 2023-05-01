@@ -7,11 +7,12 @@ import (
 )
 
 func TestLoadHandlers(t *testing.T) {
-	assert.NotNil(t, handlers)
-	assert.NotNil(t, handlers.alertHandler)
-	assert.NotNil(t, handlers.authHandler)
-	assert.NotNil(t, handlers.configHandler)
-	assert.NotNil(t, handlers.dashboardHandler)
-	assert.NotNil(t, handlers.datasourceHandler)
-	assert.NotNil(t, handlers.remoteHandler)
+	assert.NotEmpty(t, handlers)
+	assert.NotEmpty(t, handlers.alertHandler)
+	assert.NotEmpty(t, handlers.authHandler)
+	assert.NotEmpty(t, handlers.configHandler)
+	assert.NotEmpty(t, handlers.dashboardHandler)
+	assert.NotEmpty(t, handlers.datasourceHandler)
+	assert.NotEmpty(t, handlers.remoteHandler)
+	assert.NotEmpty(t, handlers.statusHandler)
 }

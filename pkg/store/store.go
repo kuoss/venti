@@ -10,6 +10,7 @@ import (
 	"github.com/kuoss/venti/pkg/store/discovery"
 	"github.com/kuoss/venti/pkg/store/discovery/kubernetes"
 	"github.com/kuoss/venti/pkg/store/remote"
+	"github.com/kuoss/venti/pkg/store/status"
 )
 
 type Stores struct {
@@ -18,6 +19,7 @@ type Stores struct {
 	*DashboardStore
 	*DatasourceStore
 	*remote.RemoteStore
+	*status.StatusStore
 	*UserStore
 }
 
@@ -54,6 +56,9 @@ func NewStores(cfg *model.Config) (*Stores, error) {
 	// remote
 	remoteStore := remote.New(&http.Client{}, cfg.DatasourceConfig.QueryTimeout)
 
+	// status
+	storeStore := status.New(cfg)
+
 	// user
 	userStore, err := NewUserStore("./data/venti.sqlite3", *cfg.UserConfig)
 	if err != nil {
@@ -66,6 +71,7 @@ func NewStores(cfg *model.Config) (*Stores, error) {
 		dashboardStore,
 		datasourceStore,
 		remoteStore,
+		storeStore,
 		userStore,
 	}, nil
 }

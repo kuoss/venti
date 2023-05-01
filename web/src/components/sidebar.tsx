@@ -20,9 +20,7 @@ const LogoutButton = () => {
   const auth = useAuth()
 
   function handleClick() {
-    console.log('logout clicked')
     auth.setAuthenticated(false)
-    console.log('logout clicked 2')
     router.push('/')
   }
   return (

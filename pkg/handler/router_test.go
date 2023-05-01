@@ -7,5 +7,5 @@ import (
 )
 
 func TestSetupRouter(t *testing.T) {
-	assert.NotNil(t, router)
+	assert.NotEmpty(t, router)
 }

@@ -22,8 +22,7 @@ func init() {
 }
 
 func TestNewProbeHandler(t *testing.T) {
-	assert.NotNil(t, probeHandler1)
-	assert.NotZero(t, probeHandler1)
+	assert.NotEmpty(t, probeHandler1)
 }
 
 func TestHealthy(t *testing.T) {

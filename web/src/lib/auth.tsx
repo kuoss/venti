@@ -1,7 +1,7 @@
 import {
   createContext,
-  FC,
   Dispatch,
+  FunctionComponent,
   ReactNode,
   SetStateAction,
   useContext,
@@ -9,43 +9,55 @@ import {
   useState,
 } from 'react'
 
+// types
 type AuthContextType = {
   authenticated: boolean
+  username: string
   setAuthenticated: Dispatch<SetStateAction<boolean>>
+  setUsername: Dispatch<SetStateAction<string>>
 }
-
-export const AuthContext = createContext<AuthContextType>({
-  authenticated: false,
-  setAuthenticated: () => {},
-})
-
-export const useAuth = () => useContext(AuthContext)
 
 type AuthContextProviderProps = {
   defaultAuthenticated: boolean
+  defaultUsername: string
   children: ReactNode
 }
 
-const AuthContextProvider: FC<AuthContextProviderProps> = ({
+// consts
+const AuthContext = createContext<AuthContextType>({
+  authenticated: false,
+  username: '',
+  setAuthenticated: () => {},
+  setUsername: () => {},
+})
+
+const AuthContextProvider: FunctionComponent<AuthContextProviderProps> = ({
   defaultAuthenticated,
+  defaultUsername,
   children,
 }) => {
   const [authenticated, setAuthenticated] = useState(defaultAuthenticated)
+  const [username, setUsername] = useState(defaultUsername)
   const contextValue = useMemo(
-    () => ({ authenticated, setAuthenticated }),
-    [authenticated]
+    () => ({
+      authenticated,
+      username,
+      setAuthenticated,
+      setUsername,
+    }),
+    [authenticated, username, setAuthenticated, setUsername]
   )
-  return (
-    <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>
-  )
+  return <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>
 }
 
-function AuthProvider({ children }: { children: ReactNode }) {
+// export
+export const useAuth = () => useContext(AuthContext)
+
+// export default
+export default function AuthProvider({ children }: { children: ReactNode }) {
   return (
-    <AuthContextProvider defaultAuthenticated={false}>
+    <AuthContextProvider defaultAuthenticated={false} defaultUsername={''}>
       {children}
     </AuthContextProvider>
   )
 }
-
-export default AuthProvider

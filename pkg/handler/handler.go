@@ -13,6 +13,7 @@ type Handlers struct {
 	*datasourceHandler
 	*probeHandler
 	*remoteHandler
+	*statusHandler
 }
 
 func loadHandlers(cfg *model.Config, stores *store.Stores) *Handlers {
@@ -24,5 +25,6 @@ func loadHandlers(cfg *model.Config, stores *store.Stores) *Handlers {
 		NewDatasourceHandler(stores.DatasourceStore, stores.RemoteStore),
 		NewProbeHandler(),
 		NewRemoteHandler(stores.DatasourceStore, stores.RemoteStore),
+		NewStatusHandler(stores.StatusStore),
 	}
 }

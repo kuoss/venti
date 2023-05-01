@@ -13,29 +13,34 @@ var (
 )
 
 func main() {
+
 	// load configuration
 	cfg, err := config.Load(Version)
 	if err != nil {
 		logger.Fatalf("config.Load err: %s", err)
 	}
+
+	// init stores
 	stores, err := store.NewStores(cfg)
 	if err != nil {
 		logger.Fatalf("NewStores err: %s", err)
 	}
 
-	// starting
+	// show starting & version
 	logger.Infof("💨 venti starting.... version %s", Version)
 
+	// alerter start
 	alerter := alerter.New(stores)
 	err = alerter.Start()
 	if err != nil {
 		logger.Warnf("alerter.Start err: %s", err)
 	}
 
+	// router run
 	router := handler.NewRouter(cfg, stores)
 	logger.Infof("listen :3030")
 	err = router.Run(":3030")
 	if err != nil {
-		logger.Fatalf("router run err: %s", err)
+		logger.Fatalf("router.Run err: %s", err)
 	}
 }
