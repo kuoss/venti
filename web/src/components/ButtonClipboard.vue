@@ -1,5 +1,5 @@
 <script setup>
-import { ClipboardIcon, CheckIcon } from '@heroicons/vue/outline'
+import { ClipboardIcon, CheckIcon } from '@heroicons/vue/outline';
 </script>
 
 <template>
@@ -11,9 +11,9 @@ import { ClipboardIcon, CheckIcon } from '@heroicons/vue/outline'
       @click="copy"
     >
       <component
+        :is="copied ? 'CheckIcon' : 'ClipboardIcon'"
         class="w-4 h-4 mt-[-1px] inline"
         :class="{ 'text-green-400': copied }"
-        :is="copied ? 'CheckIcon' : 'ClipboardIcon'"
       />
       <span v-if="text" class="px-2">{{ text }}</span>
     </button>
@@ -31,36 +31,36 @@ import { ClipboardIcon, CheckIcon } from '@heroicons/vue/outline'
 export default {
   components: { ClipboardIcon, CheckIcon },
   props: ['value', 'buttonClass', 'text', 'tooltipDirection'],
-  computed: {
-    tooltipClass() {
-      switch (this.tooltipDirection) {
-        case 'top':
-          return 'bottom-[100%] right-0 translate-x-3'
-        case 'right':
-          return 'left-[100%] top-0'
-      }
-      return 'right-[100%] top-0'
-    },
-  },
   data() {
     return {
       hover: false,
       copied: false,
       timer: null,
-    }
+    };
+  },
+  computed: {
+    tooltipClass() {
+      switch (this.tooltipDirection) {
+        case 'top':
+          return 'bottom-[100%] right-0 translate-x-3';
+        case 'right':
+          return 'left-[100%] top-0';
+      }
+      return 'right-[100%] top-0';
+    },
   },
   methods: {
     copy() {
-      this.removeTimer()
-      this.copied = true
-      this.$util.copyToClipboard(this.value)
+      this.removeTimer();
+      this.copied = true;
+      this.$util.copyToClipboard(this.value);
       this.timer = setTimeout(() => {
-        this.copied = false
-      }, 2500)
+        this.copied = false;
+      }, 2500);
     },
     removeTimer() {
-      if (this.timer) clearTimeout(this.timer)
+      if (this.timer) clearTimeout(this.timer);
     },
   },
-}
+};
 </script>

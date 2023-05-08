@@ -5,17 +5,16 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kuoss/venti/pkg/store/discovery"
-
 	"github.com/kuoss/venti/pkg/model"
+	"github.com/kuoss/venti/pkg/store/discovery"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var (
-	datasourceConfig   *model.DatasourceConfig
-	datasources        []model.Datasource
-	datasourcePointers []*model.Datasource
-	store              *DatasourceStore
+	datasourceConfig model.DatasourceConfig
+	datasources      []model.Datasource
+	store            *DatasourceStore
 )
 
 func init() {
@@ -27,12 +26,9 @@ func init() {
 		{Name: "subLethe1", Type: model.DatasourceTypeLethe, URL: "http://lethe1:3100", IsMain: false},
 		{Name: "subLethe2", Type: model.DatasourceTypeLethe, URL: "http://lethe2:3100", IsMain: false},
 	}
-	for i := range datasources {
-		datasourcePointers = append(datasourcePointers, &datasources[i])
-	}
-	datasourceConfig = &model.DatasourceConfig{
+	datasourceConfig = model.DatasourceConfig{
 		QueryTimeout: time.Second * 10,
-		Datasources:  datasourcePointers,
+		Datasources:  datasources,
 		Discovery: model.Discovery{
 			Enabled:          false,
 			ByNamePrometheus: true,
@@ -41,15 +37,38 @@ func init() {
 	}
 	var discoverer discovery.Discoverer
 	var err error
-	store, err = NewDatasourceStore(datasourceConfig, discoverer)
+	store, err = NewDatasourceStore(&datasourceConfig, discoverer)
 	if err != nil {
 		store = &DatasourceStore{}
 	}
 }
 
 func TestNewDatasourceStore(t *testing.T) {
-	assert.Equal(t, store.config, datasourceConfig)
-	assert.ElementsMatch(t, store.datasources, datasources)
+	var discoverer discovery.Discoverer
+	testCases := []struct {
+		cfg  *model.DatasourceConfig
+		want *DatasourceStore
+	}{
+		{
+			&model.DatasourceConfig{},
+			&DatasourceStore{},
+		},
+		{
+			&model.DatasourceConfig{Datasources: []model.Datasource{
+				{Name: "mainPrometheus", Type: model.DatasourceTypePrometheus, URL: "http://prometheus:9090", IsMain: true}}},
+			&DatasourceStore{config: model.DatasourceConfig{QueryTimeout: 0, Datasources: []model.Datasource{
+				{Type: "prometheus", Name: "mainPrometheus", URL: "http://prometheus:9090", BasicAuth: false, BasicAuthUser: "", BasicAuthPassword: "", IsMain: true, IsDiscovered: false}}, Discovery: model.Discovery{Enabled: false, MainNamespace: "", AnnotationKey: "", ByNamePrometheus: false, ByNameLethe: false}}, datasources: []model.Datasource{model.Datasource{Type: "prometheus", Name: "mainPrometheus", URL: "http://prometheus:9090", BasicAuth: false, BasicAuthUser: "", BasicAuthPassword: "", IsMain: true, IsDiscovered: false}}, discoverer: discovery.Discoverer(nil)},
+		},
+	}
+	for i, tc := range testCases {
+		t.Run(fmt.Sprintf("#%d", i), func(t *testing.T) {
+			got, err := NewDatasourceStore(tc.cfg, discoverer)
+			require.NoError(t, err)
+			require.Equal(t, tc.want, got)
+		})
+	}
+	// assert.Equal(t, store.config, datasourceConfig)
+	// assert.ElementsMatch(t, store.datasources, datasources)
 }
 
 func TestGetDatasourcesWithSelector(t *testing.T) {

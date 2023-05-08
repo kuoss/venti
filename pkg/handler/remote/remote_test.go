@@ -1,4 +1,4 @@
-package handler
+package remote
 
 import (
 	"fmt"
@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/kuoss/common/logger"
 	ms "github.com/kuoss/venti/pkg/mock/servers"
 	"github.com/kuoss/venti/pkg/model"
 	"github.com/kuoss/venti/pkg/store"
@@ -19,7 +20,7 @@ import (
 
 var (
 	servers        *ms.Servers
-	remoteHandler1 *remoteHandler
+	remoteHandler1 *RemoteHandler
 	remoteRouter   *gin.Engine
 )
 
@@ -30,18 +31,25 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
+func shutdown() {
+	servers.Close()
+}
+
 func setup() {
+	logger.SetLevel(logger.DebugLevel)
 	servers = ms.New(ms.Requirements{
 		{Type: ms.TypePrometheus, Port: 0, Name: "prometheus1", IsMain: true},
 		{Type: ms.TypePrometheus, Port: 0, Name: "prometheus2", IsMain: false},
 		{Type: ms.TypeLethe, Port: 0, Name: "lethe1", IsMain: true},
 		{Type: ms.TypeLethe, Port: 0, Name: "lethe2", IsMain: false},
 	})
-	datasourceConfig := model.DatasourceConfig{Datasources: servers.GetDatasources()}
 	var discoverer discovery.Discoverer
-	datasourceStore, _ := store.NewDatasourceStore(&datasourceConfig, discoverer)
+	datasourceStore, err := store.NewDatasourceStore(&model.DatasourceConfig{Datasources: servers.GetDatasources()}, discoverer)
+	if err != nil {
+		panic(err)
+	}
 	remoteStore := remote.New(&http.Client{}, 30*time.Second)
-	remoteHandler1 = NewRemoteHandler(datasourceStore, remoteStore)
+	remoteHandler1 = New(datasourceStore, remoteStore)
 
 	// router
 	remoteRouter = gin.New()
@@ -51,16 +59,10 @@ func setup() {
 	api.GET("/remote/query_range", remoteHandler1.QueryRange)
 }
 
-func shutdown() {
-	servers.Close()
-}
+func TestNew(t *testing.T) {
+	assert.NotEmpty(t, remoteHandler1.datasourceStore)
 
-func TestNewRemoteHandler(t *testing.T) {
-	assert.NotNil(t, remoteHandler1.datasourceStore)
-	assert.NotZero(t, remoteHandler1.datasourceStore)
-
-	assert.NotNil(t, remoteHandler1.remoteStore)
-	assert.NotZero(t, remoteHandler1.remoteStore)
+	assert.NotEmpty(t, remoteHandler1.remoteStore)
 
 	var ds model.Datasource
 	var err error
@@ -72,6 +74,16 @@ func TestNewRemoteHandler(t *testing.T) {
 	ds, err = remoteHandler1.datasourceStore.GetDatasourceByIndex(3)
 	assert.NoError(t, err)
 	assert.Equal(t, "lethe2", ds.Name)
+}
+
+func TestBuildInfo(t *testing.T) {
+	w := httptest.NewRecorder()
+	req, err := http.NewRequest("GET", "/api/remote/metadata?dsid=0", nil)
+	assert.NoError(t, err)
+
+	remoteRouter.ServeHTTP(w, req)
+	assert.Equal(t, 200, w.Code)
+	assert.Equal(t, `{"status":"success","data":{"apiserver_audit_event_total":[{"type":"counter","help":"[ALPHA] Counter of audit events generated and sent to the audit backend.","unit":""}]}}`, w.Body.String())
 }
 
 func TestMetadata(t *testing.T) {

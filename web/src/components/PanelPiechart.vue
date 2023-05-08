@@ -1,8 +1,8 @@
 <script setup>
-import { useFilterStore } from '@/stores/filter'
-import { Pie } from 'vue-chartjs'
-import { Chart as ChartJS, ArcElement } from 'chart.js'
-ChartJS.register(ArcElement)
+import { useFilterStore } from '@/stores/filter';
+import { Pie } from 'vue-chartjs';
+import { Chart as ChartJS, ArcElement } from 'chart.js';
+ChartJS.register(ArcElement);
 </script>
 
 <template>
@@ -12,10 +12,10 @@ ChartJS.register(ArcElement)
   <div v-else>
     <div v-if="chartData">
       <div class="piechart-wrapper p-2">
-        <pie :chart-data="chartData" :chart-options="chartOptions"></pie>
+        <pie :chart-data="chartData" :chart-options="chartOptions" />
       </div>
       <table class="border-t border-common w-full">
-        <tr class="border-b border-common" v-for="(label, idx) in chartData.labels">
+        <tr v-for="(label, idx) in chartData.labels" class="border-b border-common">
           <td>
             <span class="px-2" :style="'color:' + chartData.datasets[0].backgroundColor[idx]">●</span>
             {{ label }}
@@ -29,8 +29,6 @@ ChartJS.register(ArcElement)
   </div>
 </template>
 
-<style></style>
-
 <script>
 export default {
   props: {
@@ -39,11 +37,6 @@ export default {
     panelConfig: Object,
     panelWidth: Number,
     timeRange: Object,
-  },
-  watch: {
-    count() {
-      if (!this.isLoading) this.fetchData()
-    },
   },
   data() {
     return {
@@ -54,7 +47,15 @@ export default {
         maintainAspectRatio: false,
         elements: { arc: { borderWidth: 0.5 } },
       },
-    }
+    };
+  },
+  watch: {
+    count() {
+      if (!this.isLoading) this.fetchData();
+    },
+  },
+  mounted() {
+    this.fetchData();
   },
   methods: {
     getColorsForLabels(labels) {
@@ -67,20 +68,20 @@ export default {
         ready: '#2b8',
         running: '#2b8',
         succeeded: '#176',
-      }
-      let colors = []
+      };
+      let colors = [];
       labels.forEach(a => {
-        const x = Object.entries(labelColors).filter(b => b[0] == a.toLowerCase())
-        if (x.length > 0) colors.push(x[0][1])
-        else colors.push('#aaa')
-      })
-      return colors
+        const x = Object.entries(labelColors).filter(b => b[0] == a.toLowerCase());
+        if (x.length > 0) colors.push(x[0][1]);
+        else colors.push('#aaa');
+      });
+      return colors;
     },
     async fetchData() {
-      if (this.timeRange.length < 2) return
-      this.$emit('setIsLoading', true)
+      if (this.timeRange.length < 2) return;
+      this.$emit('setIsLoading', true);
       try {
-        let dds = []
+        let dds = [];
         for (const target of this.panelConfig.targets) {
           const response = await fetch(
             '/api/prometheus/query?' +
@@ -88,22 +89,22 @@ export default {
                 query: useFilterStore().renderExpr(target.expr),
                 time: this.timeRange[1],
               }),
-          )
-          const data = await response.json()
+          );
+          const data = await response.json();
           dds = [
             ...dds,
             ...data.data.result.map(x => ({
               label: target.legend.replace(/\{\{(.*?)\}\}/g, (i, m) => x.metric[m]),
               value: 1 * x.value[1],
             })),
-          ].sort((a, b) => (1 * a.value > 1 * b.value ? -1 : 1))
+          ].sort((a, b) => (1 * a.value > 1 * b.value ? -1 : 1));
         }
-        const labels = dds.map(x => x.label)
-        const values = dds.map(x => x.value)
+        const labels = dds.map(x => x.label);
+        const values = dds.map(x => x.value);
         if (values.length < 1) {
-          this.isNoData = true
+          this.isNoData = true;
         } else {
-          this.total = values.reduce((a, b) => a + b)
+          this.total = values.reduce((a, b) => a + b);
           this.chartData = {
             labels: labels,
             datasets: [
@@ -112,16 +113,15 @@ export default {
                 backgroundColor: this.getColorsForLabels(labels),
               },
             ],
-          }
+          };
         }
       } catch (error) {
-        console.error(error)
+        console.error(error);
       }
-      this.$emit('setIsLoading', false)
+      this.$emit('setIsLoading', false);
     },
   },
-  mounted() {
-    this.fetchData()
-  },
-}
+};
 </script>
+
+<style></style>

@@ -4,53 +4,57 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/kuoss/common/logger"
 	"github.com/kuoss/venti/pkg/model"
 	"github.com/kuoss/venti/pkg/store/alerting"
 	"github.com/kuoss/venti/pkg/store/alertrule"
+	"github.com/kuoss/venti/pkg/store/dashboard"
 	"github.com/kuoss/venti/pkg/store/discovery"
 	"github.com/kuoss/venti/pkg/store/discovery/kubernetes"
 	"github.com/kuoss/venti/pkg/store/remote"
 	"github.com/kuoss/venti/pkg/store/status"
+	"github.com/kuoss/venti/pkg/store/user"
 )
 
 type Stores struct {
 	*alerting.AlertingStore
 	*alertrule.AlertRuleStore
-	*DashboardStore
+	*dashboard.DashboardStore
 	*DatasourceStore
 	*remote.RemoteStore
 	*status.StatusStore
-	*UserStore
+	*user.UserStore
 }
 
 func NewStores(cfg *model.Config) (*Stores, error) {
-
 	// alerting
 	alertingStore := alerting.New("")
 
 	// alertrule
 	alertRuleStore, err := alertrule.New("")
 	if err != nil {
-		return nil, fmt.Errorf("error on New alertRuleStore: %w", err)
+		return nil, fmt.Errorf("alertrule.New err: %w", err)
 	}
 
 	// dashboard
-	dashboardStore, err := NewDashboardStore("etc/dashboards/**/*.y*ml")
+	logger.Debugf("new dashboard store...")
+	dashboardStore, err := dashboard.New("etc/dashboards/*.yml")
 	if err != nil {
-		return nil, fmt.Errorf("load dashboard configuration failed: %w", err)
+		return nil, fmt.Errorf("NewDashboardStore err: %w", err)
 	}
 
 	// datasource
+	logger.Infof("hello 1")
 	var discoverer discovery.Discoverer
 	if cfg.DatasourceConfig.Discovery.Enabled {
 		discoverer, err = kubernetes.NewK8sStore()
 		if err != nil {
-			return nil, fmt.Errorf("load discoverer k8sStore failed: %w", err)
+			return nil, fmt.Errorf("NewK8sStore err: %w", err)
 		}
 	}
-	datasourceStore, err := NewDatasourceStore(cfg.DatasourceConfig, discoverer)
+	datasourceStore, err := NewDatasourceStore(&cfg.DatasourceConfig, discoverer)
 	if err != nil {
-		return nil, fmt.Errorf("load datasource configuration failed: %w", err)
+		return nil, fmt.Errorf("NewDatasourceStore err: %w", err)
 	}
 
 	// remote
@@ -60,10 +64,11 @@ func NewStores(cfg *model.Config) (*Stores, error) {
 	storeStore := status.New(cfg)
 
 	// user
-	userStore, err := NewUserStore("./data/venti.sqlite3", *cfg.UserConfig)
+	userStore, err := user.New("./data/venti.sqlite3", cfg.UserConfig)
 	if err != nil {
-		return nil, fmt.Errorf("load user configuration failed: %w", err)
+		return nil, fmt.Errorf("NewUserStore err: %w", err)
 	}
+	logger.Infof("hello 6")
 
 	return &Stores{
 		alertingStore,

@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kuoss/common/logger"
 	ms "github.com/kuoss/venti/pkg/mock/servers"
 	"github.com/kuoss/venti/pkg/model"
 	"github.com/stretchr/testify/assert"
@@ -15,7 +16,7 @@ import (
 
 var (
 	servers     *ms.Servers
-	datasources []*model.Datasource
+	datasources []model.Datasource
 	remoteStore *RemoteStore
 )
 
@@ -27,7 +28,11 @@ func TestMain(m *testing.M) {
 }
 
 func setup() {
-	_ = os.Chdir("../..")
+	logger.SetLevel(logger.DebugLevel)
+	err := os.Chdir("../..")
+	if err != nil {
+		panic(err)
+	}
 	servers = ms.New(ms.Requirements{
 		{Type: ms.TypeAlertmanager, Port: 0, Name: "alertmanager1"},
 		{Type: ms.TypeLethe, Port: 0, Name: "lethe1", IsMain: true},
@@ -60,7 +65,7 @@ func TestNew(t *testing.T) {
 func TestGET(t *testing.T) {
 	testCases := []struct {
 		url       string
-		action    string
+		action    Action
 		rawQuery  string
 		wantCode  int
 		wantBody  string
@@ -77,76 +82,76 @@ func TestGET(t *testing.T) {
 		},
 		{
 			"wrongURL", "", "",
-			0, "", `error on Do: Get "/api/v1/": unsupported protocol scheme ""`,
+			0, "", `error on Do: Get "": unsupported protocol scheme ""`,
 		},
 		{
 			"http://0.0.0.0:1111", "", "",
-			0, "", `error on Do: Get "http://0.0.0.0:1111/api/v1/": dial tcp 0.0.0.0:1111: connect: connection refused`,
+			0, "", `error on Do: Get "http://0.0.0.0:1111": dial tcp 0.0.0.0:1111: connect: connection refused`,
 		},
 		{
 			"http://127.0.0.1:99999", "", "",
-			0, "", `error on Do: Get "http://127.0.0.1:99999/api/v1/": dial tcp: address 99999: invalid port`,
+			0, "", `error on Do: Get "http://127.0.0.1:99999": dial tcp: address 99999: invalid port`,
 		},
 		// metadata
 		{
-			datasources[4].URL, "metadata", "",
+			datasources[4].URL, ActionMetadata, "",
 			200, `{"status":"success","data":{"apiserver_audit_event_total":[{"type":"counter","help":"[ALPHA] Counter of audit events generated and sent to the audit backend.","unit":""}]}}`,
 			"",
 		},
 		// query
 		{
-			datasources[4].URL, "query", "",
+			datasources[4].URL, ActionQuery, "",
 			405, `{"status":"error","errorType":"bad_data","error":"invalid parameter \"query\": 1:1: parse error: no expression found in input"}`,
 			"",
 		},
 		{
-			datasources[4].URL, "query", "query=up",
+			datasources[4].URL, ActionQuery, "query=up",
 			200, `{"status":"success","data":{"resultType":"vector","result":[{"metric":{"__name__":"up","job":"prometheus","instance":"localhost:9090"},"value":[1435781451.781,"1"]}]}}`,
 			"",
 		},
 		{
-			datasources[4].URL, "query", "query=not_exists",
+			datasources[4].URL, ActionQuery, "query=not_exists",
 			200, `{"status":"success","data":{"resultType":"vector","result":[]}}`,
 			"",
 		},
 		{
-			servers.GetServersByType(ms.TypeAlertmanager)[0].URL, "query", "query=up",
+			servers.GetServersByType(ms.TypeAlertmanager)[0].URL, ActionQuery, "query=up",
 			404, "404 page not found\n",
 			"",
 		},
 		// query_range
 		{
-			datasources[4].URL, "query_range", "",
+			datasources[4].URL, ActionQueryRange, "",
 			405, `{"status":"error","errorType":"bad_data","error":"invalid parameter \"start\": cannot parse \"\" to a valid timestamp"}`,
 			"",
 		},
 		{
-			datasources[4].URL, "query_range", "query=up",
+			datasources[4].URL, ActionQueryRange, "query=up",
 			405, `{"status":"error","errorType":"bad_data","error":"invalid parameter \"start\": cannot parse \"\" to a valid timestamp"}`,
 			"",
 		},
 		{
-			datasources[4].URL, "query_range", "query=not_exists",
+			datasources[4].URL, ActionQueryRange, "query=not_exists",
 			405, `{"status":"error","errorType":"bad_data","error":"invalid parameter \"start\": cannot parse \"\" to a valid timestamp"}`,
 			"",
 		},
 		{
-			datasources[4].URL, "query_range", "query=not_exists&start=2015-07-01T20:10:30.781Z",
+			datasources[4].URL, ActionQueryRange, "query=not_exists&start=2015-07-01T20:10:30.781Z",
 			405, `{"status":"error","errorType":"bad_data","error":"invalid parameter \"end\": cannot parse \"\" to a valid timestamp"}`,
 			"",
 		},
 		{
-			datasources[4].URL, "query_range", "query=not_exists&start=2015-07-01T20:10:30.781Z&end=2015-07-01T20:11:00.781Z",
+			datasources[4].URL, ActionQueryRange, "query=not_exists&start=2015-07-01T20:10:30.781Z&end=2015-07-01T20:11:00.781Z",
 			405, `{"status":"error","errorType":"bad_data","error":"invalid parameter \"step\": cannot parse \"\" to a valid duration"}`,
 			"",
 		},
 		{
-			datasources[4].URL, "query_range", "query=not_exists&start=2015-07-01T20:10:30.781Z&end=2015-07-01T20:11:00.781Z&step=15s",
+			datasources[4].URL, ActionQueryRange, "query=not_exists&start=2015-07-01T20:10:30.781Z&end=2015-07-01T20:11:00.781Z&step=15s",
 			200, `{"status":"success","data":{"resultType":"matrix","result":[]}}`,
 			"",
 		},
 		{
-			datasources[4].URL, "query_range", "query=up&start=2015-07-01T20:10:30.781Z&end=2015-07-01T20:11:00.781Z&step=15s",
+			datasources[4].URL, ActionQueryRange, "query=up&start=2015-07-01T20:10:30.781Z&end=2015-07-01T20:11:00.781Z&step=15s",
 			200, `{"status":"success","data":{"resultType":"matrix","result":[{"metric":{"__name__":"up","job":"prometheus","instance":"localhost:9090"},"values":[[1435781430.781,"1"],[1435781445.781,"1"],[1435781460.781,"1"]]}]}}`,
 			"",
 		},
@@ -185,7 +190,7 @@ func TestGET_basicAuth(t *testing.T) {
 	}
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("#%d", i), func(tt *testing.T) {
-			code, body, err := remoteStore.GET(context.TODO(), tc.datasource, "query", "query=up")
+			code, body, err := remoteStore.GET(context.TODO(), tc.datasource, ActionQuery, "query=up")
 			if tc.wantError == "" {
 				assert.NoError(tt, err)
 			} else {

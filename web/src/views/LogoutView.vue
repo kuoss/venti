@@ -1,3 +1,13 @@
+<script lang="ts">
+export default {
+  mounted() {
+    this.$auth.logout().then(() => {
+      this.$router.push({ name: 'login' });
+    });
+  },
+};
+</script>
+
 <template>
   <div class="flex h-full">
     <div class="m-auto">
@@ -5,12 +15,3 @@
     </div>
   </div>
 </template>
-
-<script setup>
-import { useRouter } from 'vue-router'
-import { useAuthStore } from '@/stores/auth'
-import { onMounted } from 'vue'
-const auth = useAuthStore()
-const router = useRouter()
-onMounted(() => auth.logout().then(() => router.push({ name: 'login' })))
-</script>

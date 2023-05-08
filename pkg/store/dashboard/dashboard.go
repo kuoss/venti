@@ -1,11 +1,11 @@
-package store
+package dashboard
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 
+	"github.com/kuoss/common/logger"
 	"github.com/kuoss/venti/pkg/model"
 	"gopkg.in/yaml.v2"
 )
@@ -14,18 +14,20 @@ type DashboardStore struct {
 	dashboards []model.Dashboard
 }
 
-// NewDashboardStore pattern parameter is root filepath pattern for dashboard yaml files. ex) etc/dashboards/**/*.yaml
-func NewDashboardStore(pattern string) (*DashboardStore, error) {
-	log.Println("Loading dashboards...")
-	files, err := filepath.Glob("etc/dashboards/*.yaml")
+func New(pattern string) (*DashboardStore, error) {
+	logger.Debugf("NewDashboardStore...")
+	files, err := filepath.Glob(pattern)
 	if err != nil {
-		return nil, fmt.Errorf("error on glob: %w", err)
+		return nil, fmt.Errorf("glob err: %w", err)
+	}
+	if len(files) < 1 {
+		return nil, fmt.Errorf("no dashboard file")
 	}
 	var dashboards []model.Dashboard
 	for _, filename := range files {
 		dashboard, err := loadDashboardFromFile(filename)
 		if err != nil {
-			log.Printf("Warning: error on loadDashboardFromFile(skipped): %s", err)
+			logger.Warnf("Warning: error on loadDashboardFromFile(skipped): %s", err)
 			continue
 		}
 		dashboards = append(dashboards, *dashboard)
@@ -34,7 +36,7 @@ func NewDashboardStore(pattern string) (*DashboardStore, error) {
 }
 
 func loadDashboardFromFile(filename string) (*model.Dashboard, error) {
-	log.Printf("load dashboard file: %s\n", filename)
+	logger.Infof("load dashboard file: %s", filename)
 	yamlBytes, err := os.ReadFile(filename)
 	if err != nil {
 		return nil, fmt.Errorf("error on ReadFile: %w", err)

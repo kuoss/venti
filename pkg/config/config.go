@@ -27,8 +27,8 @@ func Load(version string) (*model.Config, error) {
 
 	return &model.Config{
 		Version:          version,
-		DatasourceConfig: datasourceConfig,
-		UserConfig:       userConfig,
+		DatasourceConfig: *datasourceConfig,
+		UserConfig:       *userConfig,
 	}, nil
 }
 

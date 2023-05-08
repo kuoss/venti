@@ -3,13 +3,15 @@ package handler
 import (
 	"crypto/rand"
 	"fmt"
-	"log"
 	"net/http"
 	"strings"
 	"time"
 
+	"github.com/kuoss/common/logger"
+	"github.com/kuoss/venti/pkg/handler/api"
 	"github.com/kuoss/venti/pkg/model"
-	"github.com/kuoss/venti/pkg/store"
+	userStore "github.com/kuoss/venti/pkg/store/user"
+	"gorm.io/gorm"
 
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
@@ -17,67 +19,55 @@ import (
 
 type authHandler struct {
 	// todo service to database
-	service *store.UserStore
+	userStore *userStore.UserStore
 }
 
-func NewAuthHandler(us *store.UserStore) *authHandler {
-	return &authHandler{us}
+func NewAuthHandler(s *userStore.UserStore) *authHandler {
+	return &authHandler{s}
 }
 
-func (ah *authHandler) Login(c *gin.Context) {
-
+func (h *authHandler) Login(c *gin.Context) {
 	username := c.PostForm("username")
 	password := c.PostForm("password")
-	if username == "" || password == "" {
-		c.JSON(200, gin.H{
-			"errors": map[string]string{
-				"common": "The username or password is invalid.",
-			},
-		})
+	if username == "" {
+		api.ResponseError(c, api.ErrorUnauthorized, fmt.Errorf("username is empty"))
+		return
+	}
+	if password == "" {
+		api.ResponseError(c, api.ErrorUnauthorized, fmt.Errorf("password is empty"))
 		return
 	}
 
-	user, err := ah.service.FindByUsername(username)
+	user, err := h.userStore.FindByUsername(username)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"status":    "error",
-			"errorType": "internal error",
-			"error":     "something wrong with db", // todo
-		})
-		return
-	}
-
-	if checkPassword(password, user.Hash) {
-		user := issueToken(user)
-		err := ah.service.Save(user)
-		if err != nil {
-			log.Printf("token info update to database failed %s", err.Error())
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"status":    "error",
-				"errorType": "internal error",
-				"error":     "something wrong with db", // todo error define
-			})
+		if err == gorm.ErrRecordNotFound {
+			api.ResponseError(c, api.ErrorUnauthorized, fmt.Errorf("username not found"))
 			return
 		}
-
-		log.Printf("User '%s' logged in successfully.\n", user.Username)
-		c.JSON(200, gin.H{
-			"message":  "You are logged in.",
-			"token":    user.Token,
-			"userID":   user.ID,
-			"username": user.Username,
-		})
-		log.Println("User login ok.")
+		api.ResponseError(c, api.ErrorUnauthorized, fmt.Errorf("FindByUsername err: %w", err))
 		return
 	}
 
-	log.Println("User login failed.")
+	if !checkPassword(password, user.Hash) {
+		logger.Infof("User login failed.")
+		api.ResponseError(c, api.ErrorUnauthorized, fmt.Errorf("username or password is incorrect"))
+		return
+	}
 
-	// todo status code 422?
-	c.JSON(422, gin.H{
-		"status":    "error",
-		"errorType": "authentication_failed",
-		"error":     "The username or password is incorrect",
+	user = issueToken(user)
+	err = h.userStore.Save(user)
+	if err != nil {
+		logger.Errorf("update token err: %s", err.Error())
+		api.ResponseError(c, api.ErrorInternal, fmt.Errorf("token save err: %w", err))
+		return
+	}
+
+	logger.Infof("user '%s' logged in successfully.", user.Username)
+	c.JSON(200, gin.H{
+		"message":  "You are logged in.",
+		"token":    user.Token,
+		"userID":   user.ID,
+		"username": user.Username,
 	})
 }
 
@@ -98,7 +88,7 @@ func issueToken(user model.User) model.User {
 	return user
 }
 
-func (ah *authHandler) Logout(c *gin.Context) {
+func (h *authHandler) Logout(c *gin.Context) {
 	//deleteTokenIfWeCan(c)
 	// token delete if we can
 	tokenFromHeader := c.GetHeader("Authorization")
@@ -109,14 +99,14 @@ func (ah *authHandler) Logout(c *gin.Context) {
 	tokenFromHeader = strings.TrimPrefix(tokenFromHeader, "Bearer ")
 	userID := c.GetHeader("UserID")
 
-	user, err := ah.service.FindByUserIdAndToken(userID, tokenFromHeader)
+	user, err := h.userStore.FindByUserIdAndToken(userID, tokenFromHeader)
 	if err != nil {
 		return
 	}
 
 	user.Token = ""
 	user.TokenExpires = time.Now().Add(-480 * time.Hour)
-	err = ah.service.Save(user)
+	err = h.userStore.Save(user)
 	if err != nil {
 		return
 	}
@@ -125,9 +115,9 @@ func (ah *authHandler) Logout(c *gin.Context) {
 	})
 }
 
-// TODO: add to handler routes check if we have to this on moethod
+// TODO: add to handler routes check if we have to this on method
 // only checks userid, Bearer tokene exist. not validation.
-func (ah *authHandler) HeaderRequired(c *gin.Context) {
+func (h *authHandler) HeaderRequired(c *gin.Context) {
 	token := c.GetHeader("Authorization")
 	if token == "" || !strings.HasPrefix(token, "Bearer ") {
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{

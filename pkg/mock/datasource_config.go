@@ -7,13 +7,9 @@ import (
 )
 
 func DatasourceConfigFromDatasources(datasources []model.Datasource) *model.DatasourceConfig {
-	var datasourcePointers []*model.Datasource
-	for i := range datasources {
-		datasourcePointers = append(datasourcePointers, &datasources[i])
-	}
 	return &model.DatasourceConfig{
 		QueryTimeout: time.Second * 10,
-		Datasources:  datasourcePointers,
+		Datasources:  datasources,
 		Discovery:    model.Discovery{},
 	}
 }

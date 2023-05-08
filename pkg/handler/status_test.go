@@ -19,13 +19,13 @@ var (
 func init() {
 	statusStore := status.New(&model.Config{
 		Version:          "test",
-		DatasourceConfig: &model.DatasourceConfig{},
-		UserConfig:       &model.UserConfig{},
+		DatasourceConfig: model.DatasourceConfig{},
+		UserConfig:       model.UserConfig{},
 	})
 
 	statusHandler1 = NewStatusHandler(statusStore)
 	statusRouter = gin.New()
-	statusRouter.GET("/api/status/buildinfo", statusHandler1.BuildInfo)
+	statusRouter.GET("/api/v1/status/buildinfo", statusHandler1.BuildInfo)
 }
 
 func TestNewstatusHandler(t *testing.T) {
@@ -34,7 +34,7 @@ func TestNewstatusHandler(t *testing.T) {
 
 func TestBuildInfo(t *testing.T) {
 	w := httptest.NewRecorder()
-	req, err := http.NewRequest("GET", "/api/status/buildinfo", nil)
+	req, err := http.NewRequest("GET", "/api/v1/status/buildinfo", nil)
 	assert.NoError(t, err)
 	statusRouter.ServeHTTP(w, req)
 	assert.Equal(t, 200, w.Code)

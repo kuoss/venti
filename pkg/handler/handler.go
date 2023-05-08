@@ -1,19 +1,20 @@
 package handler
 
 import (
+	"github.com/kuoss/venti/pkg/handler/remote"
 	"github.com/kuoss/venti/pkg/model"
 	"github.com/kuoss/venti/pkg/store"
 )
 
 type Handlers struct {
-	*alertHandler
-	*authHandler
-	*configHandler
-	*dashboardHandler
-	*datasourceHandler
-	*probeHandler
-	*remoteHandler
-	*statusHandler
+	alertHandler      *alertHandler
+	authHandler       *authHandler
+	configHandler     *configHandler
+	dashboardHandler  *dashboardHandler
+	datasourceHandler *datasourceHandler
+	probeHandler      *probeHandler
+	remoteHandler     *remote.RemoteHandler
+	statusHandler     *statusHandler
 }
 
 func loadHandlers(cfg *model.Config, stores *store.Stores) *Handlers {
@@ -24,7 +25,7 @@ func loadHandlers(cfg *model.Config, stores *store.Stores) *Handlers {
 		NewDashboardHandler(stores.DashboardStore),
 		NewDatasourceHandler(stores.DatasourceStore, stores.RemoteStore),
 		NewProbeHandler(),
-		NewRemoteHandler(stores.DatasourceStore, stores.RemoteStore),
+		remote.New(stores.DatasourceStore, stores.RemoteStore),
 		NewStatusHandler(stores.StatusStore),
 	}
 }

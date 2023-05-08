@@ -19,6 +19,13 @@ func init() {
 	client = mockerClient.New(server.URL)
 }
 
+func Test_api_v1_status_buildinfo(t *testing.T) {
+	code, body, err := client.GET("/api/v1/status/buildinfo", "")
+	assert.NoError(t, err)
+	assert.Equal(t, 200, code)
+	assert.JSONEq(t, `{"status":"success","data":{"version":"2.41.0-prometheus","revision":"c0d8a56c69014279464c0e15d8bfb0e153af0dab","branch":"HEAD","buildUser":"root@d20a03e77067","buildDate":"20221220-10:40:45","goVersion":"go1.19.4"}}`, body)
+}
+
 func Test_api_v1_metadata(t *testing.T) {
 	code, body, err := client.GET("/api/v1/metadata", "")
 	assert.NoError(t, err)

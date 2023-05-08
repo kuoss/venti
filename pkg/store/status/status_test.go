@@ -1,30 +1,50 @@
 package status
 
 import (
+	"fmt"
 	"runtime"
 	"testing"
 
 	"github.com/kuoss/venti/pkg/model"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
-var store *StatusStore
+var (
+	store1    *StatusStore
+	goVersion string = runtime.Version()
+)
 
 func init() {
-	store = New(&model.Config{
+	store1 = New(&model.Config{
 		Version: "test",
 	})
 }
 
 func TestNew(t *testing.T) {
-	assert.NotEmpty(t, store)
-
-	assert.Equal(t, "test", store.ventiVersion.Version)
-	assert.Equal(t, runtime.Version(), store.ventiVersion.GoVersion)
+	testCases := []struct {
+		cfg  *model.Config
+		want *StatusStore
+	}{
+		{
+			&model.Config{},
+			&StatusStore{ventiVersion: model.VentiVersion{Version: "", GoVersion: goVersion}},
+		},
+		{
+			&model.Config{Version: "hello"},
+			&StatusStore{ventiVersion: model.VentiVersion{Version: "hello", GoVersion: goVersion}},
+		},
+	}
+	for i, tc := range testCases {
+		t.Run(fmt.Sprintf("#%d", i), func(t *testing.T) {
+			got := New(tc.cfg)
+			require.Equal(t, tc.want, got)
+		})
+	}
 }
 
 func TestBuildInfo(t *testing.T) {
-	got := store.BuildInfo()
+	got := store1.BuildInfo()
 	assert.Equal(t, "test", got.Version)
-	assert.Equal(t, runtime.Version(), got.GoVersion)
+	assert.Equal(t, goVersion, got.GoVersion)
 }

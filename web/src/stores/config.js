@@ -1,4 +1,4 @@
-import { defineStore } from 'pinia'
+import { defineStore } from 'pinia';
 
 export const useConfigStore = defineStore('config', {
   state: () => ({
@@ -6,16 +6,16 @@ export const useConfigStore = defineStore('config', {
   }),
   actions: {
     setDark(b) {
-      this.dark = b
+      this.dark = b;
       if (b) {
-        document.documentElement.classList.add('dark')
-        document.documentElement.style.setProperty('color-scheme', 'dark')
-        localStorage.theme = 'dark'
+        document.documentElement.classList.add('dark');
+        document.documentElement.style.setProperty('color-scheme', 'dark');
+        localStorage.theme = 'dark';
       } else {
-        document.documentElement.classList.remove('dark')
-        document.documentElement.style.setProperty('color-scheme', 'normal')
-        localStorage.theme = 'light'
+        document.documentElement.classList.remove('dark');
+        document.documentElement.style.setProperty('color-scheme', 'normal');
+        localStorage.theme = 'light';
       }
     },
   },
-})
+});

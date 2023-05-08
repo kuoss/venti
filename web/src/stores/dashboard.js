@@ -1,4 +1,4 @@
-import { defineStore } from 'pinia'
+import { defineStore } from 'pinia';
 // import axios from "axios";
 
 export const useDashboardStore = defineStore('dashboard', {
@@ -8,24 +8,24 @@ export const useDashboardStore = defineStore('dashboard', {
   }),
   actions: {
     async getDashboards() {
-      await this.waitForLoaded()
-      return this.dashboards
+      await this.waitForLoaded();
+      return this.dashboards;
     },
     async waitForLoaded() {
-      let tries = 0
-      if (!this.status.loading) this.loadData()
-      while (!this.status.loaded) await new Promise(resolve => setTimeout(resolve, 100 * ++tries))
+      let tries = 0;
+      if (!this.status.loading) this.loadData();
+      while (!this.status.loaded) await new Promise(resolve => setTimeout(resolve, 100 * ++tries));
     },
     async loadData() {
-      this.status.loading = true
+      this.status.loading = true;
       try {
-        const response = await fetch('/api/dashboards')
-        this.dashboards = await response.json()
-        this.status.loaded = true
+        const response = await fetch('/api/v1/dashboards');
+        this.dashboards = await response.json();
+        this.status.loaded = true;
       } catch (error) {
-        console.error(error)
-        this.status.loading = false
+        console.error(error);
+        this.status.loading = false;
       }
     },
   },
-})
+});

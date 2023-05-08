@@ -10,18 +10,21 @@ import (
 )
 
 func init() {
-	_ = os.Chdir("../..")
+	err := os.Chdir("../..")
+	if err != nil {
+		panic(err)
+	}
 }
 
 func TestLoad(t *testing.T) {
 	cfg, err := Load("Unknown")
 	assert.Nil(t, err)
 	assert.Equal(t, cfg.Version, "Unknown")
-	assert.ElementsMatch(t, []*model.Datasource{
+	assert.Equal(t, []model.Datasource{
 		{Type: model.DatasourceTypePrometheus, Name: "prometheus", URL: "http://localhost:9090"},
 		{Type: model.DatasourceTypeLethe, Name: "lethe", URL: "http://localhost:6060"},
 	}, cfg.DatasourceConfig.Datasources)
-	assert.Equal(t, &model.UserConfig{EtcUsers: []model.EtcUser{
+	assert.Equal(t, model.UserConfig{EtcUsers: []model.EtcUser{
 		{Username: "admin", Hash: "$2a$12$VcCDgh2NDk07JGN0rjGbM.Ad41qVR/YFJcgHp0UGns5JDymv..TOG", IsAdmin: true},
 	}}, cfg.UserConfig)
 }
@@ -41,7 +44,7 @@ func TestLoadDatasourceConfigFile(t *testing.T) {
 			"etc/datasources.yml",
 			&model.DatasourceConfig{
 				QueryTimeout: 30000000000,
-				Datasources: []*model.Datasource{
+				Datasources: []model.Datasource{
 					{Type: "prometheus", Name: "prometheus", URL: "http://localhost:9090"},
 					{Type: "lethe", Name: "lethe", URL: "http://localhost:6060"},
 				},
@@ -51,7 +54,7 @@ func TestLoadDatasourceConfigFile(t *testing.T) {
 		},
 	}
 	for i, tc := range testCases {
-		t.Run(fmt.Sprintf("TESTCASE_#%d", i), func(t *testing.T) {
+		t.Run(fmt.Sprintf("#%d", i), func(t *testing.T) {
 			got, err := loadDatasourceConfigFile(tc.file)
 			if tc.wantError == "" {
 				assert.NoError(t, err)
@@ -83,7 +86,7 @@ func TestLoadUserConfigFile(t *testing.T) {
 		},
 	}
 	for i, tc := range testCases {
-		t.Run(fmt.Sprintf("TESTCASE_#%d", i), func(t *testing.T) {
+		t.Run(fmt.Sprintf("#%d", i), func(t *testing.T) {
 			got, err := loadUserConfigFile(tc.file)
 			if tc.wantError == "" {
 				assert.NoError(t, err)

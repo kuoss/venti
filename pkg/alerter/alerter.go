@@ -143,7 +143,7 @@ func (a *alerter) processAlert(alert *model.Alert, datasource *model.Datasource)
 	var zero []model.Fire
 	queryData, err := a.queryAlert(alert, datasource)
 	if err != nil {
-		return zero, fmt.Errorf("error on queryAlert: %s", err)
+		return zero, fmt.Errorf("queryAlert err: %w", err)
 	}
 	fires := evaluateAlert(alert, queryData)
 	return fires, nil
@@ -154,16 +154,16 @@ func (a *alerter) queryAlert(alert *model.Alert, datasource *model.Datasource) (
 	ctx, cancel := context.WithTimeout(context.TODO(), 10*time.Second)
 	defer cancel()
 
-	code, body, err := a.remoteStore.GET(ctx, datasource, "query", "query="+url.QueryEscape(alert.Expr))
+	code, body, err := a.remoteStore.GET(ctx, datasource, remote.ActionQuery, "query="+url.QueryEscape(alert.Expr))
 	if err != nil {
-		return zero, fmt.Errorf("error on GET: %w", err)
+		return zero, fmt.Errorf("GET err: %w", err)
 	}
 
 	//  body: {"status":"success","data":{"resultType":"vector","result":[]}}
 	var queryResult model.QueryResult
 	err = json.Unmarshal([]byte(body), &queryResult)
 	if err != nil {
-		return zero, fmt.Errorf("error on Unmarshal: %w", err)
+		return zero, fmt.Errorf("Unmarshal err: %w, body: %s", err, body)
 	}
 
 	// wrap up

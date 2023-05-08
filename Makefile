@@ -14,6 +14,7 @@ mock-prometheus:
 
 # dev server (port 5173)
 run-dev:
+	cp docs/examples/datasources_dev.yml etc/datasources.yml
 	hack/run-dev.sh
 
 # gin server (port 8080)
@@ -33,11 +34,14 @@ docker:
 	docker build -t $(IMAGE) --build-arg VERSION=$(VERSION) . && docker push $(IMAGE)
 
 test:
+	cp docs/examples/datasources_test.yml etc/datasources.yml
 	hack/test-failfast.sh
 
 cover:
+	cp docs/examples/datasources_test.yml etc/datasources.yml
 	hack/test-cover.sh
 
 checks:
+	cp docs/examples/datasources_test.yml etc/datasources.yml
 	hack/checks.sh
 

@@ -4,14 +4,14 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/kuoss/venti/pkg/store"
+	"github.com/kuoss/venti/pkg/store/dashboard"
 )
 
 type dashboardHandler struct {
-	dashboardStore *store.DashboardStore
+	dashboardStore *dashboard.DashboardStore
 }
 
-func NewDashboardHandler(s *store.DashboardStore) *dashboardHandler {
+func NewDashboardHandler(s *dashboard.DashboardStore) *dashboardHandler {
 	return &dashboardHandler{s}
 }
 

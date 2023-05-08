@@ -4,8 +4,8 @@ import "time"
 
 type Config struct {
 	Version          string
-	DatasourceConfig *DatasourceConfig
-	UserConfig       *UserConfig
+	DatasourceConfig DatasourceConfig
+	UserConfig       UserConfig
 }
 
 type UserConfig struct {
@@ -20,7 +20,7 @@ type EtcUser struct {
 
 type DatasourceConfig struct {
 	QueryTimeout time.Duration `json:"queryTimeout,omitempty" yaml:"queryTimeout,omitempty"`
-	Datasources  []*Datasource `json:"datasources" yaml:"datasources,omitempty"`
+	Datasources  []Datasource  `json:"datasources" yaml:"datasources,omitempty"`
 	Discovery    Discovery     `json:"discovery,omitempty" yaml:"discovery,omitempty"`
 }
 

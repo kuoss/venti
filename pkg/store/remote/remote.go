@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/kuoss/common/logger"
 	"github.com/kuoss/venti/pkg/model"
 )
 
@@ -16,6 +17,16 @@ type RemoteStore struct {
 	timeout    time.Duration
 }
 
+type Action string
+
+const (
+	ActionReady      Action = "/-/ready"
+	ActionMetadata   Action = "/api/v1/metadata"
+	ActionQuery      Action = "/api/v1/query"
+	ActionQueryRange Action = "/api/v1/query_range"
+	ActionTargets    Action = "/api/v1/targets"
+)
+
 func New(httpClient *http.Client, timeout time.Duration) *RemoteStore {
 	return &RemoteStore{
 		httpClient: httpClient,
@@ -23,20 +34,20 @@ func New(httpClient *http.Client, timeout time.Duration) *RemoteStore {
 	}
 }
 
-func (r *RemoteStore) GET(ctx context.Context, datasource *model.Datasource, action string, rawQuery string) (code int, body string, err error) {
+func (r *RemoteStore) GET(ctx context.Context, datasource *model.Datasource, action Action, rawQuery string) (code int, body string, err error) {
 	u, err := url.Parse(datasource.URL)
 	if err != nil {
 		return 0, "", fmt.Errorf("error on Parse: %w", err)
 	}
 
-	u.Path = fmt.Sprintf("/api/v1/%s", action)
+	u.Path = string(action)
 	u.RawQuery = rawQuery
 	ctx, cancel := context.WithTimeout(ctx, r.timeout)
 	defer cancel()
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), nil)
 	if err != nil {
 		//go:cover ignore - hardly reachable
-		return 0, "", fmt.Errorf("error on NewRequest: %w", err)
+		return 0, "", fmt.Errorf("NewRequest err: %w", err)
 	}
 
 	if datasource.BasicAuth {
@@ -52,6 +63,9 @@ func (r *RemoteStore) GET(ctx context.Context, datasource *model.Datasource, act
 	if err != nil {
 		//go:cover ignore - hardly reachable
 		return code, "", fmt.Errorf("error on ReadAll: %w", err)
+	}
+	if code != 200 {
+		logger.Debugf("code=%d url=%s", code, u.String())
 	}
 	return code, string(bodyBytes), nil
 }

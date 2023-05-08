@@ -1,10 +1,10 @@
 <script setup>
-import UplotVue from 'uplot-vue'
-import 'uplot/dist/uPlot.min.css'
+import UplotVue from 'uplot-vue';
+import 'uplot/dist/uPlot.min.css';
 
-import { useFilterStore } from '@/stores/filter'
-import { useTimeStore } from '@/stores/time'
-import { useSidePanelStore } from '@/stores/sidePanel'
+import { useFilterStore } from '@/stores/filter';
+import { useTimeStore } from '@/stores/time';
+import { useSidePanelStore } from '@/stores/sidePanel';
 </script>
 
 <template>
@@ -12,7 +12,7 @@ import { useSidePanelStore } from '@/stores/sidePanel'
     <div class="text-center text-lg">No data</div>
   </div>
   <div v-else>
-    <UplotVue @click="onChartClick" :data="data" :options="options" ref="main" />
+    <UplotVue ref="main" :data="data" :options="options" @click="onChartClick" />
   </div>
 </template>
 
@@ -24,14 +24,6 @@ export default {
     panelConfig: Object,
     panelWidth: Number,
     timeRange: Object,
-  },
-  watch: {
-    count() {
-      if (!this.isLoading) this.fetchData()
-    },
-    panelWidth() {
-      this.resize()
-    },
   },
   data() {
     return {
@@ -68,13 +60,24 @@ export default {
         series: [],
         plugins: [this.tooltipPlugin()],
       },
-    }
+    };
+  },
+  watch: {
+    count() {
+      if (!this.isLoading) this.fetchData();
+    },
+    panelWidth() {
+      this.resize();
+    },
+  },
+  mounted() {
+    this.init();
   },
   methods: {
     async fetchData() {
-      if (this.timeRange.length < 2) return
-      const target = this.panelConfig.targets[0]
-      this.$emit('setIsLoading', true)
+      if (this.timeRange.length < 2) return;
+      const target = this.panelConfig.targets[0];
+      this.$emit('setIsLoading', true);
       try {
         const response = await fetch(
           '/api/prometheus/query_range?' +
@@ -84,34 +87,34 @@ export default {
               end: this.timeRange[1],
               step: (this.timeRange[1] - this.timeRange[0]) / 120,
             }),
-        )
-        const data = await response.json()
+        );
+        const data = await response.json();
 
-        const result = data.data.result
+        const result = data.data.result;
         if (result.length < 1) {
-          this.isNoData = true
-          return
+          this.isNoData = true;
+          return;
         }
-        this.isNoData = false
+        this.isNoData = false;
 
-        const temp = result.map(x => x.values)
-        const timestamps = Array.from(new Set(temp.map(a => a.map(b => b[0])).flat())).sort()
+        const temp = result.map(x => x.values);
+        const timestamps = Array.from(new Set(temp.map(a => a.map(b => b[0])).flat())).sort();
         const seriesData = temp.map(a => {
-          let newA = []
+          let newA = [];
           timestamps.forEach(t => {
-            const newPoint = a.filter(b => t == b[0])
+            const newPoint = a.filter(b => t == b[0]);
             if (newPoint.length != 1 || isNaN(parseFloat(newPoint[0][1]))) {
-              newA.push(null)
-              return
+              newA.push(null);
+              return;
             }
-            newA.push(parseFloat(newPoint[0][1]))
-          })
-          return newA
-        })
+            newA.push(parseFloat(newPoint[0][1]));
+          });
+          return newA;
+        });
         // labels
-        const labels = result.map(x => target.legend.replace(/\{\{(.*?)\}\}/g, (i, m) => x.metric[m]))
-        let newSeries = []
-        newSeries.push({})
+        const labels = result.map(x => target.legend.replace(/\{\{(.*?)\}\}/g, (i, m) => x.metric[m]));
+        let newSeries = [];
+        newSeries.push({});
         labels.forEach((x, i) =>
           newSeries.push({
             label: x,
@@ -119,56 +122,53 @@ export default {
             width: 1,
             points: { size: 0 },
           }),
-        )
+        );
         let options = {
           ...this.options,
           series: newSeries,
           scales: useTimeStore().scales,
-        }
-        const yMax = this.panelConfig.chartOptions?.yMax ?? 0
+        };
+        const yMax = this.panelConfig.chartOptions?.yMax ?? 0;
         options.scales = {
           y: {
             range: (self, fromMin, fromMax) => [0, Math.max(fromMax, yMax)],
           },
-        }
-        this.options = options
-        this.data = [timestamps, ...seriesData]
+        };
+        this.options = options;
+        this.data = [timestamps, ...seriesData];
       } catch (error) {
-        console.error(error)
+        console.error(error);
       }
-      this.$emit('setIsLoading', false)
+      this.$emit('setIsLoading', false);
     },
     resize() {
-      this.options = { ...this.options, width: this.panelWidth - 15 }
+      this.options = { ...this.options, width: this.panelWidth - 15 };
     },
     onChartClick() {
-      useSidePanelStore().toggleShow('DataTable')
+      useSidePanelStore().toggleShow('DataTable');
     },
     tooltipPlugin() {
       return {
         hooks: {
           setCursor: u => {
-            let columnData = u.data.map(x => x[u.cursor.idx])
-            const time = columnData.shift()
-            if (!time) return
-            const labels = this.options.series.map(x => x['label']).slice(1)
-            const rows = labels.map((x, i) => [x, columnData[i]]).filter(x => x[1] != undefined)
+            let columnData = u.data.map(x => x[u.cursor.idx]);
+            const time = columnData.shift();
+            if (!time) return;
+            const labels = this.options.series.map(x => x['label']).slice(1);
+            const rows = labels.map((x, i) => [x, columnData[i]]).filter(x => x[1] != undefined);
             useSidePanelStore().updatetDataTable({
               title: this.panelConfig.title,
               time: time,
               rows: rows,
-            })
+            });
           },
         },
-      }
+      };
     },
     async init() {
-      await this.fetchData()
-      this.resize()
+      await this.fetchData();
+      this.resize();
     },
   },
-  mounted() {
-    this.init()
-  },
-}
+};
 </script>

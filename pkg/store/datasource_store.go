@@ -3,47 +3,47 @@ package store
 import (
 	"errors"
 	"fmt"
-	"log"
 
+	"github.com/kuoss/common/logger"
 	"github.com/kuoss/venti/pkg/model"
 	"github.com/kuoss/venti/pkg/store/discovery"
 )
 
 // DatasourceStore
 type DatasourceStore struct {
-	config      *model.DatasourceConfig
+	config      model.DatasourceConfig
 	datasources []model.Datasource
 	discoverer  discovery.Discoverer
 }
 
 // NewDatasourceStore return *DatasourceStore after service discovery (with k8s service)
 func NewDatasourceStore(cfg *model.DatasourceConfig, discoverer discovery.Discoverer) (*DatasourceStore, error) {
-	store := &DatasourceStore{cfg, nil, discoverer}
+	store := &DatasourceStore{*cfg, nil, discoverer}
 	err := store.load()
 	if err != nil {
-		return nil, fmt.Errorf("error on load: %w", err)
+		return nil, fmt.Errorf("load err: %w", err)
 	}
 	return store, nil
 }
 
 func (s *DatasourceStore) load() error {
 	// load from config
-	for _, datasource := range s.config.Datasources {
-		s.datasources = append(s.datasources, *datasource)
-	}
+	s.datasources = append(s.datasources, s.config.Datasources...)
 
 	// load from discovery
 	if s.config.Discovery.Enabled {
 
 		discoveredDatasources, err := s.discoverer.Do(s.config.Discovery)
 		if err != nil {
-			log.Fatalf("error on discoverDatasources: %s", err)
+			logger.Errorf("error on discoverDatasources: %s", err)
 		}
 		s.datasources = append(s.datasources, discoveredDatasources...)
 	}
+	// if len(s.datasources) < 1 {
+	// 	return fmt.Errorf("no datasource")
+	// }
 	// set main datasources
 	s.setMainDatasources()
-
 	return nil
 }
 
@@ -73,9 +73,9 @@ func (s *DatasourceStore) setMainDatasources() {
 	// fallback for main prometheus datasource
 	// If there is no main prometheus, the first prometheus will be a main prometheus.
 	if !existsMainPrometheus {
-		for _, ds := range s.datasources {
+		for i, ds := range s.datasources {
 			if ds.Type == model.DatasourceTypePrometheus {
-				ds.IsMain = true
+				s.datasources[i].IsMain = true
 				break
 			}
 		}
@@ -84,9 +84,9 @@ func (s *DatasourceStore) setMainDatasources() {
 	// fallback for main lethe datasource
 	// If there is no main lethe, the first lethe will be a main lethe.
 	if !existsMainLethe {
-		for _, ds := range s.datasources {
+		for i, ds := range s.datasources {
 			if ds.Type == model.DatasourceTypeLethe {
-				ds.IsMain = true
+				s.datasources[i].IsMain = true
 				break
 			}
 		}

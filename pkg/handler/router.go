@@ -12,7 +12,7 @@ func NewRouter(cfg *model.Config, stores *store.Stores) *gin.Engine {
 	router := gin.Default()
 	handlers := loadHandlers(cfg, stores)
 
-	api := router.Group("/api")
+	api := router.Group("/api/v1")
 	// TODO: api.Use(tokenRequired)
 	{
 		api.GET("/alerts", handlers.alertHandler.AlertRuleFiles)

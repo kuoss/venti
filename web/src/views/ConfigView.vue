@@ -1,7 +1,7 @@
 <template>
   <header class="fixed right-0 w-full bg-white border-b border-common shadow z-30 p-2 pl-52">
     <div class="flex items-center flex-row">
-      <div><i class="mdi mdi-18px mdi-file-outline"></i> Config</div>
+      <div><i class="mdi mdi-18px mdi-file-outline" /> Config</div>
     </div>
   </header>
   <main class="mt-12 w-full p-4">
@@ -25,17 +25,17 @@ export default {
   data() {
     return {
       yaml: '',
-    }
+    };
+  },
+  mounted() {
+    this.fetchData();
   },
   methods: {
     fetchData() {
       this.axios.get('/api/config/dashboards/yaml').then(response => {
-        this.yaml = response.data.yaml
-      })
+        this.yaml = response.data.yaml;
+      });
     },
   },
-  mounted() {
-    this.fetchData()
-  },
-}
+};
 </script>

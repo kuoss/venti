@@ -15,7 +15,7 @@ import (
 	"github.com/kuoss/venti/pkg/store/discovery"
 	"github.com/kuoss/venti/pkg/store/remote"
 	commonModel "github.com/prometheus/common/model"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var (
@@ -31,8 +31,15 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
+func shutdown() {
+	servers.Close()
+}
+
 func setup() {
-	_ = os.Chdir("../..")
+	err := os.Chdir("../..")
+	if err != nil {
+		panic(err)
+	}
 	servers = ms.New(ms.Requirements{
 		{Type: ms.TypeAlertmanager, Port: 0, Name: "alertmanager1", IsMain: false},
 		{Type: ms.TypeLethe, Port: 0, Name: "lethe1", IsMain: true},
@@ -41,7 +48,7 @@ func setup() {
 		{Type: ms.TypePrometheus, Port: 0, Name: "prometheus2", IsMain: false},
 		{Type: ms.TypePrometheus, Port: 0, Name: "prometheus3", IsMain: false},
 	})
-	datasourceConfig := model.DatasourceConfig{
+	datasourceConfig := &model.DatasourceConfig{
 		Datasources: servers.GetDatasources(),
 	}
 
@@ -52,7 +59,7 @@ func setup() {
 	}
 
 	var discoverer discovery.Discoverer
-	datasourceStore, err := store.NewDatasourceStore(&datasourceConfig, discoverer)
+	datasourceStore, err := store.NewDatasourceStore(datasourceConfig, discoverer)
 	if err != nil {
 		panic(err)
 	}
@@ -67,10 +74,6 @@ func setup() {
 
 	alerter1 = New(stores)
 	alerter1.SetAlertmanagerURL(servers.GetServersByType(ms.TypeAlertmanager)[0].URL)
-}
-
-func shutdown() {
-	servers.Close()
 }
 
 func TestNew(t *testing.T) {
@@ -91,46 +94,50 @@ func TestNew(t *testing.T) {
 			},
 		},
 	}
-	assert.Equal(t, 1, len(alertRuleFiles))
-	assert.Equal(t, 1, len(alertRuleFiles[0].RuleGroups))
-	assert.Equal(t, 3, len(alertRuleFiles[0].RuleGroups[0].Rules))
-	assert.Equal(t, model.DatasourceSelector{Type: "prometheus"}, alertRuleFiles[0].DatasourceSelector)
+	require.Equal(t, 1, len(alertRuleFiles))
+	require.Equal(t, 1, len(alertRuleFiles[0].RuleGroups))
+	require.Equal(t, 3, len(alertRuleFiles[0].RuleGroups[0].Rules))
+	require.Equal(t, model.DatasourceSelector{Type: "prometheus"}, alertRuleFiles[0].DatasourceSelector)
 
-	assert.Equal(t, false, alerter1.repeat)
+	require.Equal(t, false, alerter1.repeat)
 
 	wantAlertGroups := []model.AlertGroup{{Alerts: []model.Alert{
 		{State: 0, Name: "S00-AlwaysOn", Expr: "vector(1234)", For: 0, Labels: map[string]string{"hello": "world", "rulefile": "sample-v3", "severity": "silence"}, Annotations: map[string]string{"summary": "AlwaysOn value={{ $value }}"}, ActiveAt: 0},
 		{State: 0, Name: "S01-Monday", Expr: "day_of_week() == 1 and hour() < 2", For: 0, Labels: map[string]string{"hello": "world", "rulefile": "sample-v3", "severity": "silence"}, Annotations: map[string]string{"summary": "Monday"}, ActiveAt: 0},
 		{State: 0, Name: "S02-NewNamespace", Expr: "time() - kube_namespace_created < 120", For: 0, Labels: map[string]string{"hello": "world", "rulefile": "sample-v3", "severity": "silence"}, Annotations: map[string]string{"summary": "labels={{ $labels }} namespace={{ $labels.namespace }} value={{ $value }}"}, ActiveAt: 0},
 	}}}
-	assert.Equal(t, wantAlertGroups, alerter1.alertFiles[0].AlertGroups)
-	assert.Equal(t, wantAlertGroups, alerter1.alertFiles[1].AlertGroups)
-	assert.Equal(t, wantAlertGroups, alerter1.alertFiles[2].AlertGroups)
+	require.Equal(t, wantAlertGroups, alerter1.alertFiles[0].AlertGroups)
+	require.Equal(t, wantAlertGroups, alerter1.alertFiles[1].AlertGroups)
+	require.Equal(t, wantAlertGroups, alerter1.alertFiles[2].AlertGroups)
 
-	assert.Equal(t, "prometheus1", alerter1.alertFiles[0].Datasource.Name)
-	assert.Equal(t, "prometheus2", alerter1.alertFiles[1].Datasource.Name)
-	assert.Equal(t, "prometheus3", alerter1.alertFiles[2].Datasource.Name)
+	require.Equal(t, "prometheus1", alerter1.alertFiles[0].Datasource.Name)
+	require.Equal(t, "prometheus2", alerter1.alertFiles[1].Datasource.Name)
+	require.Equal(t, "prometheus3", alerter1.alertFiles[2].Datasource.Name)
 }
 
 func TestGetAlertFiles(t *testing.T) {
 	var discoverer discovery.Discoverer
-	alertRuleStore, _ := alertrule.New("")
+	alertRuleStore, err := alertrule.New("")
+	require.NoError(t, err)
 
 	// stores1
-	datasourceStore1, _ := store.NewDatasourceStore(&model.DatasourceConfig{}, discoverer)
+	datasourceStore1 := &store.DatasourceStore{}
+	require.NoError(t, err)
 	stores1 := &store.Stores{AlertRuleStore: alertRuleStore, DatasourceStore: datasourceStore1}
 
 	// stores2
-	datasourceStore2, _ := store.NewDatasourceStore(&model.DatasourceConfig{Datasources: []*model.Datasource{
+	datasourceStore2, err := store.NewDatasourceStore(&model.DatasourceConfig{Datasources: []model.Datasource{
 		{Type: model.DatasourceTypePrometheus, URL: servers.Svrs[0].Server.URL},
 	}}, discoverer)
+	require.NoError(t, err)
 	stores2 := &store.Stores{AlertRuleStore: alertRuleStore, DatasourceStore: datasourceStore2}
 
 	// stores3
-	datasourceStore3, _ := store.NewDatasourceStore(&model.DatasourceConfig{Datasources: []*model.Datasource{
+	datasourceStore3, err := store.NewDatasourceStore(&model.DatasourceConfig{Datasources: []model.Datasource{
 		{Type: model.DatasourceTypePrometheus, URL: servers.Svrs[0].Server.URL},
 		{Type: model.DatasourceTypePrometheus, URL: servers.Svrs[1].Server.URL},
 	}}, discoverer)
+	require.NoError(t, err)
 	stores3 := &store.Stores{AlertRuleStore: alertRuleStore, DatasourceStore: datasourceStore3}
 
 	testCases := []struct {
@@ -144,7 +151,7 @@ func TestGetAlertFiles(t *testing.T) {
 		{
 			stores2,
 			[]model.AlertFile{{
-				Datasource: model.Datasource{Type: "prometheus", Name: "", URL: "", BasicAuth: false, BasicAuthUser: "", BasicAuthPassword: "", IsMain: false, IsDiscovered: false},
+				Datasource: model.Datasource{Type: "prometheus", Name: "", URL: "", BasicAuth: false, BasicAuthUser: "", BasicAuthPassword: "", IsMain: true, IsDiscovered: false},
 				AlertGroups: []model.AlertGroup{
 					{Alerts: []model.Alert{
 						{State: 0, Name: "S00-AlwaysOn", Expr: "vector(1234)", For: 0, Labels: map[string]string{"hello": "world", "rulefile": "sample-v3", "severity": "silence"}, Annotations: map[string]string{"summary": "AlwaysOn value={{ $value }}"}, ActiveAt: 0},
@@ -156,7 +163,7 @@ func TestGetAlertFiles(t *testing.T) {
 			stores3,
 			[]model.AlertFile{
 				{
-					Datasource: model.Datasource{Type: "prometheus", Name: "", URL: "", BasicAuth: false, BasicAuthUser: "", BasicAuthPassword: "", IsMain: false, IsDiscovered: false},
+					Datasource: model.Datasource{Type: "prometheus", Name: "", URL: "", BasicAuth: false, BasicAuthUser: "", BasicAuthPassword: "", IsMain: true, IsDiscovered: false},
 					AlertGroups: []model.AlertGroup{
 						{Alerts: []model.Alert{
 							{State: 0, Name: "S00-AlwaysOn", Expr: "vector(1234)", For: 0, Labels: map[string]string{"hello": "world", "rulefile": "sample-v3", "severity": "silence"}, Annotations: map[string]string{"summary": "AlwaysOn value={{ $value }}"}, ActiveAt: 0},
@@ -177,7 +184,7 @@ func TestGetAlertFiles(t *testing.T) {
 			for i := range alertFiles {
 				alertFiles[i].Datasource.URL = ""
 			}
-			assert.Equal(tt, tc.want, alertFiles)
+			require.Equal(tt, tc.want, alertFiles)
 		})
 	}
 }
@@ -185,18 +192,18 @@ func TestGetAlertFiles(t *testing.T) {
 func TestSetAlertmanagerURL(t *testing.T) {
 	temp := alerter1.alertmanagerURL
 	alerter1.SetAlertmanagerURL("hello")
-	assert.Equal(t, "hello", alerter1.alertmanagerURL)
+	require.Equal(t, "hello", alerter1.alertmanagerURL)
 	alerter1.SetAlertmanagerURL(temp)
 }
 
 func TestStartAndStop(t *testing.T) {
 	var discoverer discovery.Discoverer
 	alertRuleStore, err := alertrule.New("")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	remoteStore := remote.New(&http.Client{}, 30*time.Second)
 
 	datasourceStore, err := store.NewDatasourceStore(&model.DatasourceConfig{}, discoverer)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	tempAlerter := New(&store.Stores{
 		AlertingStore:   alerting.New(""),
 		AlertRuleStore:  alertRuleStore,
@@ -227,24 +234,24 @@ func TestProcessAlertFiles(t *testing.T) {
 	var discoverer discovery.Discoverer
 	alertingStore := alerting.New("")
 	alertRuleStore, err := alertrule.New("")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	remoteStore := remote.New(&http.Client{}, 30*time.Second)
 
 	// tempAlerter_ok1
 	datasourceStore_ok1, _ := store.NewDatasourceStore(&model.DatasourceConfig{
-		Datasources: []*model.Datasource{{Type: model.DatasourceTypePrometheus, URL: servers.Svrs[2].Server.URL}}}, discoverer)
+		Datasources: []model.Datasource{{Type: model.DatasourceTypePrometheus, URL: servers.Svrs[2].Server.URL}}}, discoverer)
 	tempAlerter_ok1 := New(&store.Stores{AlertingStore: alertingStore, AlertRuleStore: alertRuleStore, DatasourceStore: datasourceStore_ok1, RemoteStore: remoteStore})
 	tempAlerter_ok1.SetAlertmanagerURL(servers.Svrs[0].Server.URL)
 
 	// tempAlerter_ok2
 	datasourceStore_ok2, err := store.NewDatasourceStore(&model.DatasourceConfig{
-		Datasources: []*model.Datasource{{Type: model.DatasourceTypePrometheus, URL: servers.Svrs[2].Server.URL}}}, discoverer)
-	assert.NoError(t, err)
+		Datasources: []model.Datasource{{Type: model.DatasourceTypePrometheus, URL: servers.Svrs[2].Server.URL}}}, discoverer)
+	require.NoError(t, err)
 	tempAlerter_ok2 := New(&store.Stores{AlertingStore: alertingStore, AlertRuleStore: alertRuleStore, DatasourceStore: datasourceStore_ok2, RemoteStore: remoteStore})
 	tempAlerter_ok2.SetAlertmanagerURL(servers.Svrs[0].Server.URL)
-	assert.Equal(t, 1, len(datasourceStore_ok2.GetDatasources()))
-	assert.Equal(t, 1, len(tempAlerter_ok2.alertFiles))
-	assert.Equal(t, 3, len(tempAlerter_ok2.alertFiles[0].AlertGroups[0].Alerts))
+	require.Equal(t, 1, len(datasourceStore_ok2.GetDatasources()))
+	require.Equal(t, 1, len(tempAlerter_ok2.alertFiles))
+	require.Equal(t, 3, len(tempAlerter_ok2.alertFiles[0].AlertGroups[0].Alerts))
 	tempAlerter_ok2.alertFiles[0].AlertGroups[0].Alerts[0] = model.Alert{Name: "alert1", Expr: "unmarshalable"}
 
 	// tempAlerter_error1
@@ -253,8 +260,8 @@ func TestProcessAlertFiles(t *testing.T) {
 	// tempAlerter_error2
 	alertingStore_error2 := &alerting.AlertingStore{AlertingFile: &model.AlertingFile{Alertings: []model.Alerting{{Name: "alertmanager", Type: "alertmanager", URL: "http://alertmanager:9093"}}}}
 
-	datasourceStore_error2, err := store.NewDatasourceStore(&model.DatasourceConfig{Datasources: []*model.Datasource{}}, discoverer)
-	assert.NoError(t, err)
+	datasourceStore_error2, err := store.NewDatasourceStore(&model.DatasourceConfig{Datasources: []model.Datasource{}}, discoverer)
+	require.NoError(t, err)
 	tempAlerter_error2 := New(&store.Stores{AlertingStore: alertingStore_error2, AlertRuleStore: alertRuleStore, DatasourceStore: datasourceStore_error2, RemoteStore: remoteStore})
 
 	testCases := []struct {
@@ -288,10 +295,10 @@ func TestProcessAlertFiles(t *testing.T) {
 		t.Run(fmt.Sprintf("#%d", i), func(t *testing.T) {
 			err := tc.alerter.processAlertFiles()
 			if tc.wantErrorRegexp == "" {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			} else {
-				assert.Error(t, err)
-				assert.Regexp(t, tc.wantErrorRegexp, err.Error())
+				require.Error(t, err)
+				require.Regexp(t, tc.wantErrorRegexp, err.Error())
 			}
 		})
 	}
@@ -319,17 +326,17 @@ func TestProcessAlert(t *testing.T) {
 			&model.Alert{Name: "alert1", Expr: "unmarshalable"},
 			datasource5,
 			nil,
-			"error on queryAlert: error on Unmarshal: invalid character ':' after object key:value pair",
+			"queryAlert err: Unmarshal err: invalid character ':' after object key:value pair, body: {\"status\":\"success\",\"data\":{\"a\":\"b\":\"c\"}}",
 		},
 	}
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("#%d", i), func(tt *testing.T) {
 			queryData, err := alerter1.processAlert(tc.alert, tc.datasource)
-			assert.Equal(tt, tc.want, queryData)
+			require.Equal(tt, tc.want, queryData)
 			if tc.wantError == "" {
-				assert.NoError(tt, err)
+				require.NoError(tt, err)
 			} else {
-				assert.EqualError(tt, err, tc.wantError)
+				require.EqualError(tt, err, tc.wantError)
 			}
 		})
 	}
@@ -356,13 +363,13 @@ func TestQueryAlert(t *testing.T) {
 			&model.Alert{Name: "alert1", Expr: "unmarshalable"},
 			&model.Datasource{URL: servers.Svrs[5].Server.URL},
 			model.QueryData{},
-			"error on Unmarshal: invalid character ':' after object key:value pair",
+			"Unmarshal err: invalid character ':' after object key:value pair, body: {\"status\":\"success\",\"data\":{\"a\":\"b\":\"c\"}}",
 		},
 		{
 			&model.Alert{},
 			&model.Datasource{},
 			model.QueryData{},
-			"error on GET: error on Do: Get \"/api/v1/query?query=\": unsupported protocol scheme \"\"",
+			"GET err: error on Do: Get \"/api/v1/query?query=\": unsupported protocol scheme \"\"",
 		},
 		{
 			&model.Alert{},
@@ -374,11 +381,11 @@ func TestQueryAlert(t *testing.T) {
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("#%d", i), func(tt *testing.T) {
 			queryData, err := alerter1.queryAlert(tc.alert, tc.datasource)
-			assert.Equal(tt, tc.want, queryData)
+			require.Equal(tt, tc.want, queryData)
 			if tc.wantError == "" {
-				assert.NoError(tt, err)
+				require.NoError(tt, err)
 			} else {
-				assert.EqualError(tt, err, tc.wantError)
+				require.EqualError(tt, err, tc.wantError)
 			}
 		})
 	}
@@ -431,7 +438,7 @@ func TestEvaluateAlert(t *testing.T) {
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("#%d", i), func(tt *testing.T) {
 			fires := evaluateAlert(tc.alert, tc.queryData)
-			assert.Equal(tt, tc.want, fires)
+			require.Equal(tt, tc.want, fires)
 		})
 	}
 }
@@ -481,7 +488,7 @@ func TestGetFires_zero_QueryData(t *testing.T) {
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("#%d", i), func(tt *testing.T) {
 			fires := getFires(tc.alert, queryData)
-			assert.Equal(tt, tc.want, fires)
+			require.Equal(tt, tc.want, fires)
 		})
 	}
 }
@@ -508,7 +515,7 @@ func TestGetFires_vector_zero_Result(t *testing.T) {
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("#%d", i), func(tt *testing.T) {
 			fires := getFires(tc.alert, queryData)
-			assert.Equal(tt, tc.want, fires)
+			require.Equal(tt, tc.want, fires)
 		})
 	}
 }
@@ -575,7 +582,7 @@ func TestGetFires_vector_two_Result(t *testing.T) {
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("#%d", i), func(tt *testing.T) {
 			fires := getFires(tc.alert, queryData)
-			assert.Equal(tt, tc.want, fires)
+			require.Equal(tt, tc.want, fires)
 		})
 	}
 }
@@ -620,8 +627,8 @@ func TestRenderSummary_ok(t *testing.T) {
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("#%d", i), func(tt *testing.T) {
 			ret, err := renderSummary(tc.input, tc.sample)
-			assert.Nil(tt, err)
-			assert.Equal(tt, tc.want, ret)
+			require.Nil(tt, err)
+			require.Equal(tt, tc.want, ret)
 		})
 	}
 }
@@ -661,9 +668,9 @@ func TestRenderSummary_error_on_Parse(t *testing.T) {
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("#%d", i), func(tt *testing.T) {
 			output, err := renderSummary(tc.input, tc.sample)
-			assert.NotNil(tt, err)
-			assert.Error(tt, err, tc.wantError)
-			assert.Equal(tt, tc.input, output)
+			require.NotNil(tt, err)
+			require.Error(tt, err, tc.wantError)
+			require.Equal(tt, tc.input, output)
 		})
 	}
 }
@@ -703,9 +710,9 @@ func TestRenderSummary_error_on_Execute(t *testing.T) {
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("#%d", i), func(tt *testing.T) {
 			output, err := renderSummary(tc.input, tc.sample)
-			assert.NotNil(tt, err)
-			assert.Error(tt, err, tc.wantError)
-			assert.Equal(tt, tc.input, output)
+			require.NotNil(tt, err)
+			require.Error(tt, err, tc.wantError)
+			require.Equal(tt, tc.input, output)
 		})
 	}
 }
@@ -718,7 +725,7 @@ func TestSendFires_ok(t *testing.T) {
 			Annotations: map[string]string{"lorem": "ipsum"},
 		},
 	})
-	assert.Nil(t, err)
+	require.Nil(t, err)
 }
 
 func TestSendFires_error_on_Post(t *testing.T) {
@@ -731,8 +738,8 @@ func TestSendFires_error_on_Post(t *testing.T) {
 			Annotations: map[string]string{"lorem": "ipsum"},
 		},
 	})
-	assert.NotNil(t, err)
-	assert.Equal(t, `error on Post: Post "/api/v1/alerts": unsupported protocol scheme ""`, err.Error())
+	require.NotNil(t, err)
+	require.Equal(t, `error on Post: Post "/api/v1/alerts": unsupported protocol scheme ""`, err.Error())
 	alerter1.alertmanagerURL = tempURL
 }
 
@@ -747,8 +754,8 @@ func TestSendFires_not_ok(t *testing.T) {
 			Annotations: map[string]string{"lorem": "ipsum"},
 		},
 	})
-	assert.NotNil(t, err)
-	assert.Equal(t, `statusCode is not ok(200)`, err.Error())
+	require.NotNil(t, err)
+	require.Equal(t, `statusCode is not ok(200)`, err.Error())
 	alerter1.alertmanagerURL = tempURL
 
 }
