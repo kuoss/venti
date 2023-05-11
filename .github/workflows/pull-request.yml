@@ -60,14 +60,16 @@ jobs:
     steps:
     - uses: actions/setup-go@v4
     - uses: actions/checkout@v3
-    - run: go test ./... -v -failfast
+    - run: cp etc/datasources.checks.yaml etc/datasources.yaml
+    - run: go test ./... -race -v -failfast
 
   go-test-coverage:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/setup-go@v4
     - uses: actions/checkout@v3
-    - run: go test ./... -covermode=atomic -coverprofile=coverage.out
+    - run: cp etc/datasources.checks.yaml etc/datasources.yaml 
+    - run: go test ./... -race -covermode=atomic -coverprofile=coverage.out
     # https://about.codecov.io/blog/getting-started-with-code-coverage-for-golang/
     - uses: codecov/codecov-action@v3
     # https://github.com/mattn/goveralls#github-actions
