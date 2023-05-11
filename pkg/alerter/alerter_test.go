@@ -175,7 +175,7 @@ func TestProcessRuleAlert(t *testing.T) {
 		// ok
 		{
 			&model.RuleAlert{Rule: model.Rule{Alert: "alert1", Expr: "up"}, Alerts: []model.Alert{{Datasource: datasource5}}},
-			[]model.Fire{{State: "firing", Labels: map[string]string{"alertname": "alert1", "firer": "venti"}, Annotations: map[string]string{"summary": "placeholder summary"}}},
+			[]model.Fire{{Labels: map[string]string{"alertname": "alert1", "firer": "venti"}, Annotations: map[string]string{"summary": "placeholder summary"}}},
 		},
 		// error
 		{
@@ -273,8 +273,8 @@ func TestEvaluateAlert(t *testing.T) {
 			&model.Rule{},
 			&model.Alert{},
 			[]model.Fire{
-				{State: "firing", Labels: map[string]string{"alertname": "placeholder name", "firer": "venti"}, Annotations: map[string]string{"summary": "placeholder summary"}},
-				{State: "firing", Labels: map[string]string{"alertname": "placeholder name", "firer": "venti"}, Annotations: map[string]string{"summary": "placeholder summary"}},
+				{Labels: map[string]string{"alertname": "placeholder name", "firer": "venti"}, Annotations: map[string]string{"summary": "placeholder summary"}},
+				{Labels: map[string]string{"alertname": "placeholder name", "firer": "venti"}, Annotations: map[string]string{"summary": "placeholder summary"}},
 			},
 		},
 		// pending
@@ -302,7 +302,7 @@ func TestGetFires_zero_QueryData(t *testing.T) {
 		{
 			&model.Rule{},
 			[]model.Fire{
-				{State: "firing", Labels: map[string]string{"alertname": "placeholder name", "firer": "venti"}, Annotations: map[string]string{"summary": "placeholder summary"}},
+				{Labels: map[string]string{"alertname": "placeholder name", "firer": "venti"}, Annotations: map[string]string{"summary": "placeholder summary"}},
 			},
 		},
 		{
@@ -311,7 +311,7 @@ func TestGetFires_zero_QueryData(t *testing.T) {
 				Labels:      map[string]string{"lorem": "ipsum"},
 			},
 			[]model.Fire{
-				{State: "firing", Labels: map[string]string{"alertname": "placeholder name", "firer": "venti", "lorem": "ipsum"}, Annotations: map[string]string{"hello": "world", "summary": "placeholder summary"}},
+				{Labels: map[string]string{"alertname": "placeholder name", "firer": "venti", "lorem": "ipsum"}, Annotations: map[string]string{"hello": "world", "summary": "placeholder summary"}},
 			},
 		},
 		{
@@ -321,7 +321,7 @@ func TestGetFires_zero_QueryData(t *testing.T) {
 				Labels:      map[string]string{"lorem": "ipsum"},
 			},
 			[]model.Fire{
-				{State: "firing", Labels: map[string]string{"alertname": "alert1", "firer": "venti", "lorem": "ipsum"}, Annotations: map[string]string{"hello": "world", "summary": "lorem={{ $labels.lorem }} value={{ $value }}"}},
+				{Labels: map[string]string{"alertname": "alert1", "firer": "venti", "lorem": "ipsum"}, Annotations: map[string]string{"hello": "world", "summary": "lorem={{ $labels.lorem }} value={{ $value }}"}},
 			},
 		},
 		{
@@ -331,7 +331,7 @@ func TestGetFires_zero_QueryData(t *testing.T) {
 				Labels:      map[string]string{"lorem": "ipsum"},
 			},
 			[]model.Fire{
-				{State: "firing", Labels: map[string]string{"alertname": "alert1", "firer": "venti", "lorem": "ipsum"}, Annotations: map[string]string{"hello": "world", "summary": "lorem={{ $labels.lorem }} value={{}}"}},
+				{Labels: map[string]string{"alertname": "alert1", "firer": "venti", "lorem": "ipsum"}, Annotations: map[string]string{"hello": "world", "summary": "lorem={{ $labels.lorem }} value={{}}"}},
 			},
 		},
 	}
@@ -392,8 +392,8 @@ func TestGetFires_vector_two_Result(t *testing.T) {
 		{
 			&model.Rule{},
 			[]model.Fire{
-				{State: "firing", Labels: map[string]string{"alertname": "placeholder name", "firer": "venti"}, Annotations: map[string]string{"summary": "placeholder summary"}},
-				{State: "firing", Labels: map[string]string{"alertname": "placeholder name", "firer": "venti"}, Annotations: map[string]string{"summary": "placeholder summary"}},
+				{Labels: map[string]string{"alertname": "placeholder name", "firer": "venti"}, Annotations: map[string]string{"summary": "placeholder summary"}},
+				{Labels: map[string]string{"alertname": "placeholder name", "firer": "venti"}, Annotations: map[string]string{"summary": "placeholder summary"}},
 			},
 		},
 		{
@@ -402,8 +402,8 @@ func TestGetFires_vector_two_Result(t *testing.T) {
 				Labels:      map[string]string{"lorem": "ipsum"},
 			},
 			[]model.Fire{
-				{State: "firing", Labels: map[string]string{"alertname": "placeholder name", "firer": "venti", "lorem": "ipsum"}, Annotations: map[string]string{"hello": "world", "summary": "placeholder summary"}},
-				{State: "firing", Labels: map[string]string{"alertname": "placeholder name", "firer": "venti", "lorem": "ipsum"}, Annotations: map[string]string{"hello": "world", "summary": "placeholder summary"}},
+				{Labels: map[string]string{"alertname": "placeholder name", "firer": "venti", "lorem": "ipsum"}, Annotations: map[string]string{"hello": "world", "summary": "placeholder summary"}},
+				{Labels: map[string]string{"alertname": "placeholder name", "firer": "venti", "lorem": "ipsum"}, Annotations: map[string]string{"hello": "world", "summary": "placeholder summary"}},
 			},
 		},
 		{
@@ -413,8 +413,8 @@ func TestGetFires_vector_two_Result(t *testing.T) {
 				Labels:      map[string]string{"rule": "pod-v1"},
 			},
 			[]model.Fire{
-				{State: "firing", Labels: map[string]string{"alertname": "alert1", "firer": "venti", "rule": "pod-v1"}, Annotations: map[string]string{"summary": "pod=pod1 value=1111"}},
-				{State: "firing", Labels: map[string]string{"alertname": "alert1", "firer": "venti", "rule": "pod-v1"}, Annotations: map[string]string{"summary": "pod=pod2 value=2222"}},
+				{Labels: map[string]string{"alertname": "alert1", "firer": "venti", "rule": "pod-v1"}, Annotations: map[string]string{"summary": "pod=pod1 value=1111"}},
+				{Labels: map[string]string{"alertname": "alert1", "firer": "venti", "rule": "pod-v1"}, Annotations: map[string]string{"summary": "pod=pod2 value=2222"}},
 			},
 		},
 		{
@@ -424,8 +424,8 @@ func TestGetFires_vector_two_Result(t *testing.T) {
 				Labels:      map[string]string{"rule": "pod-v1"},
 			},
 			[]model.Fire{
-				{State: "firing", Labels: map[string]string{"alertname": "alert1", "firer": "venti", "rule": "pod-v1"}, Annotations: map[string]string{"summary": "pod={{ $labels.pod }} value={{}}"}},
-				{State: "firing", Labels: map[string]string{"alertname": "alert1", "firer": "venti", "rule": "pod-v1"}, Annotations: map[string]string{"summary": "pod={{ $labels.pod }} value={{}}"}},
+				{Labels: map[string]string{"alertname": "alert1", "firer": "venti", "rule": "pod-v1"}, Annotations: map[string]string{"summary": "pod={{ $labels.pod }} value={{}}"}},
+				{Labels: map[string]string{"alertname": "alert1", "firer": "venti", "rule": "pod-v1"}, Annotations: map[string]string{"summary": "pod={{ $labels.pod }} value={{}}"}},
 			},
 		},
 	}
@@ -570,7 +570,6 @@ func TestRenderSummary_error_on_Execute(t *testing.T) {
 func TestSendFires_ok(t *testing.T) {
 	err := alerter1.sendFires([]model.Fire{
 		{
-			State:       "firing",
 			Labels:      map[string]string{"hello": "world"},
 			Annotations: map[string]string{"lorem": "ipsum"},
 		},
@@ -583,7 +582,6 @@ func TestSendFires_error_on_Post(t *testing.T) {
 	alerter1.alertmanagerURL = ""
 	err := alerter1.sendFires([]model.Fire{
 		{
-			State:       "firing",
 			Labels:      map[string]string{"hello": "world"},
 			Annotations: map[string]string{"lorem": "ipsum"},
 		},
@@ -599,7 +597,6 @@ func TestSendFires_not_ok(t *testing.T) {
 	alerter1.alertmanagerURL = servers.GetServersByType(ms.TypePrometheus)[0].URL
 	err := alerter1.sendFires([]model.Fire{
 		{
-			State:       "firing",
 			Labels:      map[string]string{"hello": "world"},
 			Annotations: map[string]string{"lorem": "ipsum"},
 		},

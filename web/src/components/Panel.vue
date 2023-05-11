@@ -71,9 +71,9 @@ export default {
           return 'PanelStat';
         case 'table':
           return 'PanelTable';
-        case 'time_series':
-          return 'PanelTimeSeries';
       }
+      // case 'time_series'
+      return 'PanelTimeSeries';
     },
   },
   mounted() {
@@ -81,7 +81,7 @@ export default {
       { name: '$namespace', class: 'namespace' },
       { name: '$node', class: 'node' },
     ];
-    variables.forEach((v, i) => {
+    variables.forEach(v => {
       if (this.panelConfig.targets[0].expr.indexOf(v.name) > 0) {
         this.usingVariables.push(v);
       }
@@ -105,6 +105,7 @@ export default {
 .node {
   @apply text-yellow-500;
 }
+
 .namespace {
   @apply text-green-500;
 }

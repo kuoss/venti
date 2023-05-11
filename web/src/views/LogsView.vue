@@ -212,7 +212,8 @@ export default {
           return { name: x.metric.namespace, isExpanded: false, workloads: [] };
         });
 
-        for (const [i, kind] of kinds.entries()) {
+        for (const [_, kind] of kinds.entries()) {
+          // console.log(`${k}: ${kind}`);
           response = await fetch(
             '/api/v1/remote/query?dstype=prometheus&' +
               new URLSearchParams({
@@ -361,20 +362,23 @@ export default {
               <i class="mdi" :class="[ns.isExpanded ? 'mdi-chevron-down' : 'mdi-chevron-right']" />
               {{ ns.name }}
             </div>
-            <div v-for="w in ns.workloads" v-if="ns.isExpanded">
-              <div class="pl-2 cursor-pointer" @click="w.isExpanded = !w.isExpanded">
-                <i class="mdi" :class="[w.isExpanded ? 'mdi-chevron-down' : 'mdi-chevron-right']" />
-                {{ w.kind }} ({{ w.objects.length }})
+            <template v-if="ns.isExpanded">
+              <div v-for="w in ns.workloads">
+                <div class="pl-2 cursor-pointer" @click="w.isExpanded = !w.isExpanded">
+                  <i class="mdi" :class="[w.isExpanded ? 'mdi-chevron-down' : 'mdi-chevron-right']" />
+                  {{ w.kind }} ({{ w.objects.length }})
+                </div>
+                <template v-if="w.isExpanded">
+                  <div
+                    v-for="object in w.objects"
+                    class="pl-5 cursor-pointer"
+                    @click="selectObject(w.kind, ns.name, object.name)"
+                  >
+                    {{ object.name }}
+                  </div>
+                </template>
               </div>
-              <div
-                v-for="object in w.objects"
-                v-if="w.isExpanded"
-                class="pl-5 cursor-pointer"
-                @click="selectObject(w.kind, ns.name, object.name)"
-              >
-                {{ object.name }}
-              </div>
-            </div>
+            </template>
           </div>
           <div class="pb-16">
             <hr />

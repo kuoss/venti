@@ -1,32 +1,32 @@
 <script lang="ts" setup>
-  import { useThemeStore } from '@/stores/theme';
-  import { useDashboardStore } from '@/stores/dashboard';
-  import type { Dashboard } from '@/types/dashboard';
+import { useThemeStore } from '@/stores/theme';
+import { useDashboardStore } from '@/stores/dashboard';
+import type { Dashboard } from '@/types/dashboard';
 </script>
 <script lang="ts">
-  export default {
-    data() {
-      return {
-        dashboards: [] as Dashboard[],
-        version: '',
-      };
+export default {
+  data() {
+    return {
+      dashboards: [] as Dashboard[],
+      version: '',
+    };
+  },
+  methods: {
+    async init() {
+      this.dashboards = await useDashboardStore().getDashboards();
+      try {
+        const response = await fetch('/api/v1/status/buildinfo');
+        const data = await response.json();
+        this.version = data.version;
+      } catch (error) {
+        console.error(error);
+      }
     },
-    methods: {
-      async init() {
-        this.dashboards = await useDashboardStore().getDashboards();
-        try {
-          const response = await fetch('/api/v1/status/buildinfo');
-          const data = await response.json()
-          this.version = data.version;
-        } catch (error) {
-          console.error(error);
-        }
-      },
-    },
-    mounted() {
-      this.init();
-    },
-  };
+  },
+  mounted() {
+    this.init();
+  },
+};
 </script>
 
 <template>
@@ -41,27 +41,34 @@
         <div class="text-xs text-center opacity-25">{{ version }}</div>
       </div>
       <div class="py-5">
-        <RouterLink class="block hover:bg-slate-600 dark:hover:bg-slate-600 px-8 py-2" to="/metrics">Metrics
+        <RouterLink class="block hover:bg-slate-600 dark:hover:bg-slate-600 px-8 py-2" to="/metrics"
+          >Metrics
         </RouterLink>
         <RouterLink class="block hover:bg-slate-600 dark:hover:bg-slate-600 px-8 py-2" to="/logs">Logs</RouterLink>
-        <div class="block px-8 text-slate-400 dark:text-slate-400 py-2">
-          Dashboards ({{ dashboards.length }})
-        </div>
+        <div class="block px-8 text-slate-400 dark:text-slate-400 py-2">Dashboards ({{ dashboards.length }})</div>
         <div v-for="dashboard in dashboards">
-          <RouterLink class="block hover:bg-slate-600 dark:hover:bg-slate-600 px-12 py-2"
-            :to="'/dashboard/' + dashboard.title">{{ dashboard.title }}</RouterLink>
+          <RouterLink
+            class="block hover:bg-slate-600 dark:hover:bg-slate-600 px-12 py-2"
+            :to="'/dashboard/' + dashboard.title"
+            >{{ dashboard.title }}</RouterLink
+          >
         </div>
         <RouterLink class="block hover:bg-slate-600 dark:hover:bg-slate-600 px-8 py-2" to="/alert">Alert</RouterLink>
-        <RouterLink class="block hover:bg-slate-600 dark:hover:bg-slate-600 px-8 py-2" to="/datasource">Datasource
+        <RouterLink class="block hover:bg-slate-600 dark:hover:bg-slate-600 px-8 py-2" to="/datasource"
+          >Datasource
         </RouterLink>
       </div>
       <div class="text-center text-slate-100 dark:text-slate-100 py-1">
-        <button @click="useThemeStore().setDark(false)"
-          class="rounded py-2 px-4 bg-slate-600 dark:bg-slate-600 border border-slate-700 dark:border-slate-700 hover:bg-slate-800 dark:hover:bg-slate-800">
+        <button
+          @click="useThemeStore().setDark(false)"
+          class="rounded py-2 px-4 bg-slate-600 dark:bg-slate-600 border border-slate-700 dark:border-slate-700 hover:bg-slate-800 dark:hover:bg-slate-800"
+        >
           light
         </button>
-        <button @click="useThemeStore().setDark(true)"
-          class="rounded py-2 px-4 bg-slate-600 dark:bg-slate-600 border border-slate-700 dark:border-slate-700 hover:bg-slate-800 dark:hover:bg-slate-800">
+        <button
+          @click="useThemeStore().setDark(true)"
+          class="rounded py-2 px-4 bg-slate-600 dark:bg-slate-600 border border-slate-700 dark:border-slate-700 hover:bg-slate-800 dark:hover:bg-slate-800"
+        >
           dark
         </button>
       </div>

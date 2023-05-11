@@ -1,118 +1,118 @@
 <script setup>
-  import { useSidePanelStore } from '@/stores/sidePanel';
-  import { XIcon } from '@heroicons/vue/solid';
-  import ButtonClipboard from '@/components/ButtonClipboard.vue';
-  import yaml from 'js-yaml';
-  import Util from '@/lib/util';
+import { useSidePanelStore } from '@/stores/sidePanel';
+import { XIcon } from '@heroicons/vue/solid';
+import ButtonClipboard from '@/components/ButtonClipboard.vue';
+import yaml from 'js-yaml';
+import Util from '@/lib/util';
 </script>
 
 <script>
-  export default {
-    data() {
-      return {
-        show: false,
-        type: '',
-        dataTable: {},
-        panelInfo: {},
-        dashboardInfo: {},
-        currentPosition: null,
-      };
+export default {
+  data() {
+    return {
+      show: false,
+      type: '',
+      dataTable: {},
+      panelInfo: {},
+      dashboardInfo: {},
+      currentPosition: null,
+    };
+  },
+  computed: {
+    width() {
+      switch (this.type) {
+        case 'DataTable':
+          return '300px';
+      }
+      return '600px';
     },
-    computed: {
-      width() {
-        switch (this.type) {
-          case 'DataTable':
-            return '300px';
-        }
-        return '600px';
-      },
-      title() {
-        switch (this.type) {
-          case 'DataTable':
-            return this.dataTable.title;
-          case 'DashboardInfo':
-            return this.dashboardInfo.dashboardConfig.title;
-          case 'PanelInfo':
-            return this.panelInfo.panelConfig.title;
-        }
-      },
+    title() {
+      switch (this.type) {
+        case 'DataTable':
+          return this.dataTable.title;
+        case 'DashboardInfo':
+          return this.dashboardInfo.dashboardConfig.title;
+      }
+      // case 'PanelInfo':
+      return this.panelInfo.panelConfig.title;
     },
-    mounted() {
-      useSidePanelStore().$subscribe((mutation, state) => {
-        const needResize = this.show != state.show || this.type != state.type;
-        this.show = state.show;
-        this.type = state.type;
-        this.dataTable = state.dataTable;
-        this.panelInfo = state.panelInfo;
-        this.dashboardInfo = state.dashboardInfo;
-        if (state.currentPosition && this.currentPosition != state.currentPosition) {
-          // console.log('SidePanel.vue: mounted: $subscribe: state=', state)
-          this.goToPanelConfig(state.currentPosition);
-        }
-        this.currentPosition = state.currentPosition;
-        if (needResize) this.$emit('resize');
-      });
+  },
+  mounted() {
+    useSidePanelStore().$subscribe((mutation, state) => {
+      const needResize = this.show != state.show || this.type != state.type;
+      this.show = state.show;
+      this.type = state.type;
+      this.dataTable = state.dataTable;
+      this.panelInfo = state.panelInfo;
+      this.dashboardInfo = state.dashboardInfo;
+      if (state.currentPosition && this.currentPosition != state.currentPosition) {
+        // console.log('SidePanel.vue: mounted: $subscribe: state=', state)
+        this.goToPanelConfig(state.currentPosition);
+      }
+      this.currentPosition = state.currentPosition;
+      if (needResize) this.$emit('resize');
+    });
+  },
+  methods: {
+    dumpYAML(j, flowLevel) {
+      return yaml.dump(j, { noArrayIndent: true, flowLevel: flowLevel }).replaceAll('>-', '|').replaceAll('>', '|');
     },
-    methods: {
-      dumpYAML(j, flowLevel) {
-        return yaml.dump(j, { noArrayIndent: true, flowLevel: flowLevel }).replaceAll('>-', '|').replaceAll('>', '|');
-      },
-      yamlDashboard(j) {
-        return this.dumpYAML(j, 5);
-      },
-      yamlPanel(j) {
-        return this.indentText(this.dumpYAML([j], 4), 2);
-      },
-      yamlTarget(j, type) {
-        let x = this.cloneObject(j);
-        const expr = x.expr;
-        const path = type == 'logs' ? 'logs' : 'metrics';
-        x.expr = 'DuMmYeXpR';
-        x = this.dumpYAML([x], 3);
-        x = x.replace(
-          'DuMmYeXpR',
-          `<span class="text-cyan-500"><a class="hover:underline" href="/#/${path}?query=${encodeURIComponent(
-            expr,
-          )}">${yaml
-            .dump(expr)
-            .replaceAll('>-', '|')
-            .replaceAll('>', '|')
-            .replaceAll('\n', '\n  ')
-            .trimRight()}</a></span>`,
-        );
-        return this.indentText(x, 4)
-          .replaceAll('$node', '<span class="text-yellow-500 font-bold">$node</span>')
-          .replaceAll('$namespace', '<span class="text-green-500 font-bold">$namespace</span>');
-      },
-      yamlChartOptions(j) {
-        return '  chartOptions:\n' + this.indentText(this.dumpYAML(j), 4);
-      },
-      indentText(t, level) {
-        return t
-          .split('\n')
-          .map(x => ' '.repeat(level) + x)
-          .join('\n')
-          .trimRight();
-      },
-      cloneObject(o) {
-        return JSON.parse(JSON.stringify(o));
-      },
-      goToPanelConfig(position, retries = 0) {
-        if (this.type != 'DashboardInfo') {
-          console.log('this.type=', this.type);
-          return;
-        }
-        const el = this.$refs[`ref${position}`];
+    yamlDashboard(j) {
+      return this.dumpYAML(j, 5);
+    },
+    yamlPanel(j) {
+      return this.indentText(this.dumpYAML([j], 4), 2);
+    },
+    yamlTarget(j, type) {
+      let x = this.cloneObject(j);
+      const expr = x.expr;
+      const path = type == 'logs' ? 'logs' : 'metrics';
+      x.expr = 'DuMmYeXpR';
+      x = this.dumpYAML([x], 3);
+      x = x.replace(
+        'DuMmYeXpR',
+        `<span class="text-cyan-500"><a class="hover:underline" href="/#/${path}?query=${encodeURIComponent(
+          expr,
+        )}">${yaml
+          .dump(expr)
+          .replaceAll('>-', '|')
+          .replaceAll('>', '|')
+          .replaceAll('\n', '\n  ')
+          .trimRight()}</a></span>`,
+      );
+      return this.indentText(x, 4)
+        .replaceAll('$node', '<span class="text-yellow-500 font-bold">$node</span>')
+        .replaceAll('$namespace', '<span class="text-green-500 font-bold">$namespace</span>');
+    },
+    yamlChartOptions(j) {
+      return '  chartOptions:\n' + this.indentText(this.dumpYAML(j), 4);
+    },
+    indentText(t, level) {
+      return t
+        .split('\n')
+        .map(x => ' '.repeat(level) + x)
+        .join('\n')
+        .trimRight();
+    },
+    cloneObject(o) {
+      return JSON.parse(JSON.stringify(o));
+    },
+    goToPanelConfig(position) {
+      if (this.type != 'DashboardInfo') {
+        console.log('this.type=', this.type);
+        return;
+      }
+      const el = this.$refs[`ref${position}`];
+      if (!el || !el[0] || !el[0]?.classList) return;
+      el[0].scrollIntoView();
+      el[0].classList.add('highlight');
+      setTimeout(() => {
         if (!el || !el[0] || !el[0]?.classList) return;
-        el[0].scrollIntoView();
-        el[0].classList.add('highlight');
-        setTimeout(() => {
-          if (!el || !el[0] || !el[0]?.classList) return;
-          el[0].classList.remove('highlight');
-        }, 5000);
-      },
+        el[0].classList.remove('highlight');
+      }, 5000);
     },
-  };
+  },
+};
 </script>
 
 <template>
@@ -135,16 +135,20 @@
           <div v-else class="flex justify-center py-2">
             <span class="font-bold text-center p-1">{{ dashboardInfo.dashboardConfig.title }}</span>
             <span class="ml-2">
-              <ButtonClipboard text="Dashboard" tooltip-direction="right"
+              <ButtonClipboard
+                text="Dashboard"
+                tooltip-direction="right"
                 :value="yamlDashboard(dashboardInfo.dashboardConfig)"
-                button-class="inline border-slate-400 hover:bg-slate-400" />
+                button-class="inline border-slate-400 hover:bg-slate-400"
+              />
             </span>
           </div>
         </div>
       </div>
       <div
         class="overflow-y-auto border-l border-2 w-full bg-slate-300 border-b scrollbar-thin scrollbar-track-transparnt scrollbar-thumb-slate-400 dark:scrollbar-thumb-slate-500"
-        style="height: calc(100vh - 100px)">
+        style="height: calc(100vh - 100px)"
+      >
         <div class="bg-slate-200 pb-8">
           <div v-if="type == 'DataTable'">
             <table v-if="dataTable.time" class="w-full">
@@ -179,8 +183,10 @@
                   <td class="text-center">
                     <div class="p-1 bg-cyan-100" style="user-select: none">{{ i + 1 }}{{ j + 1 }}</div>
                   </td>
-                  <td :ref="`ref${i + 1}${j + 1}`"
-                    class="bg-slate-100 highlight-base transition-colors duration-[5000ms]">
+                  <td
+                    :ref="`ref${i + 1}${j + 1}`"
+                    class="bg-slate-100 highlight-base transition-colors duration-[5000ms]"
+                  >
                     <div class="float-right my-1 mr-3">
                       <ButtonClipboard :value="yamlPanel(panel)" button-class="hover:bg-slate-300" />
                     </div>
@@ -190,7 +196,7 @@
                       <pre class="whitespace-pre-wrap">    targets:</pre>
                       <template v-for="target in panel.targets">
                         <pre class="whitespace-pre-wrap" v-html="yamlTarget(target, panel.type)" />
-                        </template>
+                      </template>
                     </template>
                     <pre
                       v-if="panel.chartOptions"

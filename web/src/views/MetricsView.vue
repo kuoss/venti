@@ -1,5 +1,5 @@
 <script setup>
-  import Util from '@/lib/util';
+import Util from '@/lib/util';
 </script>
 <script>
 import { useTimeStore } from '@/stores/time';
@@ -197,12 +197,6 @@ export default {
         });
         return newA;
       });
-      let m = Math.max(...seriesData.flat());
-      let c = 0;
-      while (m > 1000) {
-        m /= 1000;
-        c++;
-      }
       const metrics = this.result.map(x => x.metric);
       let newSeries = [];
       newSeries.push({});
@@ -358,30 +352,32 @@ export default {
                 </th>
                 <th class="min-w-[120px] sticky top-0 right-0 font-normal border bg-slate-200 text-center">VALUE</th>
               </tr>
-              <tr v-for="row in result" v-if="result && result.length > 0" class="border-b hover:bg-gray-200">
-                <td
-                  v-for="key in keys"
-                  class="max-w-[250px] px-2 border border-r-0 text-ellipsis overflow-hidden hover:whitespace-normal hover:min-w-[200px]"
-                  @mouseover="
-                    row.hover = row.hover || {};
-                    row.hover[key] = true;
-                  "
-                  @mouseleave="row.hover[key] = false"
-                >
-                  {{ row.metric[key] }}
-                  <span v-if="row.hover && row.hover[key]" class="inline-flex">
-                    <button class="rounded px-1 border bg-slate-50 ml-1" @click="addLabel('', key, row.metric[key])">
-                      <i class="mdi mdi-plus-circle-outline" />
-                    </button>
-                    <button class="rounded px-1 border bg-slate-50" @click="addLabel('!', key, row.metric[key])">
-                      <i class="mdi mdi-minus-circle-outline" />
-                    </button>
-                  </span>
-                </td>
-                <td class="sticky right-0 top-auto px-4 border bg-slate-50 text-right">
-                  <span v-if="cursorIdx">{{ row.values[cursorIdx][1] }}</span>
-                </td>
-              </tr>
+              <template v-if="result && result.length > 0">
+                <tr v-for="row in result" class="border-b hover:bg-gray-200">
+                  <td
+                    v-for="key in keys"
+                    class="max-w-[250px] px-2 border border-r-0 text-ellipsis overflow-hidden hover:whitespace-normal hover:min-w-[200px]"
+                    @mouseover="
+                      row.hover = row.hover || {};
+                      row.hover[key] = true;
+                    "
+                    @mouseleave="row.hover[key] = false"
+                  >
+                    {{ row.metric[key] }}
+                    <span v-if="row.hover && row.hover[key]" class="inline-flex">
+                      <button class="rounded px-1 border bg-slate-50 ml-1" @click="addLabel('', key, row.metric[key])">
+                        <i class="mdi mdi-plus-circle-outline" />
+                      </button>
+                      <button class="rounded px-1 border bg-slate-50" @click="addLabel('!', key, row.metric[key])">
+                        <i class="mdi mdi-minus-circle-outline" />
+                      </button>
+                    </span>
+                  </td>
+                  <td class="sticky right-0 top-auto px-4 border bg-slate-50 text-right">
+                    <span v-if="cursorIdx">{{ row.values[cursorIdx][1] }}</span>
+                  </td>
+                </tr>
+              </template>
             </table>
           </div>
         </div>
@@ -416,15 +412,16 @@ export default {
               <div class="pl-1 cursor-pointer text-stone-600" @click="d.showMetrics = !d.showMetrics">
                 {{ k }} ({{ d.metrics.length }})
               </div>
-              <div
-                v-for="m in d.metrics"
-                v-if="d.showMetrics"
-                class="pl-4 overflow-hidden text-ellipsis hover:bg-white cursor-pointer"
-                @click="applyMetric(m)"
-                @mouseover="selectMetric(m)"
-              >
-                {{ m.name }}
-              </div>
+              <template v-if="d.showMetrics">
+                <div
+                  v-for="m in d.metrics"
+                  class="pl-4 overflow-hidden text-ellipsis hover:bg-white cursor-pointer"
+                  @click="applyMetric(m)"
+                  @mouseover="selectMetric(m)"
+                >
+                  {{ m.name }}
+                </div>
+              </template>
             </div>
           </div>
           <div v-else>
@@ -432,15 +429,17 @@ export default {
               <div class="pl-1 overflow-hidden text-ellipsis hover:bg-white cursor-pointer" @click="d.show = !d.show">
                 {{ key }} ({{ d.values.length }})
               </div>
-              <div v-for="v in d.values" v-if="d.show" class="pl-4">
-                {{ v }}
-                <button class="rounded px-1 border bg-slate-50 ml-1" @click="addLabel('', key, v)">
-                  <i class="mdi mdi-plus-circle-outline" />
-                </button>
-                <button class="rounded px-1 border bg-slate-50" @click="addLabel('!', key, v)">
-                  <i class="mdi mdi-minus-circle-outline" />
-                </button>
-              </div>
+              <template v-if="d.show">
+                <div v-for="v in d.values" class="pl-4">
+                  {{ v }}
+                  <button class="rounded px-1 border bg-slate-50 ml-1" @click="addLabel('', key, v)">
+                    <i class="mdi mdi-plus-circle-outline" />
+                  </button>
+                  <button class="rounded px-1 border bg-slate-50" @click="addLabel('!', key, v)">
+                    <i class="mdi mdi-minus-circle-outline" />
+                  </button>
+                </div>
+              </template>
             </div>
           </div>
         </div>
@@ -455,7 +454,7 @@ export default {
     <div class="border-b border-slate-300 p-2 break-all font-bold">
       {{ metricInfo.name }}
     </div>
-    <div v-for="(v, k) in metricInfo.data[0]" class="px-2 py-1 word-break">
+    <div v-for="v in metricInfo.data[0]" class="px-2 py-1 word-break">
       {{ v }}
     </div>
   </div>

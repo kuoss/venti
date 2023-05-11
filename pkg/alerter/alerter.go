@@ -196,7 +196,6 @@ func getFires(rule *model.Rule, data model.QueryData) []model.Fire {
 	if data.ResultType != commonModel.ValVector {
 		logger.Warnf("resultType is not vector")
 		return []model.Fire{{
-			State:       "firing",
 			Labels:      labels,
 			Annotations: annotations,
 		}}
@@ -205,7 +204,6 @@ func getFires(rule *model.Rule, data model.QueryData) []model.Fire {
 	fires := []model.Fire{}
 	for _, sample := range data.Result {
 		fire := model.Fire{
-			State:       "firing",
 			Labels:      map[string]string{},
 			Annotations: map[string]string{},
 		}

@@ -37,8 +37,8 @@ export const useDatasourceStore = defineStore('datasource', {
         }
         this.datasources = datasources;
         this.status.loaded = true;
-      } catch (err) {
-        console.error(err);
+      } catch (error) {
+        console.error(error);
         this.status.loading = false;
       }
     },

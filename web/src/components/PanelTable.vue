@@ -1,24 +1,7 @@
-<template>
-  <table class="w-full border-collapse">
-    <tr>
-      <template v-for="t in panelConfig.targets">
-        <th v-for="h in t.headers" class="border px-2 py-1 bg-slate-50">
-          {{ h }}
-        </th>
-      </template>
-    </tr>
-    <tr v-for="row in rows">
-      <template v-for="(t, i) in panelConfig.targets">
-        <td v-for="c in t.columns" class="border px-2 py-1">
-          {{ c == 'VALUE' ? row['VALUE' + i] : row[c] }}
-        </td>
-      </template>
-    </tr>
-  </table>
-</template>
-
-<script>
+<script setup>
 import { useTimeStore } from '@/stores/time';
+</script>
+<script>
 export default {
   props: {
     count: Number,
@@ -68,7 +51,6 @@ export default {
           });
           Object.entries(rows).forEach(r => {
             const k = r[0];
-            const v = r[1];
             merged[k] = { ...merged[k], ...rows[k] };
           });
         } catch (error) {
@@ -85,3 +67,22 @@ export default {
   },
 };
 </script>
+
+<template>
+  <table class="w-full border-collapse">
+    <tr>
+      <template v-for="t in panelConfig.targets">
+        <th v-for="h in t.headers" class="border px-2 py-1 bg-slate-50">
+          {{ h }}
+        </th>
+      </template>
+    </tr>
+    <tr v-for="row in rows">
+      <template v-for="(t, i) in panelConfig.targets">
+        <td v-for="c in t.columns" class="border px-2 py-1">
+          {{ c == 'VALUE' ? row['VALUE' + i] : row[c] }}
+        </td>
+      </template>
+    </tr>
+  </table>
+</template>

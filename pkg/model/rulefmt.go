@@ -31,34 +31,33 @@ type RuleFile struct {
 }
 
 type AlertFile struct {
-	Kind               string             `json:"kind,omitempty" yaml:"kind,omitempty"`
-	CommonLabels       map[string]string  `json:"commonLabels,omitempty" yaml:"commonLabels,omitempty"`
-	DatasourceSelector DatasourceSelector `json:"datasourceSelector" yaml:"datasourceSelector"`
-	AlertGroups        []AlertGroup
+	Kind               string             `json:"kind,omitempty"`
+	CommonLabels       map[string]string  `json:"commonLabels,omitempty"`
+	DatasourceSelector DatasourceSelector `json:"datasourceSelector"`
+	AlertGroups        []AlertGroup       `json:"groups"`
 }
 
 type AlertGroup struct {
-	Name       string               `json:"name" yaml:"name"`
-	Interval   commonModel.Duration `json:"interval,omitempty" yaml:"interval,omitempty"`
-	Limit      int                  `json:"limit,omitempty" yaml:"limit,omitempty"`
-	RuleAlerts []RuleAlert
+	Name       string               `json:"name"`
+	Interval   commonModel.Duration `json:"interval,omitempty"`
+	Limit      int                  `json:"limit,omitempty"`
+	RuleAlerts []RuleAlert          `json:"ruleAlerts"`
 }
 
 type RuleAlert struct {
-	Rule   Rule
-	Alerts []Alert
+	Rule   Rule    `json:"rule"`
+	Alerts []Alert `json:"alerts"`
 }
 
 type Alert struct {
-	Datasource *Datasource
-	State      promRule.AlertState // commonModel doesn't have pending state
-	ActiveAt   commonModel.Time
+	Datasource *Datasource         `json:"datasource"`
+	State      promRule.AlertState `json:"state"` // commonModel doesn't have pending state
+	ActiveAt   commonModel.Time    `json:"activeAt"`
 }
 
 type Fire struct {
-	State       string
-	Labels      map[string]string
-	Annotations map[string]string
+	Labels      map[string]string `json:"labels"`
+	Annotations map[string]string `json:"annotations"`
 }
 
 type RuleGroup struct {
@@ -72,7 +71,7 @@ type Rule struct {
 	Record        string               `json:"record,omitempty" yaml:"record,omitempty"`
 	Alert         string               `json:"alert,omitempty" yaml:"alert,omitempty"`
 	Expr          string               `json:"expr" yaml:"expr"`
-	For           commonModel.Duration `json:"for,omitempty" yaml:"for,omitempty"`
+	For           commonModel.Duration `json:"for" yaml:"for,omitempty"`
 	KeepFiringFor commonModel.Duration `json:"keep_firing_for,omitempty" yaml:"keep_firing_for,omitempty"`
 	Labels        map[string]string    `json:"labels,omitempty" yaml:"labels,omitempty"`
 	Annotations   map[string]string    `json:"annotations,omitempty" yaml:"annotations,omitempty"`
