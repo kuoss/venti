@@ -12,7 +12,7 @@ import (
 	"github.com/kuoss/common/logger"
 	ms "github.com/kuoss/venti/pkg/mock/servers"
 	"github.com/kuoss/venti/pkg/model"
-	"github.com/kuoss/venti/pkg/store"
+	dsStore "github.com/kuoss/venti/pkg/store/datasource"
 	"github.com/kuoss/venti/pkg/store/discovery"
 	"github.com/kuoss/venti/pkg/store/remote"
 	"github.com/stretchr/testify/assert"
@@ -44,7 +44,7 @@ func setup() {
 		{Type: ms.TypeLethe, Port: 0, Name: "lethe2", IsMain: false},
 	})
 	var discoverer discovery.Discoverer
-	datasourceStore, err := store.NewDatasourceStore(&model.DatasourceConfig{Datasources: servers.GetDatasources()}, discoverer)
+	datasourceStore, err := dsStore.New(&model.DatasourceConfig{Datasources: servers.GetDatasources()}, discoverer)
 	if err != nil {
 		panic(err)
 	}

@@ -65,13 +65,13 @@ func TestNew(t *testing.T) {
 	}{
 		{
 			"",
-			nil,
-			"no dashboard file",
+			&DashboardStore{dashboards: []model.Dashboard{*sampleDashboard}},
+			"",
 		},
 		{
 			"etc/dashboards/*.yaml",
 			nil,
-			"no dashboard file",
+			"no dashboard file: pattern: etc/dashboards/*.yaml",
 		},
 		{
 			"etc/dashboards/*.yml",

@@ -1,4 +1,4 @@
-package store
+package datasource
 
 import (
 	"fmt"
@@ -12,20 +12,8 @@ import (
 )
 
 var (
-	datasourceConfig model.DatasourceConfig
-	datasources      []model.Datasource
-	store            *DatasourceStore
-)
+	store *DatasourceStore
 
-func init() {
-	datasources = []model.Datasource{
-		{Name: "mainPrometheus", Type: model.DatasourceTypePrometheus, URL: "http://prometheus:9090", IsMain: true},
-		{Name: "subPrometheus1", Type: model.DatasourceTypePrometheus, URL: "http://prometheus1:9090", IsMain: false},
-		{Name: "subPrometheus2", Type: model.DatasourceTypePrometheus, URL: "http://prometheus2:9090", IsMain: false},
-		{Name: "mainLethe", Type: model.DatasourceTypeLethe, URL: "http://lethe:3100", IsMain: true},
-		{Name: "subLethe1", Type: model.DatasourceTypeLethe, URL: "http://lethe1:3100", IsMain: false},
-		{Name: "subLethe2", Type: model.DatasourceTypeLethe, URL: "http://lethe2:3100", IsMain: false},
-	}
 	datasourceConfig = model.DatasourceConfig{
 		QueryTimeout: time.Second * 10,
 		Datasources:  datasources,
@@ -35,16 +23,26 @@ func init() {
 			ByNameLethe:      true,
 		},
 	}
-	var discoverer discovery.Discoverer
+
+	datasources = []model.Datasource{
+		{Name: "mainPrometheus", Type: model.DatasourceTypePrometheus, URL: "http://prometheus:9090", IsMain: true},
+		{Name: "subPrometheus1", Type: model.DatasourceTypePrometheus, URL: "http://prometheus1:9090", IsMain: false},
+		{Name: "subPrometheus2", Type: model.DatasourceTypePrometheus, URL: "http://prometheus2:9090", IsMain: false},
+		{Name: "mainLethe", Type: model.DatasourceTypeLethe, URL: "http://lethe:3100", IsMain: true},
+		{Name: "subLethe1", Type: model.DatasourceTypeLethe, URL: "http://lethe1:3100", IsMain: false},
+		{Name: "subLethe2", Type: model.DatasourceTypeLethe, URL: "http://lethe2:3100", IsMain: false},
+	}
+)
+
+func init() {
 	var err error
-	store, err = NewDatasourceStore(&datasourceConfig, discoverer)
+	store, err = New(&datasourceConfig, discovery.Discoverer(nil))
 	if err != nil {
 		store = &DatasourceStore{}
 	}
 }
 
-func TestNewDatasourceStore(t *testing.T) {
-	var discoverer discovery.Discoverer
+func TestNew(t *testing.T) {
 	testCases := []struct {
 		cfg  *model.DatasourceConfig
 		want *DatasourceStore
@@ -62,7 +60,7 @@ func TestNewDatasourceStore(t *testing.T) {
 	}
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("#%d", i), func(t *testing.T) {
-			got, err := NewDatasourceStore(tc.cfg, discoverer)
+			got, err := New(tc.cfg, discovery.Discoverer(nil))
 			require.NoError(t, err)
 			require.Equal(t, tc.want, got)
 		})

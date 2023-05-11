@@ -1,41 +1,42 @@
 <script setup>
-import { useTimeStore } from '@/stores/time';
+  import { useTimeStore } from '@/stores/time';
+  import Util from '@/lib/util';
 </script>
-
 <script>
-export default {
-  data() {
-    return {
-      alertRuleFiles: [],
-      isLoading: false,
-      repeat: true,
-    };
-  },
-  mounted() {
-    this.fetchData();
-  },
-  beforeUnmount() {
-    this.repeat = false;
-  },
-  methods: {
-    async fetchData() {
-      this.isLoading = true;
-      try {
-        const response = await fetch('/api/alerts');
-        const data = await response.json();
-        this.alertRuleFiles = data;
-        setTimeout(() => {
-          if (!this.repeat) return;
-          this.fetchData();
-        }, 3000);
-      } catch (error) {
-        this.repeat = false;
-        console.error(error);
-      }
-      this.isLoading = false;
+  export default {
+    data() {
+      return {
+        alertRuleFiles: [],
+        isLoading: false,
+        repeat: true,
+      };
     },
-  },
-};
+    mounted() {
+      this.fetchData();
+    },
+    beforeUnmount() {
+      this.repeat = false;
+    },
+    methods: {
+      async fetchData() {
+        this.isLoading = true;
+        try {
+          const response = await fetch('/api/v1/alerts');
+          const jsonData = await response.json();
+          console.log('jsonData=', jsonData)
+          this.alertRuleFiles = jsonData;
+          setTimeout(() => {
+            if (!this.repeat) return;
+            this.fetchData();
+          }, 3000);
+        } catch (error) {
+          this.repeat = false;
+          console.error(error);
+        }
+        this.isLoading = false;
+      },
+    },
+  };
 </script>
 
 <template>
@@ -90,16 +91,12 @@ export default {
                 {{ r.annotations.summary }}
               </td>
               <td class="px-2 max-w-[20vw] truncate hover:whitespace-normal text-cyan-500">
-                <a
-                  class="hover:underline"
-                  :href="`/${f.datasourceSelector.type == 'prometheus' ? 'metrics' : 'logs'}?query=${encodeURIComponent(
+                <a class="hover:underline" :href="`/${f.datasourceSelector.type == 'prometheus' ? 'metrics' : 'logs'}?query=${encodeURIComponent(
                     r.expr,
-                  )}`"
-                  >{{ r.expr }}</a
-                >
+                  )}`">{{ r.expr }}</a>
               </td>
               <td class="px-2">
-                {{ $util.nanoseconds2human(r.for) }}
+                {{ Util.nanoseconds2human(r.for) }}
               </td>
             </tr>
           </template>
@@ -110,7 +107,7 @@ export default {
 </template>
 
 <style>
-th {
-  @apply text-left px-2;
-}
+  th {
+    @apply text-left px-2;
+  }
 </style>

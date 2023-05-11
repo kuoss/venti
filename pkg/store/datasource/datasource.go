@@ -1,4 +1,4 @@
-package store
+package datasource
 
 import (
 	"errors"
@@ -17,7 +17,7 @@ type DatasourceStore struct {
 }
 
 // NewDatasourceStore return *DatasourceStore after service discovery (with k8s service)
-func NewDatasourceStore(cfg *model.DatasourceConfig, discoverer discovery.Discoverer) (*DatasourceStore, error) {
+func New(cfg *model.DatasourceConfig, discoverer discovery.Discoverer) (*DatasourceStore, error) {
 	store := &DatasourceStore{*cfg, nil, discoverer}
 	err := store.load()
 	if err != nil {

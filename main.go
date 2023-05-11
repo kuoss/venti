@@ -30,10 +30,10 @@ func main() {
 	logger.Infof("💨 venti starting.... version %s", Version)
 
 	// alerter start
-	alerter := alerter.New(stores)
+	alerter := alerter.New(stores.AlertingStore, stores.RemoteStore)
 	err = alerter.Start()
 	if err != nil {
-		logger.Warnf("alerter.Start err: %s", err)
+		logger.Warnf("alerter start err: %s", err)
 	}
 
 	// router run

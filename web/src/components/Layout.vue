@@ -1,8 +1,9 @@
-<script lang="ts">
+<script lang="ts" setup>
   import { useThemeStore } from '@/stores/theme';
   import { useDashboardStore } from '@/stores/dashboard';
   import type { Dashboard } from '@/types/dashboard';
-  
+</script>
+<script lang="ts">
   export default {
     data() {
       return {

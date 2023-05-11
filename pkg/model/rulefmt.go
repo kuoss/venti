@@ -31,22 +31,28 @@ type RuleFile struct {
 }
 
 type AlertFile struct {
-	Datasource  Datasource
-	AlertGroups []AlertGroup
+	Kind               string             `json:"kind,omitempty" yaml:"kind,omitempty"`
+	CommonLabels       map[string]string  `json:"commonLabels,omitempty" yaml:"commonLabels,omitempty"`
+	DatasourceSelector DatasourceSelector `json:"datasourceSelector" yaml:"datasourceSelector"`
+	AlertGroups        []AlertGroup
 }
 
 type AlertGroup struct {
+	Name       string               `json:"name" yaml:"name"`
+	Interval   commonModel.Duration `json:"interval,omitempty" yaml:"interval,omitempty"`
+	Limit      int                  `json:"limit,omitempty" yaml:"limit,omitempty"`
+	RuleAlerts []RuleAlert
+}
+
+type RuleAlert struct {
+	Rule   Rule
 	Alerts []Alert
 }
 
 type Alert struct {
-	State       promRule.AlertState // commonModel doesn't have pending state
-	Name        string
-	Expr        string
-	For         commonModel.Duration
-	Labels      map[string]string
-	Annotations map[string]string
-	ActiveAt    commonModel.Time
+	Datasource *Datasource
+	State      promRule.AlertState // commonModel doesn't have pending state
+	ActiveAt   commonModel.Time
 }
 
 type Fire struct {

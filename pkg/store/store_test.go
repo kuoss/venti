@@ -20,7 +20,7 @@ func init() {
 }
 
 func TestNewStores(t *testing.T) {
-	datasourceConfig = model.DatasourceConfig{
+	datasourceConfig := model.DatasourceConfig{
 		Datasources: []model.Datasource{
 			{Name: "mainPrometheus", Type: model.DatasourceTypePrometheus, URL: "http://prometheus:9090", IsMain: true},
 			{Name: "subPrometheus1", Type: model.DatasourceTypePrometheus, URL: "http://prometheus1:9090", IsMain: false},

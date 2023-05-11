@@ -9,16 +9,16 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/kuoss/venti/pkg/handler/api"
 	"github.com/kuoss/venti/pkg/model"
-	"github.com/kuoss/venti/pkg/store"
+	dsStore "github.com/kuoss/venti/pkg/store/datasource"
 	"github.com/kuoss/venti/pkg/store/remote"
 )
 
 type RemoteHandler struct {
-	datasourceStore *store.DatasourceStore
+	datasourceStore *dsStore.DatasourceStore
 	remoteStore     *remote.RemoteStore
 }
 
-func New(datasourceStore *store.DatasourceStore, remoteStore *remote.RemoteStore) *RemoteHandler {
+func New(datasourceStore *dsStore.DatasourceStore, remoteStore *remote.RemoteStore) *RemoteHandler {
 	return &RemoteHandler{
 		datasourceStore,
 		remoteStore,

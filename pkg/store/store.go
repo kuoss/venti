@@ -9,6 +9,7 @@ import (
 	"github.com/kuoss/venti/pkg/store/alerting"
 	"github.com/kuoss/venti/pkg/store/alertrule"
 	"github.com/kuoss/venti/pkg/store/dashboard"
+	"github.com/kuoss/venti/pkg/store/datasource"
 	"github.com/kuoss/venti/pkg/store/discovery"
 	"github.com/kuoss/venti/pkg/store/discovery/kubernetes"
 	"github.com/kuoss/venti/pkg/store/remote"
@@ -17,19 +18,16 @@ import (
 )
 
 type Stores struct {
-	*alerting.AlertingStore
 	*alertrule.AlertRuleStore
 	*dashboard.DashboardStore
-	*DatasourceStore
+	*datasource.DatasourceStore
 	*remote.RemoteStore
 	*status.StatusStore
 	*user.UserStore
+	*alerting.AlertingStore
 }
 
 func NewStores(cfg *model.Config) (*Stores, error) {
-	// alerting
-	alertingStore := alerting.New("")
-
 	// alertrule
 	alertRuleStore, err := alertrule.New("")
 	if err != nil {
@@ -52,7 +50,7 @@ func NewStores(cfg *model.Config) (*Stores, error) {
 			return nil, fmt.Errorf("NewK8sStore err: %w", err)
 		}
 	}
-	datasourceStore, err := NewDatasourceStore(&cfg.DatasourceConfig, discoverer)
+	datasourceStore, err := datasource.New(&cfg.DatasourceConfig, discoverer)
 	if err != nil {
 		return nil, fmt.Errorf("NewDatasourceStore err: %w", err)
 	}
@@ -68,15 +66,17 @@ func NewStores(cfg *model.Config) (*Stores, error) {
 	if err != nil {
 		return nil, fmt.Errorf("NewUserStore err: %w", err)
 	}
-	logger.Infof("hello 6")
+
+	// alerting
+	alertingStore := alerting.New("", alertRuleStore.AlertRuleFiles(), datasourceStore)
 
 	return &Stores{
-		alertingStore,
 		alertRuleStore,
 		dashboardStore,
 		datasourceStore,
 		remoteStore,
 		storeStore,
 		userStore,
+		alertingStore,
 	}, nil
 }

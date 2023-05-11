@@ -6,39 +6,100 @@ import (
 	"testing"
 
 	"github.com/kuoss/venti/pkg/model"
-	"github.com/stretchr/testify/assert"
+	"github.com/kuoss/venti/pkg/store/datasource"
+	"github.com/kuoss/venti/pkg/store/discovery"
+	"github.com/stretchr/testify/require"
+)
+
+var (
+	datasourceStore *datasource.DatasourceStore
+	ruleFiles       = []model.RuleFile{{
+		Kind:               "AlertRuleFile",
+		CommonLabels:       map[string]string{"rulefile": "sample-v3", "severity": "silence"},
+		DatasourceSelector: model.DatasourceSelector{System: "", Type: "prometheus"},
+		RuleGroups: []model.RuleGroup{
+			{Name: "sample", Interval: 0, Limit: 0, Rules: []model.Rule{
+				{Record: "", Alert: "S00-AlwaysOn", Expr: "vector(1234)", For: 0, KeepFiringFor: 0, Labels: map[string]string{"hello": "world"}, Annotations: map[string]string{"summary": "AlwaysOn value={{ $value }}"}},
+				{Record: "", Alert: "S01-Monday", Expr: "day_of_week() == 1 and hour() < 2", For: 0, KeepFiringFor: 0, Labels: map[string]string(nil), Annotations: map[string]string{"summary": "Monday"}},
+				{Record: "", Alert: "S02-NewNamespace", Expr: "time() - kube_namespace_created < 120", For: 0, KeepFiringFor: 0, Labels: map[string]string(nil), Annotations: map[string]string{"summary": "labels={{ $labels }} namespace={{ $labels.namespace }} value={{ $value }}"}},
+			}}}}}
+
+	// alertFiles1 = []model.AlertFile{{
+	// 	Kind:               "",
+	// 	CommonLabels:       map[string]string{"rulefile": "sample-v3", "severity": "silence"},
+	// 	DatasourceSelector: model.DatasourceSelector{System: "", Type: "prometheus"},
+	// 	AlertGroups: []model.AlertGroup{{
+	// 		Name: "sample", Interval: 0, Limit: 0,
+	// 		RuleAlerts: []model.RuleAlert{
+	// 			{Rule: model.Rule{Record: "", Alert: "S00-AlwaysOn", Expr: "vector(1234)", For: 0, KeepFiringFor: 0, Labels: map[string]string{"hello": "world"}, Annotations: map[string]string{"summary": "AlwaysOn value={{ $value }}"}}, Alerts: []model.Alert{}},
+	// 			{Rule: model.Rule{Record: "", Alert: "S01-Monday", Expr: "day_of_week() == 1 and hour() < 2", For: 0, KeepFiringFor: 0, Labels: map[string]string(nil), Annotations: map[string]string{"summary": "Monday"}}, Alerts: []model.Alert{}},
+	// 			{Rule: model.Rule{Record: "", Alert: "S02-NewNamespace", Expr: "time() - kube_namespace_created < 120", For: 0, KeepFiringFor: 0, Labels: map[string]string(nil), Annotations: map[string]string{"summary": "labels={{ $labels }} namespace={{ $labels.namespace }} value={{ $value }}"}}, Alerts: []model.Alert{}}}}}}}
 )
 
 func init() {
-	_ = os.Chdir("../../..")
+	err := os.Chdir("../../..")
+	if err != nil {
+		panic(err)
+	}
+	err = setDatasourceStore()
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("datasourceStore=%#v\n", datasourceStore)
+}
+
+func setDatasourceStore() error {
+	datasourceConfig := model.DatasourceConfig{
+		Datasources: []model.Datasource{
+			{Name: "mainPrometheus", Type: model.DatasourceTypePrometheus, URL: "http://prometheus:9090", IsMain: true},
+			{Name: "subPrometheus1", Type: model.DatasourceTypePrometheus, URL: "http://prometheus1:9090", IsMain: false},
+			{Name: "subPrometheus2", Type: model.DatasourceTypePrometheus, URL: "http://prometheus2:9090", IsMain: false},
+			{Name: "mainLethe", Type: model.DatasourceTypeLethe, URL: "http://lethe:3100", IsMain: true},
+			{Name: "subLethe1", Type: model.DatasourceTypeLethe, URL: "http://lethe1:3100", IsMain: false},
+			{Name: "subLethe2", Type: model.DatasourceTypeLethe, URL: "http://lethe2:3100", IsMain: false},
+		},
+		Discovery: model.Discovery{
+			Enabled:          false,
+			ByNamePrometheus: true,
+			ByNameLethe:      true,
+		},
+	}
+	var err error
+	datasourceStore, err = datasource.New(&datasourceConfig, discovery.Discoverer(nil))
+	if err != nil {
+		return fmt.Errorf("datasource.New err: %w", err)
+	}
+	return nil
 }
 
 func TestNew(t *testing.T) {
 	testCases := []struct {
 		file string
-		want *AlertingStore
+		want model.AlertingFile
 	}{
 		{
 			file: "",
-			want: &AlertingStore{AlertingFile: &model.AlertingFile{Alertings: []model.Alerting{{Name: "alertmanager", Type: model.AlertingTypeAlertmanager, URL: "http://localhost:9093"}}}},
+			want: model.AlertingFile{Alertings: []model.Alerting{{Name: "alertmanager", Type: "alertmanager", URL: "http://localhost:9093"}}},
 		},
 		{
 			file: "asdf",
-			want: &AlertingStore{AlertingFile: &model.AlertingFile{Alertings: []model.Alerting{}}},
+			want: model.AlertingFile{Alertings: []model.Alerting(nil)},
 		},
 		{
 			file: "etc/alerting.yml",
-			want: &AlertingStore{AlertingFile: &model.AlertingFile{Alertings: []model.Alerting{{Name: "alertmanager", Type: model.AlertingTypeAlertmanager, URL: "http://localhost:9093"}}}},
+			want: model.AlertingFile{Alertings: []model.Alerting{{Name: "alertmanager", Type: "alertmanager", URL: "http://localhost:9093"}}},
 		},
 		{
 			file: "etc/alerting.yaml",
-			want: &AlertingStore{AlertingFile: &model.AlertingFile{Alertings: []model.Alerting{}}},
+			want: model.AlertingFile{Alertings: []model.Alerting(nil)},
 		},
 	}
 	for i, tc := range testCases {
-		t.Run(fmt.Sprintf("TESTCASE_#%d", i), func(t *testing.T) {
-			got := New(tc.file)
-			assert.Equal(t, tc.want, got)
+		t.Run(fmt.Sprintf("#%d", i), func(t *testing.T) {
+			got := New(tc.file, ruleFiles, datasourceStore)
+			require.NotEmpty(t, got)
+			require.NotEmpty(t, got.AlertFiles)
+			require.Equal(t, tc.want, got.AlertingFile)
 		})
 	}
 
@@ -57,8 +118,8 @@ func TestLoadAlertingFile(t *testing.T) {
 		},
 		{
 			"asdfasdf",
-			nil,
-			"error on ReadFile: open asdfasdf: no such file or directory",
+			&model.AlertingFile{Alertings: []model.Alerting(nil)},
+			"readFile err: open asdfasdf: no such file or directory",
 		},
 		{
 			"etc/alerting.yml",
@@ -67,19 +128,20 @@ func TestLoadAlertingFile(t *testing.T) {
 		},
 		{
 			"etc/alerting.yaml",
-			nil,
-			"error on ReadFile: open etc/alerting.yaml: no such file or directory",
+			&model.AlertingFile{Alertings: []model.Alerting(nil)},
+			"readFile err: open etc/alerting.yaml: no such file or directory",
 		},
 	}
 	for i, tc := range testCases {
-		t.Run(fmt.Sprintf("TESTCASE_#%d", i), func(t *testing.T) {
+		t.Run(fmt.Sprintf("#%d", i), func(t *testing.T) {
 			got, err := loadAlertingFile(tc.file)
+			fmt.Println("tc.wantError=", tc.wantError)
 			if tc.wantError == "" {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			} else {
-				assert.EqualError(t, err, tc.wantError)
+				require.EqualError(t, err, tc.wantError)
 			}
-			assert.Equal(t, tc.want, got)
+			require.Equal(t, tc.want, got)
 		})
 	}
 }
@@ -107,9 +169,9 @@ func TestGetAlertmanagerURL(t *testing.T) {
 		},
 	}
 	for i, tc := range testCases {
-		t.Run(fmt.Sprintf("TESTCASE_#%d", i), func(t *testing.T) {
-			store := New(tc.file)
-			assert.Equal(t, tc.want, store.GetAlertmanagerURL())
+		t.Run(fmt.Sprintf("#%d", i), func(t *testing.T) {
+			store := New(tc.file, ruleFiles, datasourceStore)
+			require.Equal(t, tc.want, store.GetAlertmanagerURL())
 		})
 	}
 }

@@ -113,7 +113,7 @@ export default {
       this.range = r;
     },
     selectEventNamespace(ns_name) {
-      this.expr = `pod{namespace="kube-system",pod="eventrouter-.*"} | "namespace":"${ns_name}"`;
+      this.expr = `pod{namespace="kube-system",pod="eventrouter-.*"} |= "${ns_name}"`;
     },
     selectNode(name) {
       this.expr = `node{node="${name}"}`;
@@ -141,7 +141,7 @@ export default {
       this.loading = true;
       try {
         const response = await fetch(
-          '/api/v1/remote/query_range?dstype=lethe' +
+          '/api/v1/remote/query_range?dstype=lethe&' +
             new URLSearchParams({
               query: this.expr,
               start: timeRange[0],

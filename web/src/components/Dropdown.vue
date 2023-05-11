@@ -5,7 +5,7 @@
       <span v-else>{{ options[0] }}</span>
       <i class="mdi mdi-chevron-down" />
     </button>
-    <ul v-if="isOpen" class="absolute text-gray-700 w-max border border-gray-300 bg-white">
+    <ul v-if="isOpen" class="absolute text-gray-700 w-max border border-gray-300 bg-white max-h-[80vh] overflow-y-auto">
       <li v-for="option in options" class="hover:bg-gray-400 px-2 cursor-pointer py-[1px]" @click.stop="select(option)">
         {{ option }}
       </li>

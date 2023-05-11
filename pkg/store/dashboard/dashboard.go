@@ -16,12 +16,15 @@ type DashboardStore struct {
 
 func New(pattern string) (*DashboardStore, error) {
 	logger.Debugf("NewDashboardStore...")
+	if pattern == "" {
+		pattern = "etc/dashboards/*.yml"
+	}
 	files, err := filepath.Glob(pattern)
 	if err != nil {
 		return nil, fmt.Errorf("glob err: %w", err)
 	}
 	if len(files) < 1 {
-		return nil, fmt.Errorf("no dashboard file")
+		return nil, fmt.Errorf("no dashboard file: pattern: %s", pattern)
 	}
 	var dashboards []model.Dashboard
 	for _, filename := range files {

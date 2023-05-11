@@ -1,26 +1,22 @@
 <script setup>
-import Dropdown from '@/components/Dropdown.vue';
-import Panel from '@/components/Panel.vue';
-import RunButton from '@/components/RunButton.vue';
-import SidePanel from '@/components/SidePanel.vue';
-import TimeRangePicker from '@/components/TimeRangePicker.vue';
+  import Dropdown from '@/components/Dropdown.vue';
+  import Panel from '@/components/Panel.vue';
+  import RunButton from '@/components/RunButton.vue';
+  import SidePanel from '@/components/SidePanel.vue';
+  import TimeRangePicker from '@/components/TimeRangePicker.vue';
 
-import { useDashboardStore } from '@/stores/dashboard';
-import { useFilterStore } from '@/stores/filter';
-import { useSidePanelStore } from '@/stores/sidePanel';
-import { useTimeStore } from '@/stores/time';
+  import { useDashboardStore } from '@/stores/dashboard';
+  import { useFilterStore } from '@/stores/filter';
+  import { useSidePanelStore } from '@/stores/sidePanel';
+  import { useTimeStore } from '@/stores/time';
 </script>
 
 <template>
   <nav class="fixed left-0 w-full bg-white border-b shadow p-2 pl-52 pr-4 z-10">
     <div class="flex gap-2">
       <div class="flex-none">
-        <Dropdown
-          :options="namespaces"
-          :current-dropdown="currentDropdown"
-          @select="selectNamespace"
-          @open="onDropdownOpen"
-        />
+        <Dropdown :options="namespaces" :current-dropdown="currentDropdown" @select="selectNamespace"
+          @open="onDropdownOpen" />
       </div>
       <div class="flex-none">
         <Dropdown :options="nodes" :current-dropdown="currentDropdown" @select="selectNode" @open="onDropdownOpen" />
@@ -42,10 +38,7 @@ import { useTimeStore } from '@/stores/time';
   <div class="flex w-full mt-12 text-xs">
     <div ref="root" class="flex-1">
       <div class="p-4 pt-5">
-        <div
-          v-for="(row, i) in dashboard.rows"
-          class="pb-3 grid gap-3"
-          :class="[
+        <div v-for="(row, i) in dashboard.rows" class="pb-3 grid gap-3" :class="[
             'flex',
             [
               '',
@@ -62,16 +55,10 @@ import { useTimeStore } from '@/stores/time';
               'grid-cols-11',
               'grid-cols-12',
             ][row.panels.length],
-          ]"
-        >
+          ]">
           <div v-for="(panel, j) in row.panels" class="flex-1 bg-white border">
-            <Panel
-              :position="`${i + 1}${j + 1}`"
-              :count="count"
-              :panel-config="panel"
-              :panel-width="clientWidth / row.panels.length"
-              :time-range="timeRange"
-            />
+            <Panel :position="`${i + 1}${j + 1}`" :count="count" :panel-config="panel"
+              :panel-width="clientWidth / row.panels.length" :time-range="timeRange" />
           </div>
         </div>
       </div>
@@ -81,91 +68,91 @@ import { useTimeStore } from '@/stores/time';
 </template>
 
 <script>
-export default {
-  data() {
-    return {
-      count: 0,
-      range: [],
-      timeRange: [],
-      intervalSeconds: 0,
-      currentDropdown: -1,
-      dashboards: [],
-      dashboard: {},
-      namespaces: [],
-      nodes: [],
-      clientWidth: 100,
-      rows: [],
-    };
-  },
-  mounted() {
-    useTimeStore().timerManager = 'DashboardView';
-    this.$watch(
-      () => this.$route.params,
-      () => {
-        this.renderDashboard();
+  export default {
+    data() {
+      return {
+        count: 0,
+        range: [],
+        timeRange: [],
+        intervalSeconds: 0,
+        currentDropdown: -1,
+        dashboards: [],
+        dashboard: {},
+        namespaces: [],
+        nodes: [],
+        clientWidth: 100,
+        rows: [],
+      };
+    },
+    mounted() {
+      useTimeStore().timerManager = 'DashboardView';
+      this.$watch(
+        () => this.$route.params,
+        () => {
+          this.renderDashboard();
+        },
+      );
+      window.addEventListener('resize', this.resize);
+      this.init();
+    },
+    unmounted() {
+      window.removeEventListener('resize', this.resize);
+    },
+    methods: {
+      updateTimeRange(r) {
+        this.range = r;
       },
-    );
-    window.addEventListener('resize', this.resize);
-    this.init();
-  },
-  unmounted() {
-    window.removeEventListener('resize', this.resize);
-  },
-  methods: {
-    updateTimeRange(r) {
-      this.range = r;
-    },
-    async execute() {
-      this.timeRange = await useTimeStore().toTimeRangeForQuery(this.range);
-      this.count++;
-      if (this.intervalSeconds > 0) {
-        setTimeout(() => this.timerHandler(), this.intervalSeconds * 1000);
-      }
-    },
-    timerHandler() {
-      if (useTimeStore().timerManager != 'DashboardView' || this.intervalSeconds == 0) return;
-      this.execute();
-    },
-    changeInterval(i) {
-      this.intervalSeconds = i;
-      this.execute();
-    },
-    onDropdownOpen(uid) {
-      this.currentDropdown = uid;
-    },
-    selectNamespace(ns) {
-      useFilterStore().selectedNamespace = ns;
-      this.execute();
-    },
-    selectNode(node) {
-      useFilterStore().selectedNode = node;
-      this.execute();
-    },
-    mousemove(e) {
-      this.legendPosition = [e.clientX + 50, e.clientY + 50];
-    },
-    resize() {
-      // wait for browser rendering
-      setTimeout(() => {
-        this.clientWidth = this.$refs.root.clientWidth;
-      }, 80);
-    },
-    async init() {
-      this.namespaces = await useFilterStore().getNamespaces();
-      this.nodes = await useFilterStore().getNodes();
-      this.dashboards = await useDashboardStore().getDashboards();
-      this.renderDashboard();
-      this.execute();
-      this.resize();
-    },
-    renderDashboard() {
-      this.dashboards.forEach(d => {
-        if (d.title == this.$route.params.name) {
-          this.dashboard = d;
-          useSidePanelStore().updateDashboardInfo(d);
+      async execute() {
+        this.timeRange = await useTimeStore().toTimeRangeForQuery(this.range);
+        this.count++;
+        if (this.intervalSeconds > 0) {
+          setTimeout(() => this.timerHandler(), this.intervalSeconds * 1000);
         }
-      });
+      },
+      timerHandler() {
+        if (useTimeStore().timerManager != 'DashboardView' || this.intervalSeconds == 0) return;
+        this.execute();
+      },
+      changeInterval(i) {
+        this.intervalSeconds = i;
+        this.execute();
+      },
+      onDropdownOpen(uid) {
+        this.currentDropdown = uid;
+      },
+      selectNamespace(ns) {
+        useFilterStore().selectedNamespace = ns;
+        this.execute();
+      },
+      selectNode(node) {
+        useFilterStore().selectedNode = node;
+        this.execute();
+      },
+      mousemove(e) {
+        this.legendPosition = [e.clientX + 50, e.clientY + 50];
+      },
+      resize() {
+        // wait for browser rendering
+        setTimeout(() => {
+          this.clientWidth = this.$refs.root.clientWidth;
+        }, 80);
+      },
+      async init() {
+        this.namespaces = await useFilterStore().getNamespaces();
+        this.nodes = await useFilterStore().getNodes();
+        this.dashboards = await useDashboardStore().getDashboards();
+        this.renderDashboard();
+        this.execute();
+        this.resize();
+      },
+      renderDashboard() {
+        this.dashboards.forEach(d => {
+          if (d.title == this.$route.params.name) {
+            this.dashboard = d;
+            useSidePanelStore().updateDashboardInfo(d);
+          }
+        });
+      },
     },
-  },
-};
+  };
 </script>

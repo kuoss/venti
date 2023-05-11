@@ -27,15 +27,15 @@ export const useFilterStore = defineStore('filter', {
       this.status.loading = true;
       try {
         const response = await fetch('/api/v1/remote/query?dstype=prometheus&query=kube_namespace_created');
-        const data = await response.json();
+        const jsonData = await response.json();
 
-        this.namespaces = data.data.result.map(x => x.metric.namespace);
-        this.namespaces = ['All namespaces', ...this.namespaces];
+        const namespaces = jsonData.data.result.map(x => x.metric.namespace);
+        this.namespaces = ['All namespaces', ...namespaces];
 
         const response2 = await fetch('/api/v1/remote/query?dstype=prometheus&query=kube_node_created');
-        const data2 = await response2.json();
-        this.nodes = data2.data.result.map(x => x.metric.node);
-        this.nodes = ['All nodes', ...this.nodes];
+        const jsonData2 = await response2.json();
+        const nodes = jsonData2.data.result.map(x => x.metric.node);
+        this.nodes = ['All nodes', ...nodes];
 
         this.status.loaded = true;
       } catch (error) {
