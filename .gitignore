@@ -1,3 +1,5 @@
+.vscode
+.theia
 tmp/
 /**/node_modules
 /data/*.sqlite3
