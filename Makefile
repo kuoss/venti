@@ -35,6 +35,9 @@ docker:
 test:
 	hack/test-failfast.sh
 
+testall:
+	hack/test-all.sh
+
 cover:
 	hack/test-cover.sh
 
