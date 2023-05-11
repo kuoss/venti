@@ -60,7 +60,7 @@ jobs:
     steps:
     - uses: actions/setup-go@v4
     - uses: actions/checkout@v3
-    - run: cp etc/datasources.checks.yaml etc/datasources.yaml
+    - run: cp docs/examples/datasources.test.yml etc/datasources.yaml
     - run: go test ./... -race -v -failfast
 
   go-test-coverage:
@@ -68,7 +68,7 @@ jobs:
     steps:
     - uses: actions/setup-go@v4
     - uses: actions/checkout@v3
-    - run: cp etc/datasources.checks.yaml etc/datasources.yaml 
+    - run: cp docs/examples/datasources.test.yml etc/datasources.yaml
     - run: go test ./... -race -covermode=atomic -coverprofile=coverage.out
     # https://about.codecov.io/blog/getting-started-with-code-coverage-for-golang/
     - uses: codecov/codecov-action@v3
