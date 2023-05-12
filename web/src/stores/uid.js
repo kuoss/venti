@@ -1,6 +1,6 @@
-import { defineStore } from "pinia";
+import { defineStore } from 'pinia';
 
-export const useUIDStore = defineStore("uid", {
+export const useUIDStore = defineStore('uid', {
   state: () => ({
     lastUID: 1,
     currentUID: 0,

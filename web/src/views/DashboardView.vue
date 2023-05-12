@@ -1,14 +1,14 @@
 <script setup>
-import Dropdown from "@/components/Dropdown.vue";
-import Panel from "@/components/Panel.vue";
-import RunButton from "@/components/RunButton.vue";
-import SidePanel from "@/components/SidePanel.vue";
-import TimeRangePicker from "@/components/TimeRangePicker.vue";
+import Dropdown from '@/components/Dropdown.vue';
+import Panel from '@/components/Panel.vue';
+import RunButton from '@/components/RunButton.vue';
+import SidePanel from '@/components/SidePanel.vue';
+import TimeRangePicker from '@/components/TimeRangePicker.vue';
 
-import { useDashboardStore } from "@/stores/dashboard";
-import { useFilterStore } from "@/stores/filter";
-import { useSidePanelStore } from "@/stores/sidePanel";
-import { useTimeStore } from "@/stores/time";
+import { useDashboardStore } from '@/stores/dashboard';
+import { useFilterStore } from '@/stores/filter';
+import { useSidePanelStore } from '@/stores/sidePanel';
+import { useTimeStore } from '@/stores/time';
 </script>
 
 <template>
@@ -17,43 +17,30 @@ import { useTimeStore } from "@/stores/time";
       <div class="flex-none">
         <Dropdown
           :options="namespaces"
-          :currentDropdown="currentDropdown"
+          :current-dropdown="currentDropdown"
           @select="selectNamespace"
           @open="onDropdownOpen"
-        ></Dropdown>
+        />
       </div>
       <div class="flex-none">
-        <Dropdown
-          :options="nodes"
-          :currentDropdown="currentDropdown"
-          @select="selectNode"
-          @open="onDropdownOpen"
-        ></Dropdown>
+        <Dropdown :options="nodes" :current-dropdown="currentDropdown" @select="selectNode" @open="onDropdownOpen" />
       </div>
       <div class="grow font-bold text-center align-middle">
         {{ dashboard.title }}
-        <button
-          class="ml-2 px-2 py-2 border rounded"
-          @click="useSidePanelStore().toggleDashboardInfo()"
-        >
-          <i class="mdi mdi-information-outline"></i>
+        <button class="ml-2 px-2 py-2 border rounded" @click="useSidePanelStore().toggleDashboardInfo()">
+          <i class="mdi mdi-information-outline" />
         </button>
       </div>
       <div class="flex-none">
         <TimeRangePicker @updateTimeRange="updateTimeRange" />
       </div>
       <div class="flex-none">
-        <RunButton
-          :disabled="false"
-          btnText="Refresh"
-          @execute="execute"
-          @changeInterval="changeInterval"
-        />
+        <RunButton :disabled="false" btn-text="Refresh" @execute="execute" @changeInterval="changeInterval" />
       </div>
     </div>
   </nav>
   <div class="flex w-full mt-12 text-xs">
-    <div class="flex-1" ref="root">
+    <div ref="root" class="flex-1">
       <div class="p-4 pt-5">
         <div
           v-for="(row, i) in dashboard.rows"
@@ -77,13 +64,13 @@ import { useTimeStore } from "@/stores/time";
             ][row.panels.length],
           ]"
         >
-          <div class="flex-1 bg-white border" v-for="(panel, j) in row.panels">
+          <div v-for="(panel, j) in row.panels" class="flex-1 bg-white border">
             <Panel
               :position="`${i + 1}${j + 1}`"
               :count="count"
-              :panelConfig="panel"
-              :panelWidth="clientWidth / row.panels.length"
-              :timeRange="timeRange"
+              :panel-config="panel"
+              :panel-width="clientWidth / row.panels.length"
+              :time-range="timeRange"
             />
           </div>
         </div>
@@ -110,6 +97,20 @@ export default {
       rows: [],
     };
   },
+  mounted() {
+    useTimeStore().timerManager = 'DashboardView';
+    this.$watch(
+      () => this.$route.params,
+      () => {
+        this.renderDashboard();
+      },
+    );
+    window.addEventListener('resize', this.resize);
+    this.init();
+  },
+  unmounted() {
+    window.removeEventListener('resize', this.resize);
+  },
   methods: {
     updateTimeRange(r) {
       this.range = r;
@@ -122,11 +123,7 @@ export default {
       }
     },
     timerHandler() {
-      if (
-        useTimeStore().timerManager != "DashboardView" ||
-        this.intervalSeconds == 0
-      )
-        return;
+      if (useTimeStore().timerManager != 'DashboardView' || this.intervalSeconds == 0) return;
       this.execute();
     },
     changeInterval(i) {
@@ -162,27 +159,13 @@ export default {
       this.resize();
     },
     renderDashboard() {
-      this.dashboards.forEach((d) => {
+      this.dashboards.forEach(d => {
         if (d.title == this.$route.params.name) {
           this.dashboard = d;
           useSidePanelStore().updateDashboardInfo(d);
         }
       });
     },
-  },
-  mounted() {
-    useTimeStore().timerManager = "DashboardView";
-    this.$watch(
-      () => this.$route.params,
-      () => {
-        this.renderDashboard();
-      }
-    );
-    window.addEventListener("resize", this.resize);
-    this.init();
-  },
-  unmounted() {
-    window.removeEventListener("resize", this.resize);
   },
 };
 </script>

@@ -37,7 +37,10 @@ func setup() {
 			"message": "Hello_" + name,
 		})
 	})
-	_ = mainServer.Start(0)
+	err := mainServer.Start(0)
+	if err != nil {
+		panic(err)
+	}
 	mainClient = mockerClient.New(mainServer.URL)
 }
 
@@ -48,7 +51,8 @@ func shutdown() {
 func TestNew(t *testing.T) {
 	// default case
 	assert.NotZero(t, mainServer)
-	u, _ := url.Parse(mainServer.URL)
+	u, err := url.Parse(mainServer.URL)
+	assert.NoError(t, err)
 	assert.Equal(t, "127.0.0.1", u.Hostname())
 	assert.NotEqual(t, "0", u.Port())
 }
@@ -104,7 +108,8 @@ func TestSetBasicAuth(t *testing.T) {
 	tempServer.GET("/ping", func(c *mocker.Context) {
 		c.JSON(200, mocker.H{"message": "pong"})
 	})
-	_ = tempServer.Start(0)
+	err := tempServer.Start(0)
+	assert.NoError(t, err)
 
 	tempClient1 := mockerClient.New(tempServer.URL)
 
@@ -119,22 +124,17 @@ func TestSetBasicAuth(t *testing.T) {
 		wantCode int
 		wantBody string
 	}{
-		// 401
 		{
 			tempClient1,
-			401,
-			"401 unauthorized\n",
+			401, "401 unauthorized\n",
 		},
 		{
 			tempClient2,
-			401,
-			"401 unauthorized\n",
+			401, "401 unauthorized\n",
 		},
-		// 200
 		{
 			tempClient3,
-			200,
-			`{"message":"pong"}`,
+			200, `{"message":"pong"}`,
 		},
 	}
 	for i, tc := range testCases {
@@ -155,7 +155,6 @@ func Test_ping(t *testing.T) {
 		wantBody  string
 		wantError string
 	}{
-		// 200
 		{
 			"/ping", "",
 			200, `{"message":"pong"}`, "",
@@ -172,7 +171,6 @@ func Test_ping(t *testing.T) {
 			"/greet", "name=John",
 			200, `{"message":"Hello_John"}`, "",
 		},
-		// 404
 		{
 			"/not_found", "",
 			404, "404 page not found\n", "",

@@ -1,17 +1,15 @@
 <template>
   <table class="w-full border-collapse">
     <tr class="border-b">
-      <th class="px-2 py-1 bg-slate-50" v-for="h in panelConfig.headers">
+      <th v-for="h in panelConfig.headers" class="px-2 py-1 bg-slate-50">
         {{ h }}
       </th>
     </tr>
-    <tr class="border-b" v-for="(row, i) in rows">
-      <td class="px-2 py-1">{{ datasources[i].host }}</td>
-      <td
-        class="border-l px-2 py-1"
-        v-for="cell in row"
-        :class="{ 'text-right': !isNaN(cell) }"
-      >
+    <tr v-for="(row, i) in rows" class="border-b">
+      <td class="px-2 py-1">
+        {{ datasources[i].host }}
+      </td>
+      <td v-for="cell in row" class="border-l px-2 py-1" :class="{ 'text-right': !isNaN(cell) }">
         {{ cell }}
       </td>
     </tr>
@@ -27,24 +25,25 @@ export default {
     panelWidth: Number,
     timeRange: Object,
   },
-  watch: {
-    count() {
-      if (!this.loading) this.fetchData();
-    },
-  },
   data() {
     return {
       rows: [],
       datasources: [],
     };
   },
+  watch: {
+    count() {
+      if (!this.loading) this.fetchData();
+    },
+  },
+  mounted() {
+    this.init();
+  },
   methods: {
     async init() {
       try {
-        const response = await this.axios.get("/api/datasources");
-        this.datasources = response.data.filter(
-          (x) => x.type == "Prometheus" && x.is_discovered
-        );
+        const response = await this.axios.get('/api/datasources');
+        this.datasources = response.data.filter(x => x.type == 'Prometheus' && x.is_discovered);
       } catch (error) {
         console.error(error);
       }
@@ -52,13 +51,13 @@ export default {
     },
     async fetchData() {
       if (this.timeRange.length < 2) return;
-      this.$emit("setIsLoading", true);
+      this.$emit('setIsLoading', true);
       try {
         let rows = [];
         for (const datasource of this.datasources) {
           let row = [];
           for (const target of this.panelConfig.targets) {
-            const response = await this.axios.get("/api/prometheus/query", {
+            const response = await this.axios.get('/api/prometheus/query', {
               params: {
                 host: datasource.host,
                 expr: target.expr,
@@ -71,9 +70,7 @@ export default {
               continue;
             }
             for (const legend of target.legends) {
-              const value = result.map((x) =>
-                legend.replace(/\{\{(.*?)\}\}/g, (i, m) => x.metric[m])
-              )[0];
+              const value = result.map(x => legend.replace(/\{\{(.*?)\}\}/g, (i, m) => x.metric[m]))[0];
               row.push(value);
             }
           }
@@ -83,11 +80,8 @@ export default {
       } catch (error) {
         console.error(error);
       }
-      this.$emit("setIsLoading", false);
+      this.$emit('setIsLoading', false);
     },
-  },
-  mounted() {
-    this.init();
   },
 };
 </script>

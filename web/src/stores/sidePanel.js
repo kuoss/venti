@@ -1,10 +1,10 @@
-import { defineStore } from "pinia";
+import { defineStore } from 'pinia';
 
-export const useSidePanelStore = defineStore("sidePanel", {
+export const useSidePanelStore = defineStore('sidePanel', {
   state: () => ({
     show: false,
-    title: "",
-    type: "",
+    title: '',
+    type: '',
     dataTable: {},
     dashboardInfo: {},
     currentPosition: null,
@@ -30,12 +30,12 @@ export const useSidePanelStore = defineStore("sidePanel", {
       this.show = !this.show;
     },
     toggleDashboardInfo() {
-      if (this.type != "DashboardInfo") this.show = true;
+      if (this.type != 'DashboardInfo') this.show = true;
       else this.show = !this.show;
-      if (this.show) this.type = "DashboardInfo";
+      if (this.show) this.type = 'DashboardInfo';
     },
     goToPanelConfig(position) {
-      this.type = "DashboardInfo";
+      this.type = 'DashboardInfo';
       this.show = true;
       // this.currentPosition = position
       setTimeout(() => (this.currentPosition = position), 300);

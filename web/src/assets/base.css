@@ -98,7 +98,7 @@
   @apply relative z-[1];
 }
 .highlight-base::before {
-  content: "";
+  content: '';
   @apply bg-gradient-to-r from-slate-100 to-yellow-100 absolute top-0 left-0 w-full h-full opacity-0 z-[-1] transition-opacity duration-500;
 }
 .dark .highlight-base::before {

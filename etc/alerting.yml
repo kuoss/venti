@@ -1,0 +1,4 @@
+alertings:
+- name: alertmanager
+  type: alertmanager
+  url: http://localhost:9093

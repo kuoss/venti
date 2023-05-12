@@ -1,11 +1,14 @@
+<script setup>
+import Util from '@/lib/util';
+</script>
 <script>
-import { useTimeStore } from "@/stores/time";
-import { useDatasourceStore } from "@/stores/datasource";
+import { useTimeStore } from '@/stores/time';
+import { useDatasourceStore } from '@/stores/datasource';
 
-import TimeRangePicker from "@/components/TimeRangePicker.vue";
-import RunButton from "@/components/RunButton.vue";
-import UplotVue from "uplot-vue";
-import "uplot/dist/uPlot.min.css";
+import TimeRangePicker from '@/components/TimeRangePicker.vue';
+import RunButton from '@/components/RunButton.vue';
+import UplotVue from 'uplot-vue';
+import 'uplot/dist/uPlot.min.css';
 
 export default {
   components: {
@@ -13,25 +16,9 @@ export default {
     TimeRangePicker,
     uplotvue: UplotVue,
   },
-  computed: {
-    items() {
-      const keyword = this.expr;
-      if (!keyword || keyword.length < 1) return [];
-      return Object.entries(this.metadata)
-        .filter((x) => x[0].indexOf(keyword) >= 0)
-        .map((x) => {
-          x.push(
-            x[0].replaceAll(
-              keyword,
-              `<span class="text-blue-600 font-bold">${keyword}</span>`
-            )
-          );
-          return x;
-        });
-    },
-  },
   data() {
     return {
+      tableWidth: 0,
       timeStore: useTimeStore(),
       datasourceStore: useDatasourceStore(),
       searchMode: false,
@@ -46,7 +33,7 @@ export default {
       metadata: {},
       metaDict: {},
       metricInfo: null,
-      queryType: "raw",
+      queryType: 'raw',
       expr: `container_memory_working_set_bytes{namespace="kube-system"}`,
       keys: [],
       keyDict: {},
@@ -57,94 +44,30 @@ export default {
       chartOptions: {
         axes: [
           {
-            stroke: "#888",
-            grid: { stroke: "#8885", width: 1 },
-            ticks: { stroke: "#8885", width: 1 },
+            stroke: '#888',
+            grid: { stroke: '#8885', width: 1 },
+            ticks: { stroke: '#8885', width: 1 },
             values: [
-              [
-                3600 * 24 * 365,
-                "{YYYY}",
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                1,
-              ],
-              [
-                3600 * 24 * 28,
-                "{MM}",
-                "\n{YYYY}",
-                null,
-                null,
-                null,
-                null,
-                null,
-                1,
-              ],
-              [
-                3600 * 24,
-                "{MM}-{DD}",
-                "\n{YYYY}",
-                null,
-                null,
-                null,
-                null,
-                null,
-                1,
-              ],
-              [
-                3600,
-                "{HH}:00",
-                "\n{YYYY}-{MM}-{DD}",
-                null,
-                "\n{MM}-{DD}",
-                null,
-                null,
-                null,
-                1,
-              ],
-              [
-                60,
-                "{HH}:{mm}",
-                "\n{YYYY}-{MM}-{DD}",
-                null,
-                "\n{MM}-{DD}",
-                null,
-                null,
-                null,
-                1,
-              ],
-              [
-                1,
-                "{HH}:{mm}:{ss}",
-                "\n{YYYY}-{MM}-{DD}",
-                null,
-                "\n{MM}-{DD}",
-                null,
-                null,
-                null,
-                1,
-              ],
+              [3600 * 24 * 365, '{YYYY}', null, null, null, null, null, null, 1],
+              [3600 * 24 * 28, '{MM}', '\n{YYYY}', null, null, null, null, null, 1],
+              [3600 * 24, '{MM}-{DD}', '\n{YYYY}', null, null, null, null, null, 1],
+              [3600, '{HH}:00', '\n{YYYY}-{MM}-{DD}', null, '\n{MM}-{DD}', null, null, null, 1],
+              [60, '{HH}:{mm}', '\n{YYYY}-{MM}-{DD}', null, '\n{MM}-{DD}', null, null, null, 1],
+              [1, '{HH}:{mm}:{ss}', '\n{YYYY}-{MM}-{DD}', null, '\n{MM}-{DD}', null, null, null, 1],
             ],
           },
           {
-            stroke: "#888",
-            grid: { stroke: "#8885", width: 1 },
-            ticks: { stroke: "#8885", width: 1 },
+            stroke: '#888',
+            grid: { stroke: '#8885', width: 1 },
+            ticks: { stroke: '#8885', width: 1 },
             size(self, values, axisIdx, cycleNum) {
               const axis = self.axes[axisIdx];
               if (cycleNum > 1) return axis._size;
               let axisSize = axis.ticks.size + axis.gap;
-              let longestVal = (values ?? []).reduce(
-                (acc, val) => (val.length > acc.length ? val : acc),
-                ""
-              );
-              if (longestVal != "") {
+              let longestVal = (values ?? []).reduce((acc, val) => (val.length > acc.length ? val : acc), '');
+              if (longestVal != '') {
                 self.ctx.font = axis.font[0];
-                axisSize +=
-                  self.ctx.measureText(longestVal).width / devicePixelRatio;
+                axisSize += self.ctx.measureText(longestVal).width / devicePixelRatio;
               }
               return Math.ceil(axisSize);
             },
@@ -161,6 +84,30 @@ export default {
       },
     };
   },
+  computed: {
+    items() {
+      const keyword = this.expr;
+      if (!keyword || keyword.length < 1) return [];
+      return Object.entries(this.metadata)
+        .filter(x => x[0].indexOf(keyword) >= 0)
+        .map(x => {
+          x.push(x[0].replaceAll(keyword, `<span class="text-blue-600 font-bold">${keyword}</span>`));
+          return x;
+        });
+    },
+  },
+  mounted() {
+    this.timeStore.timerManager = 'MetricsView';
+    this.fetchMetadata();
+    if (this.$route.query?.query) {
+      this.expr = '' + this.$route.query.query;
+      setTimeout(this.execute, 500);
+    }
+    window.addEventListener('resize', this.chartResize);
+  },
+  unmounted() {
+    window.removeEventListener('resize', this.chartResize);
+  },
   methods: {
     searchKeyUp(e) {
       if (e.keyCode == 13) {
@@ -172,7 +119,7 @@ export default {
     },
     addLabel(not, key, value) {
       const where = `${key}${not}="${value}"`;
-      const idx = this.expr.indexOf("}");
+      const idx = this.expr.indexOf('}');
       if (idx < 0) {
         this.expr += `{${where}}`;
         return;
@@ -188,28 +135,31 @@ export default {
     },
     async execute() {
       if (this.expr.length < 1) {
-        console.error("emtpy expr");
+        console.error('emtpy expr');
         return;
       }
       const timeRange = await this.timeStore.toTimeRangeForQuery(this.range);
-      console.log('timeRange=', timeRange)
-      let lastRange = timeRange.map((x) => this.timeStore.timestamp2ymdhis(x));
-      if (lastRange[0].slice(0, 10) == lastRange[1].slice(0, 10))
-        lastRange[1] = lastRange[1].slice(11);
+      console.log('timeRange=', timeRange);
+      let lastRange = timeRange.map(x => this.timeStore.timestamp2ymdhis(x));
+      if (lastRange[0].slice(0, 10) == lastRange[1].slice(0, 10)) lastRange[1] = lastRange[1].slice(11);
       this.lastExecuted = { expr: this.expr, range: lastRange };
       this.loading = true;
       try {
-        const response = await fetch('/api/remote/query_range?dstype=prometheus&' + new URLSearchParams({
-            query: this.expr,
-            start: timeRange[0],
-            end: timeRange[1],
-            step: (timeRange[1] - timeRange[0]) / 120,
-        }));
-        const data = await response.json();
+        const response = await fetch(
+          '/api/v1/remote/query_range?dstype=prometheus&' +
+            new URLSearchParams({
+              query: this.expr,
+              start: timeRange[0],
+              end: timeRange[1],
+              step: (timeRange[1] - timeRange[0]) / 120,
+            }),
+        );
+        const jsonData = await response.json();
+
         this.loading = false;
-        this.result = data.data.result;
+        this.result = jsonData.data.result;
         this.keys = this.result
-          .map((x) => Object.keys(x.metric))
+          .map(x => Object.keys(x.metric))
           .flat()
           .filter((v, i, s) => s.indexOf(v) === i)
           .sort()
@@ -228,23 +178,17 @@ export default {
       }
     },
     timerHandler() {
-      if (
-        this.timeStore.timerManager != "MetricsView" ||
-        this.intervalSeconds == 0
-      )
-        return;
+      if (this.timeStore.timerManager != 'MetricsView' || this.intervalSeconds == 0) return;
       this.execute();
     },
     renderChart() {
-      const temp = this.result.map((x) => x.values);
-      const timestamps = Array.from(
-        new Set(temp.map((a) => a.map((b) => b[0])).flat())
-      ).sort();
-      let seriesData = temp.map((a) => {
+      const temp = this.result.map(x => x.values);
+      const timestamps = Array.from(new Set(temp.map(a => a.map(b => b[0])).flat())).sort();
+      let seriesData = temp.map(a => {
         let newA = [];
 
-        timestamps.forEach((t) => {
-          const newPoint = a.filter((b) => t == b[0]);
+        timestamps.forEach(t => {
+          const newPoint = a.filter(b => t == b[0]);
           if (newPoint.length != 1 || isNaN(parseFloat(newPoint[0][1]))) {
             newA.push(null);
             return;
@@ -253,35 +197,27 @@ export default {
         });
         return newA;
       });
-      let m = Math.max(...seriesData.flat());
-      let c = 0;
-      while (m > 1000) {
-        m /= 1000;
-        c++;
-      }
-      const metrics = this.result.map((x) => x.metric);
+      const metrics = this.result.map(x => x.metric);
       let newSeries = [];
       newSeries.push({});
       this.keyDict = {};
-      metrics.forEach((x) => {
+      metrics.forEach(x => {
         delete x.__name__;
         const entries = Object.entries(x);
 
-        entries.forEach((a) => {
+        entries.forEach(a => {
           this.keyDict[a[0]] = this.keyDict[a[0]] || {
             show: false,
             values: [],
           };
           this.keyDict[a[0]].values.push(a[1]);
-          this.keyDict[a[0]].values = this.keyDict[a[0]].values.filter(
-            (v, i, s) => s.indexOf(v) === i
-          );
+          this.keyDict[a[0]].values = this.keyDict[a[0]].values.filter((v, i, s) => s.indexOf(v) === i);
         });
-        x = "{" + entries.map((v) => `${v[0]}="${v[1]}"`).join(",") + "}";
+        x = '{' + entries.map(v => `${v[0]}="${v[1]}"`).join(',') + '}';
 
         newSeries.push({
           label: x,
-          stroke: this.$util.string2color(x),
+          stroke: Util.string2color(x),
           points: { size: 1 },
         });
       });
@@ -306,11 +242,11 @@ export default {
     },
     async fetchMetadata() {
       try {
-        const response = await fetch("/api/remote/metadata?dstype=prometheus");
-        const data = await response.json();
+        const resp = await fetch('/api/v1/remote/metadata?dstype=prometheus');
+        const data = await resp.json();
         this.metadata = data.data;
         this.metaDict = Object.keys(this.metadata).reduce((a, k) => {
-          const p = k.slice(0, k.indexOf("_"));
+          const p = k.slice(0, k.indexOf('_'));
           a[p] = a[p] || { showMetrics: false };
           a[p].metrics = a[p].metrics || [];
           a[p].metrics.push({ name: k, data: this.metadata[k] });
@@ -323,12 +259,12 @@ export default {
     chartResize() {
       const width = document.body.clientWidth - 545;
       this.chartOptions = { ...this.chartOptions, width: width };
-      this.tableWitdh = width;
+      this.tableWidth = width;
     },
     tooltipPlugin() {
       return {
         hooks: {
-          setCursor: (u) => {
+          setCursor: u => {
             if (!u.cursor.idx) return;
             this.cursorIdx = u.cursor.idx;
             this.cursorTime = u.data[0][u.cursor.idx];
@@ -336,18 +272,6 @@ export default {
         },
       };
     },
-  },
-  mounted() {
-    this.timeStore.timerManager = "MetricsView";
-    this.fetchMetadata();
-    if (this.$route.query?.query) {
-      this.expr = "" + this.$route.query.query;
-      setTimeout(this.execute, 500);
-    }
-    window.addEventListener("resize", this.chartResize);
-  },
-  unmounted() {
-    window.removeEventListener("resize", this.chartResize);
   },
 };
 </script>
@@ -358,18 +282,13 @@ export default {
     :class="{ 'is-loading': loading }"
   >
     <div class="flex items-center flex-row">
-      <div><i class="mdi mdi-18px mdi-numeric"></i> Metrics</div>
+      <div><i class="mdi mdi-18px mdi-numeric" /> Metrics</div>
       <div class="flex ml-auto">
         <span>
           <TimeRangePicker @updateTimeRange="updateTimeRange" />
         </span>
         <span class="ml-2">
-          <RunButton
-            btnText="Run query"
-            :disabled="busy"
-            @execute="execute"
-            @changeInterval="changeInterval"
-          />
+          <RunButton btn-text="Run query" :disabled="busy" @execute="execute" @changeInterval="changeInterval" />
         </span>
       </div>
     </div>
@@ -379,27 +298,24 @@ export default {
       <div class="pb-4">
         <div class="relative w-full">
           <input
+            v-model="expr"
             type="search"
             class="flex-1 relative flex-auto min-w-0 block w-full px-3 py-1.5 text-base font-normal text-gray-700 bg-white bg-clip-padding border border-solid border-gray-300 rounded transition ease-in-out m-0 focus:text-gray-700 focus:bg-white focus:border-blue-600 focus:outline-none"
             placeholder="Expression"
             aria-label="Expression"
             aria-describedby="button-addon3"
-            v-model="expr"
             @keyup="searchKeyUp"
           />
-          <ul
-            class="absolute bg-white border max-h-[70vh] overflow-y-auto z-20"
-            v-if="searchMode && expr"
-          >
+          <ul v-if="searchMode && expr" class="absolute bg-white border max-h-[70vh] overflow-y-auto z-20">
             <li
-              class="flex gap-3 hover:bg-gray-200 cursor-pointer"
               v-for="item in items"
+              class="flex gap-3 hover:bg-gray-200 cursor-pointer"
               @click="
                 expr = item[0];
                 searchMode = false;
               "
             >
-              <div class="text-gray-600" v-html="item[2]"></div>
+              <div class="text-gray-600" v-html="item[2]" />
               <div class="flex-auto text-right text-gray-500">
                 {{ item[1][0].type }}
               </div>
@@ -409,9 +325,7 @@ export default {
       </div>
       <div class="break-all">
         <div v-if="result.length < 1">
-          <div class="rounded bg-slate-200 text-center p-8">
-            Empty query result
-          </div>
+          <div class="rounded bg-slate-200 text-center p-8">Empty query result</div>
         </div>
         <div v-else>
           <div class="border">
@@ -419,70 +333,51 @@ export default {
           </div>
 
           <div class="mt-4 py-1 font-bold">
-            <span v-if="result && result.length > 0"
-              >{{ result.length }} rows</span
-            >
-            <div class="float-right" v-if="cursorTime">
+            <span v-if="result && result.length > 0">{{ result.length }} rows</span>
+            <div v-if="cursorTime" class="float-right">
               {{ timeStore.timestamp2ymdhis(cursorTime) }}
             </div>
           </div>
           <div
             class="overflow-x-auto overflow-y-auto margin-l-[5em] max-h-[50vh]"
-            :style="{ width: tableWitdh + 'px' }"
+            :style="{ width: tableWidth + 'px' }"
           >
-            <table
-              class="whitespace-nowrap border-separate w-full"
-              style="border-spacing: 0"
-            >
+            <table class="whitespace-nowrap border-separate w-full" style="border-spacing: 0">
               <tr class="sticky z-10 top-0 border-y bg-slate-200 text-left">
                 <th
-                  class="font-normal max-w-[100px] px-2 border border-r-0 text-ellipsis overflow-hidden hover:whitespace-normal hover:min-w-[200px]"
                   v-for="key in keys"
+                  class="font-normal max-w-[100px] px-2 border border-r-0 text-ellipsis overflow-hidden hover:whitespace-normal hover:min-w-[200px]"
                 >
                   {{ key }}
                 </th>
-                <th
-                  class="min-w-[120px] sticky top-0 right-0 font-normal border bg-slate-200 text-center"
-                >
-                  VALUE
-                </th>
+                <th class="min-w-[120px] sticky top-0 right-0 font-normal border bg-slate-200 text-center">VALUE</th>
               </tr>
-              <tr
-                v-if="result && result.length > 0"
-                v-for="row in result"
-                class="border-b hover:bg-gray-200"
-              >
-                <td
-                  class="max-w-[250px] px-2 border border-r-0 text-ellipsis overflow-hidden hover:whitespace-normal hover:min-w-[200px]"
-                  v-for="key in keys"
-                  @mouseover="
-                    row.hover = row.hover || {};
-                    row.hover[key] = true;
-                  "
-                  @mouseleave="row.hover[key] = false"
-                >
-                  {{ row.metric[key] }}
-                  <span class="inline-flex" v-if="row.hover && row.hover[key]">
-                    <button
-                      class="rounded px-1 border bg-slate-50 ml-1"
-                      @click="addLabel('', key, row.metric[key])"
-                    >
-                      <i class="mdi mdi-plus-circle-outline"></i>
-                    </button>
-                    <button
-                      class="rounded px-1 border bg-slate-50"
-                      @click="addLabel('!', key, row.metric[key])"
-                    >
-                      <i class="mdi mdi-minus-circle-outline"></i>
-                    </button>
-                  </span>
-                </td>
-                <td
-                  class="sticky right-0 top-auto px-4 border bg-slate-50 text-right"
-                >
-                  <span v-if="cursorIdx">{{ row.values[cursorIdx][1] }}</span>
-                </td>
-              </tr>
+              <template v-if="result && result.length > 0">
+                <tr v-for="row in result" class="border-b hover:bg-gray-200">
+                  <td
+                    v-for="key in keys"
+                    class="max-w-[250px] px-2 border border-r-0 text-ellipsis overflow-hidden hover:whitespace-normal hover:min-w-[200px]"
+                    @mouseover="
+                      row.hover = row.hover || {};
+                      row.hover[key] = true;
+                    "
+                    @mouseleave="row.hover[key] = false"
+                  >
+                    {{ row.metric[key] }}
+                    <span v-if="row.hover && row.hover[key]" class="inline-flex">
+                      <button class="rounded px-1 border bg-slate-50 ml-1" @click="addLabel('', key, row.metric[key])">
+                        <i class="mdi mdi-plus-circle-outline" />
+                      </button>
+                      <button class="rounded px-1 border bg-slate-50" @click="addLabel('!', key, row.metric[key])">
+                        <i class="mdi mdi-minus-circle-outline" />
+                      </button>
+                    </span>
+                  </td>
+                  <td class="sticky right-0 top-auto px-4 border bg-slate-50 text-right">
+                    <span v-if="cursorIdx">{{ row.values[cursorIdx][1] }}</span>
+                  </td>
+                </tr>
+              </template>
             </table>
           </div>
         </div>
@@ -513,47 +408,38 @@ export default {
           style="height: calc(100vh - 100px)"
         >
           <div v-if="tab == 0">
-            <div class v-for="(d, k) in metaDict">
-              <div
-                class="pl-1 cursor-pointer text-stone-600"
-                @click="d.showMetrics = !d.showMetrics"
-              >
+            <div v-for="(d, k) in metaDict" class>
+              <div class="pl-1 cursor-pointer text-stone-600" @click="d.showMetrics = !d.showMetrics">
                 {{ k }} ({{ d.metrics.length }})
               </div>
-              <div
-                class="pl-4 overflow-hidden text-ellipsis hover:bg-white cursor-pointer"
-                v-if="d.showMetrics"
-                v-for="m in d.metrics"
-                @click="applyMetric(m)"
-                @mouseover="selectMetric(m)"
-              >
-                {{ m.name }}
-              </div>
+              <template v-if="d.showMetrics">
+                <div
+                  v-for="m in d.metrics"
+                  class="pl-4 overflow-hidden text-ellipsis hover:bg-white cursor-pointer"
+                  @click="applyMetric(m)"
+                  @mouseover="selectMetric(m)"
+                >
+                  {{ m.name }}
+                </div>
+              </template>
             </div>
           </div>
           <div v-else>
             <div v-for="(d, key) in keyDict">
-              <div
-                class="pl-1 overflow-hidden text-ellipsis hover:bg-white cursor-pointer"
-                @click="d.show = !d.show"
-              >
+              <div class="pl-1 overflow-hidden text-ellipsis hover:bg-white cursor-pointer" @click="d.show = !d.show">
                 {{ key }} ({{ d.values.length }})
               </div>
-              <div class="pl-4" v-if="d.show" v-for="v in d.values">
-                {{ v }}
-                <button
-                  class="rounded px-1 border bg-slate-50 ml-1"
-                  @click="addLabel('', key, v)"
-                >
-                  <i class="mdi mdi-plus-circle-outline"></i>
-                </button>
-                <button
-                  class="rounded px-1 border bg-slate-50"
-                  @click="addLabel('!', key, v)"
-                >
-                  <i class="mdi mdi-minus-circle-outline"></i>
-                </button>
-              </div>
+              <template v-if="d.show">
+                <div v-for="v in d.values" class="pl-4">
+                  {{ v }}
+                  <button class="rounded px-1 border bg-slate-50 ml-1" @click="addLabel('', key, v)">
+                    <i class="mdi mdi-plus-circle-outline" />
+                  </button>
+                  <button class="rounded px-1 border bg-slate-50" @click="addLabel('!', key, v)">
+                    <i class="mdi mdi-minus-circle-outline" />
+                  </button>
+                </div>
+              </template>
             </div>
           </div>
         </div>
@@ -568,7 +454,7 @@ export default {
     <div class="border-b border-slate-300 p-2 break-all font-bold">
       {{ metricInfo.name }}
     </div>
-    <div class="px-2 py-1 word-break" v-for="(v, k) in metricInfo.data[0]">
+    <div v-for="v in metricInfo.data[0]" class="px-2 py-1 word-break">
       {{ v }}
     </div>
   </div>
@@ -576,11 +462,11 @@ export default {
 
 <style scope>
 .headcol-before:before {
-  content: "Row ";
+  content: 'Row ';
 }
 
 .u-inline.u-live th::after {
-  content: "";
+  content: '';
 }
 
 .u-series:first-child {

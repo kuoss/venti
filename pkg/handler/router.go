@@ -7,29 +7,35 @@ import (
 )
 
 func NewRouter(cfg *model.Config, stores *store.Stores) *gin.Engine {
-	handlers := loadHandlers(cfg, stores)
 
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()
+	handlers := loadHandlers(cfg, stores)
 
-	authGroup := router.Group("/auth")
-	{
-		authGroup.POST("/login", handlers.authHandler.Login)
-		authGroup.POST("/logout", handlers.authHandler.Logout)
-	}
-
-	api := router.Group("/api")
+	api := router.Group("/api/v1")
 	// TODO: api.Use(tokenRequired)
 	{
 		api.GET("/alerts", handlers.alertHandler.AlertRuleFiles)
 		api.GET("/config/version", handlers.configHandler.Version)
 		api.GET("/dashboards", handlers.dashboardHandler.Dashboards)
+
 		api.GET("/datasources", handlers.datasourceHandler.Datasources)
 		api.GET("/datasources/targets", handlers.datasourceHandler.Targets)
+
 		api.GET("/remote/metadata", handlers.remoteHandler.Metadata)
 		api.GET("/remote/query", handlers.remoteHandler.Query)
 		api.GET("/remote/query_range", handlers.remoteHandler.QueryRange)
+
+		api.GET("/status/buildinfo", handlers.statusHandler.BuildInfo)
 	}
+
+	router.POST("/auth/login", handlers.authHandler.Login)
+	router.POST("/auth/logout", handlers.authHandler.Logout)
+
+	router.GET("/-/healthy", handlers.probeHandler.Healthy)
+	router.GET("/-/ready", handlers.probeHandler.Ready)
+
 	router.Use(handleSPA())
+
 	return router
 }

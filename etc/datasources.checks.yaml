@@ -1,7 +1,0 @@
-datasources:
-- name: Prometheus
-  type: prometheus
-  url: http://prometheus:9090
-- name: Lethe
-  type: lethe
-  url: http://lethe:3100

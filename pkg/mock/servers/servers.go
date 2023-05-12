@@ -70,8 +70,8 @@ func New(requirements Requirements) *Servers {
 	return s
 }
 
-func (s *Servers) GetDatasources() (datasources []*model.Datasource) {
-	// datasources = []*model.Datasource{}
+func (s *Servers) GetDatasources() []model.Datasource {
+	datasources := []model.Datasource{}
 	for _, svr := range s.Svrs {
 		var typ model.DatasourceType
 		switch svr.Type {
@@ -82,14 +82,14 @@ func (s *Servers) GetDatasources() (datasources []*model.Datasource) {
 		case TypePrometheus:
 			typ = model.DatasourceTypePrometheus
 		}
-		datasources = append(datasources, &model.Datasource{
+		datasources = append(datasources, model.Datasource{
 			Type:   typ,
 			Name:   svr.Name,
 			URL:    svr.Server.URL,
 			IsMain: svr.IsMain,
 		})
 	}
-	return
+	return datasources
 }
 
 func (s *Servers) GetServersByType(typ Type) (servers []*mocker.Server) {

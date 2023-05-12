@@ -13,74 +13,44 @@ import (
 
 	"github.com/kuoss/common/logger"
 	"github.com/kuoss/venti/pkg/model"
-	"github.com/kuoss/venti/pkg/store"
+	"github.com/kuoss/venti/pkg/store/alerting"
 	"github.com/kuoss/venti/pkg/store/remote"
 	commonModel "github.com/prometheus/common/model"
 	promRule "github.com/prometheus/prometheus/rules"
 )
 
 type alerter struct {
-	alertFiles         []model.AlertFile
-	evaluationInterval time.Duration
+	alertingStore      *alerting.AlertingStore
 	remoteStore        *remote.RemoteStore
+	evaluationInterval time.Duration
 	repeat             bool
 	alertmanagerURL    string
 }
 
-func New(stores *store.Stores) *alerter {
+func New(alertingStore *alerting.AlertingStore, remoteStore *remote.RemoteStore) *alerter {
 	return &alerter{
-		alertFiles:         getAlertFiles(stores),
-		remoteStore:        stores.RemoteStore,
-		alertmanagerURL:    "http://alertmanager:9093", // TODO: configurable
-		evaluationInterval: 20 * time.Second,           // TODO: configurable
+		alertingStore:      alertingStore,
+		remoteStore:        remoteStore,
+		evaluationInterval: 20 * time.Second,                   // TODO: configurable
+		alertmanagerURL:    alertingStore.GetAlertmanagerURL(), // TODO: multiple alertmanagers
 	}
-}
-
-func getAlertFiles(stores *store.Stores) []model.AlertFile {
-	alertFiles := []model.AlertFile{}
-	for _, ruleFile := range stores.AlertRuleStore.AlertRuleFiles() {
-		datasources := stores.DatasourceStore.GetDatasourcesWithSelector(ruleFile.DatasourceSelector)
-		if len(datasources) < 1 {
-			logger.Warnf("no datasources from GetDatasourcesWithSelector")
-			continue
-		}
-		for _, datasource := range datasources {
-			alertGroups := []model.AlertGroup{}
-			for _, ruleGroup := range ruleFile.RuleGroups {
-				alerts := []model.Alert{}
-				for _, rule := range ruleGroup.Rules {
-					labels := ruleFile.CommonLabels
-					for k, v := range rule.Labels {
-						labels[k] = v
-					}
-					alerts = append(alerts, model.Alert{
-						State:       promRule.StateInactive,
-						Name:        rule.Alert,
-						Expr:        rule.Expr,
-						For:         rule.For,
-						Labels:      labels,
-						Annotations: rule.Annotations,
-					})
-				}
-				alertGroups = append(alertGroups, model.AlertGroup{Alerts: alerts})
-			}
-			alertFiles = append(alertFiles, model.AlertFile{
-				AlertGroups: alertGroups,
-				Datasource:  datasource,
-			})
-		}
-	}
-	return alertFiles
 }
 
 func (a *alerter) SetAlertmanagerURL(url string) {
 	a.alertmanagerURL = url
 }
 
-func (a *alerter) Start() {
+func (a *alerter) Start() error {
+	if len(a.alertingStore.AlertFiles) < 1 {
+		return fmt.Errorf("no alertFiles")
+	}
+	if a.alertmanagerURL == "" {
+		logger.Warnf("alertmanagerURL is not set")
+	}
 	logger.Infof("starting alerter...")
 	a.repeat = true
 	go a.loop()
+	return nil
 }
 
 func (a *alerter) Stop() {
@@ -110,55 +80,63 @@ func (a *alerter) Once() {
 }
 
 func (a *alerter) processAlertFiles() error {
-	totalFires := []model.Fire{}
-	for i := range a.alertFiles {
-		for j := range a.alertFiles[i].AlertGroups {
-			for k := range a.alertFiles[i].AlertGroups[j].Alerts {
-				fires, err := a.processAlert(&a.alertFiles[i].AlertGroups[j].Alerts[k], &a.alertFiles[i].Datasource)
-				if err != nil {
-					// TODO: test cover
-					logger.Warnf("error on processAlert: %s", err)
-					continue
-				}
-				totalFires = append(totalFires, fires...)
-				time.Sleep(time.Duration(500) * time.Millisecond)
+	if a.alertingStore == nil {
+		return fmt.Errorf("nil alertingStore")
+	}
+	if len(a.alertingStore.AlertFiles) < 1 {
+		return fmt.Errorf("no alert files")
+	}
+	var fires []model.Fire
+	for i := range a.alertingStore.AlertFiles {
+		for j := range a.alertingStore.AlertFiles[i].AlertGroups {
+			for k := range a.alertingStore.AlertFiles[i].AlertGroups[j].RuleAlerts {
+				temps := a.processRuleAlert(&a.alertingStore.AlertFiles[i].AlertGroups[j].RuleAlerts[k])
+				fires = append(fires, temps...)
 			}
 		}
 	}
-	err := a.sendFires(totalFires)
+	err := a.sendFires(fires)
 	if err != nil {
-		return fmt.Errorf("error on sendFires: %w", err)
+		return fmt.Errorf("sendFires err: %w", err)
 	}
 	return nil
 }
 
-func (a *alerter) processAlert(alert *model.Alert, datasource *model.Datasource) ([]model.Fire, error) {
-	var zero []model.Fire
-	queryData, err := a.queryAlert(alert, datasource)
-	if err != nil {
-		return zero, fmt.Errorf("error on queryAlert: %s", err)
+func (a *alerter) processRuleAlert(ruleAlert *model.RuleAlert) []model.Fire {
+	var fires []model.Fire
+	rule := &ruleAlert.Rule
+	for i := range ruleAlert.Alerts {
+		alert := &ruleAlert.Alerts[i]
+		queryData, err := a.queryAlert(rule, alert)
+		if err != nil {
+			logger.Warnf("queryAlert err: %s", err.Error())
+			continue
+		}
+		temps := evaluateAlert(queryData, rule, alert)
+		fires = append(fires, temps...)
 	}
-	fires := evaluateAlert(alert, queryData)
-	return fires, nil
+	return fires
 }
 
-func (a *alerter) queryAlert(alert *model.Alert, datasource *model.Datasource) (model.QueryData, error) {
-	var zero model.QueryData
+func (a *alerter) queryAlert(rule *model.Rule, alert *model.Alert) (model.QueryData, error) {
+	if alert.Datasource == nil {
+		return model.QueryData{}, fmt.Errorf("datasource is nil")
+	}
+
 	ctx, cancel := context.WithTimeout(context.TODO(), 10*time.Second)
 	defer cancel()
 
-	code, body, err := a.remoteStore.GET(ctx, datasource, "query", "query="+url.QueryEscape(alert.Expr))
+	code, body, err := a.remoteStore.GET(ctx, alert.Datasource, remote.ActionQuery, "query="+url.QueryEscape(rule.Expr))
 	if err != nil {
-		return zero, fmt.Errorf("error on GET: %w", err)
+		return model.QueryData{}, fmt.Errorf("GET err: %w", err)
 	}
 
 	//  body: {"status":"success","data":{"resultType":"vector","result":[]}}
 	var queryResult model.QueryResult
 	err = json.Unmarshal([]byte(body), &queryResult)
 	if err != nil {
-		return zero, fmt.Errorf("error on Unmarshal: %w", err)
+		return model.QueryData{}, fmt.Errorf("unmarshal err: %s, body: %s", err.Error(), body)
 	}
-
 	// wrap up
 	if queryResult.Status != "success" {
 		err = fmt.Errorf("not success status (status=%s, code=%d)", queryResult.Status, code)
@@ -171,72 +149,75 @@ func (a *alerter) queryAlert(alert *model.Alert, datasource *model.Datasource) (
 	return queryResult.Data, err
 }
 
-func evaluateAlert(alert *model.Alert, queryData model.QueryData) []model.Fire {
-	var zero []model.Fire
-
+func evaluateAlert(queryData model.QueryData, rule *model.Rule, alert *model.Alert) []model.Fire {
+	var fires []model.Fire
 	// inactive
 	if len(queryData.Result) < 1 {
 		alert.State = promRule.StateInactive
 		alert.ActiveAt = 0
-		return zero
+		return fires
 	}
-
 	if alert.ActiveAt == 0 {
 		// now active
 		alert.ActiveAt = commonModel.Now()
 	}
 	// pending
-	if alert.ActiveAt.Add(time.Duration(alert.For)).After(commonModel.Now()) {
+	if alert.ActiveAt.Add(time.Duration(rule.For)).After(commonModel.Now()) {
 		alert.State = promRule.StatePending
-		return zero
+		return fires
 	}
 	// firing
 	alert.State = promRule.StateFiring
-	return getFires(alert, queryData)
+	return getFires(rule, queryData)
 }
 
-func getFires(alert *model.Alert, data model.QueryData) []model.Fire {
-	if len(alert.Labels) < 1 {
-		alert.Labels = map[string]string{}
-	}
-	if len(alert.Annotations) < 1 {
-		alert.Annotations = map[string]string{}
-	}
-	alert.Labels["alertname"] = alert.Name
-	if alert.Labels["alertname"] == "" {
-		alert.Labels["alertname"] = "placeholder name"
-	}
-	alert.Labels["firer"] = "venti"
-	if _, exists := alert.Annotations["summary"]; !exists {
-		if len(alert.Annotations) == 0 {
-			alert.Annotations = map[string]string{}
+func getFires(rule *model.Rule, data model.QueryData) []model.Fire {
+	labels := map[string]string{}
+	annotations := map[string]string{}
+	if rule.Labels != nil {
+		for k, v := range rule.Labels {
+			labels[k] = v
 		}
-		alert.Annotations["summary"] = "placeholder summary"
+	}
+	if rule.Annotations != nil {
+		for k, v := range rule.Annotations {
+			annotations[k] = v
+		}
+	}
+	labels["alertname"] = rule.Alert
+	if labels["alertname"] == "" {
+		labels["alertname"] = "placeholder name"
+	}
+	labels["firer"] = "venti"
+
+	if _, exists := annotations["summary"]; !exists {
+		annotations["summary"] = "placeholder summary"
 	}
 	if data.ResultType != commonModel.ValVector {
 		logger.Warnf("resultType is not vector")
 		return []model.Fire{{
-			State:       "firing",
-			Labels:      alert.Labels,
-			Annotations: alert.Annotations,
+			Labels:      labels,
+			Annotations: annotations,
 		}}
 	}
+
 	fires := []model.Fire{}
 	for _, sample := range data.Result {
 		fire := model.Fire{
-			State:       "firing",
 			Labels:      map[string]string{},
 			Annotations: map[string]string{},
 		}
-		for k, v := range alert.Labels {
+		// deep copy
+		for k, v := range labels {
 			fire.Labels[k] = v
 		}
-		for k, v := range alert.Annotations {
+		for k, v := range annotations {
 			fire.Annotations[k] = v
 		}
-		summary, err := renderSummary(alert.Annotations["summary"], &sample)
+		// render summary
+		summary, err := renderSummary(annotations["summary"], &sample)
 		if err != nil {
-			logger.Warnf("error on renderSummary: %s", err)
+			logger.Warnf("renderSummary err: %s", err.Error())
 		}
 		fire.Annotations["summary"] = summary
 		fires = append(fires, fire)

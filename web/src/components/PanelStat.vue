@@ -1,6 +1,6 @@
-<template>
-  <div class="text-center py-1" :class="thresholdClass">{{ value }}</div>
-</template>
+<script setup>
+import Util from '@/lib/util';
+</script>
 
 <script>
 export default {
@@ -11,59 +11,58 @@ export default {
     panelWidth: Number,
     timeRange: Object,
   },
+  data() {
+    return {
+      value: '',
+      thresholdClass: '',
+    };
+  },
   watch: {
     count() {
       if (!this.isLoading) this.fetchData();
     },
   },
-  data() {
-    return {
-      value: "",
-      thresholdClass: "",
-    };
+  mounted() {
+    this.fetchData();
   },
   methods: {
     async fetchData() {
       if (this.timeRange.length < 2) return;
-      this.$emit("setIsLoading", true);
+      this.$emit('setIsLoading', true);
       try {
         const target = this.panelConfig.targets[0];
-        const response = await fetch('/api/prometheus/query?' + new URLSearchParams({
-          query: target.expr,
-          time: this.timeRange[1],
-        }));
+        const response = await fetch(
+          '/api/v1/remote/query?dstype=prometheus&' +
+            new URLSearchParams({
+              query: target.expr,
+              time: this.timeRange[1],
+            }),
+        );
         const data = await response.json();
 
         const result = data.data.result;
         const resultType = data.data.resultType;
 
         let value;
-        if (resultType == "scalar") value = result[1];
+        if (resultType == 'scalar') value = result[1];
         else {
           // vector
-          if (target.legend)
-            value = result.map((x) =>
-              target.legend.replace(/\{\{(.*?)\}\}/g, (i, m) => x.metric[m])
-            )[0];
+          if (target.legend) value = result.map(x => target.legend.replace(/\{\{(.*?)\}\}/g, (i, m) => x.metric[m]))[0];
           else value = result[0].value[1];
         }
         // unit
-        if (target.unit == "dateTimeAsLocal")
-          value = this.$util.dateTimeAsLocal(value);
+        if (target.unit == 'dateTimeAsLocal') value = Util.dateTimeAsLocal(value);
         this.value = value;
 
         // thresholds
         let level = 0;
         if (target.thresholds) {
           level = 1;
-          target.thresholds.forEach((threshold, i) => {
+          target.thresholds.forEach(threshold => {
             if (threshold.values) {
               // console.log('threshold.values=', threshold.values)
-              threshold.values.forEach((v, i) => {
-                if (
-                  (threshold.invert && value < v) ||
-                  (!threshold.invert && value > v)
-                ) {
+              threshold.values.forEach(v => {
+                if ((threshold.invert && value < v) || (!threshold.invert && value > v)) {
                   level += threshold.values.length - 1;
                 }
               });
@@ -71,20 +70,18 @@ export default {
           });
         }
         // console.log('level=', level)
-        this.thresholdClass = [
-          "",
-          "bg-green-100",
-          "bg-orange-100",
-          "bg-red-100",
-        ][level];
+        this.thresholdClass = ['', 'bg-green-100', 'bg-orange-100', 'bg-red-100'][level];
       } catch (error) {
         console.error(error);
       }
-      this.$emit("setIsLoading", false);
+      this.$emit('setIsLoading', false);
     },
-  },
-  mounted() {
-    this.fetchData();
   },
 };
 </script>
+
+<template>
+  <div class="text-center py-1" :class="thresholdClass">
+    {{ value }}
+  </div>
+</template>

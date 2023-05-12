@@ -5,16 +5,17 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/kuoss/venti/pkg/store"
+	"github.com/kuoss/venti/pkg/handler/api"
+	dsStore "github.com/kuoss/venti/pkg/store/datasource"
 	"github.com/kuoss/venti/pkg/store/remote"
 )
 
 type datasourceHandler struct {
-	datasourceStore *store.DatasourceStore
+	datasourceStore *dsStore.DatasourceStore
 	remoteStore     *remote.RemoteStore
 }
 
-func NewDatasourceHandler(datasourceStore *store.DatasourceStore, remoteStore *remote.RemoteStore) *datasourceHandler {
+func NewDatasourceHandler(datasourceStore *dsStore.DatasourceStore, remoteStore *remote.RemoteStore) *datasourceHandler {
 	return &datasourceHandler{datasourceStore, remoteStore}
 }
 
@@ -27,9 +28,9 @@ func (h *datasourceHandler) Datasources(c *gin.Context) {
 func (h *datasourceHandler) Targets(c *gin.Context) {
 	var results []string
 	for _, datasource := range h.datasourceStore.GetDatasources() {
-		_, body, err := h.remoteStore.GET(c.Request.Context(), &datasource, "targets", "state=active")
+		_, body, err := h.remoteStore.GET(c.Request.Context(), &datasource, remote.ActionTargets, "state=active")
 		if err != nil {
-			body = fmt.Sprintf(`{"status":"error","errorType":"%s","error":"%q"}`, errorExec, err.Error())
+			body = fmt.Sprintf(`{"status":"error","errorType":"%s","error":%q}`, api.ErrorExec, err.Error())
 		}
 		results = append(results, body)
 	}

@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	alertRuleFiles = []model.RuleFile{{
+	ruleFiles = []model.RuleFile{{
 		Kind:               "AlertRuleFile",
 		CommonLabels:       map[string]string{"rulefile": "sample-v3", "severity": "silence"},
 		DatasourceSelector: model.DatasourceSelector{System: "", Type: "prometheus"},
@@ -20,11 +20,19 @@ var (
 				{Record: "", Alert: "S01-Monday", Expr: "day_of_week() == 1 and hour() < 2", For: 0, KeepFiringFor: 0, Labels: map[string]string(nil), Annotations: map[string]string{"summary": "Monday"}},
 				{Record: "", Alert: "S02-NewNamespace", Expr: "time() - kube_namespace_created < 120", For: 0, KeepFiringFor: 0, Labels: map[string]string(nil), Annotations: map[string]string{"summary": "labels={{ $labels }} namespace={{ $labels.namespace }} value={{ $value }}"}},
 			}}}}}
+	ruleFiles1 = []model.RuleFile{
+		{Kind: "AlertRuleFile", CommonLabels: map[string]string{"rulefile": "sample-v3", "severity": "silence"}, DatasourceSelector: model.DatasourceSelector{System: "", Type: "prometheus"}, RuleGroups: []model.RuleGroup{
+			{Name: "sample", Interval: 0, Limit: 0, Rules: []model.Rule{
+				{Record: "", Alert: "S00-AlwaysOn", Expr: "vector(1234)", For: 0, KeepFiringFor: 0, Labels: map[string]string{"hello": "world"}, Annotations: map[string]string{"summary": "AlwaysOn value={{ $value }}"}},
+				{Record: "", Alert: "S01-Monday", Expr: "day_of_week() == 1 and hour() < 2", For: 0, KeepFiringFor: 0, Labels: map[string]string(nil), Annotations: map[string]string{"summary": "Monday"}},
+				{Record: "", Alert: "S02-NewNamespace", Expr: "time() - kube_namespace_created < 120", For: 0, KeepFiringFor: 0, Labels: map[string]string(nil), Annotations: map[string]string{"summary": "labels={{ $labels }} namespace={{ $labels.namespace }} value={{ $value }}"}}}}}}}
 )
 
 func init() {
-	_ = os.Chdir("../../..")
-
+	err := os.Chdir("../../..")
+	if err != nil {
+		panic(err)
+	}
 }
 
 func TestNew(t *testing.T) {
@@ -35,16 +43,21 @@ func TestNew(t *testing.T) {
 	}{
 		// ok
 		{
-			"etc/alertrules/*.yaml",
-			&AlertRuleStore{alertRuleFiles: alertRuleFiles},
+			"etc/alertrules/*.y*ml",
+			&AlertRuleStore{alertRuleFiles: ruleFiles1},
 			"",
 		},
 		{
 			"",
-			&AlertRuleStore{alertRuleFiles: []model.RuleFile(nil)},
+			&AlertRuleStore{alertRuleFiles: ruleFiles1},
 			"",
 		},
 		// error
+		{
+			"asdf",
+			&AlertRuleStore{alertRuleFiles: []model.RuleFile(nil)},
+			"",
+		},
 		{
 			"[]",
 			(*AlertRuleStore)(nil),
@@ -52,14 +65,14 @@ func TestNew(t *testing.T) {
 		},
 	}
 	for i, tc := range testCases {
-		t.Run(fmt.Sprintf("#%d", i), func(tt *testing.T) {
+		t.Run(fmt.Sprintf("#%d", i), func(t *testing.T) {
 			store, err := New(tc.pattern)
 			if tc.wantError == "" {
-				assert.NoError(tt, err)
+				assert.NoError(t, err)
 			} else {
-				assert.EqualError(tt, err, tc.wantError)
+				assert.EqualError(t, err, tc.wantError)
 			}
-			assert.Equal(tt, tc.want, store)
+			assert.Equal(t, tc.want, store)
 		})
 	}
 }
@@ -70,20 +83,32 @@ func TestAlertRuleFiles(t *testing.T) {
 		want    []model.RuleFile
 	}{
 		{
-			"etc/alertrules/*.yaml",
-			alertRuleFiles,
+			"",
+			ruleFiles,
 		},
 		{
-			"asdf/asdf.yaml",
+			"asdf",
 			[]model.RuleFile(nil),
+		},
+		{
+			"etc/alertrules/*.yml",
+			ruleFiles,
+		},
+		{
+			"etc/alertrules/*.yaml",
+			[]model.RuleFile(nil),
+		},
+		{
+			"etc/alertrules/*.y*ml",
+			ruleFiles,
 		},
 	}
 	for i, tc := range testCases {
-		t.Run(fmt.Sprintf("#%d", i), func(tt *testing.T) {
+		t.Run(fmt.Sprintf("#%d", i), func(t *testing.T) {
 			store, err := New(tc.pattern)
-			assert.Nil(t, err)
+			assert.NoError(t, err)
 			ruleFiles := store.AlertRuleFiles()
-			assert.Equal(tt, tc.want, ruleFiles)
+			assert.Equal(t, tc.want, ruleFiles)
 		})
 	}
 }
