@@ -4,7 +4,7 @@ MIN_COVER=50.0
 cd $(dirname $0)/..
 export PS4='[$(basename $0):$LINENO] '
 set -x
-cp docs/examples/datasources.test.yml etc/datasources.yaml
+cp docs/examples/datasources.test.yml etc/datasources.yml
 
 go test ./... -v -failfast -race -covermode=atomic -coverprofile /tmp/cover.out
 if [[ $? != 0 ]]; then
