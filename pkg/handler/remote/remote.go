@@ -36,6 +36,7 @@ func (h *RemoteHandler) Query(c *gin.Context) {
 	values.Set("time", c.Query("time"))
 	values.Set("timeout", c.Query("timeout"))
 	values.Set("query", c.Query("query"))
+	values.Set("logFormat", c.Query("logFormat"))
 	h.remoteAction(c, remote.ActionQuery, values.Encode())
 }
 
@@ -47,6 +48,7 @@ func (h *RemoteHandler) QueryRange(c *gin.Context) {
 	values.Set("step", c.Query("step"))
 	values.Set("timeout", c.Query("timeout"))
 	values.Set("query", c.Query("query"))
+	values.Set("logFormat", c.Query("logFormat"))
 	h.remoteAction(c, remote.ActionQueryRange, values.Encode())
 }
 

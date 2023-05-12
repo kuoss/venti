@@ -59,17 +59,15 @@ export default {
       try {
         let dds = [];
         for (const target of this.panelConfig.targets) {
+          const query = useFilterStore().renderExpr(target.expr);
           const response = await fetch(
-            '/api/v1/remote/query?dstype=prometheus&' +
-              new URLSearchParams({
-                query: useFilterStore().renderExpr(target.expr),
-                time: this.timeRange[1],
-              }),
+            '/api/v1/remote/query?' +
+              new URLSearchParams({ dstype: 'prometheus', query: query, time: this.timeRange[1] }),
           );
-          const data = await response.json();
+          const jsonData = await response.json();
           dds = [
             ...dds,
-            ...data.data.result.map(x => ({
+            ...jsonData.data.result.map(x => ({
               label: target.legend.replace(/\{\{(.*?)\}\}/g, (i, m) => x.metric[m]),
               value: 1 * x.value[1],
             })),
@@ -77,7 +75,7 @@ export default {
         }
         const labels = dds.map(x => x.label);
         const values = dds.map(x => x.value);
-        console.log(this.panelConfig.title, 'labels=', labels, 'values=', values);
+        // console.log(this.panelConfig.title, 'labels=', labels, 'values=', values);
         if (values.length < 1) {
           this.isNoData = true;
         } else {

@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	Version = "unknown" // Version will be overwrited by ldflags
+	Version = "development" // Version will be overwrited by ldflags
 )
 
 func main() {

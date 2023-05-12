@@ -1,7 +1,0 @@
-datasources:
-- name: prometheus
-  type: prometheus
-  url: 	http://localhost:9090
-- name: lethe
-  type: lethe
-  url: http://localhost:6060

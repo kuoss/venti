@@ -1,93 +1,13 @@
-<template>
-  <section v-click-outside="close" class="relative">
-    <button
-      class="py-2 px-4 text-gray-900 bg-white rounded border border-gray-200 hover:bg-gray-100 hover:text-blue-700"
-      @click="toggleIsOpen"
-    >
-      <i class="mdi mdi-clock-outline" />
-      {{ btnText }}
-      <i class="mdi" :class="isOpen ? 'mdi-chevron-up' : 'mdi-chevron-down'" />
-    </button>
-    <section
-      v-if="isOpen"
-      class="absolute top-[100%] right-0 w-full min-w-fit mt-1 rounded bg-white dark:bg-stone-900 border"
-    >
-      <div class="relative">
-        <div class="absolute top-0 right-[100%] mr-[1px]" :class="{ hidden: !showCalendar }">
-          <Datepicker
-            ref="datepicker"
-            v-model="localDate"
-            week-start="0"
-            range
-            inline
-            no-today
-            auto-apply
-            close-on-auto-apply
-            enable-seconds
-            multi-calendars
-            :dark="dark"
-            :max-date="new Date()"
-            :multi-static="false"
-            :start-date="new Date(new Date().getFullYear(), new Date().getMonth() - 1)"
-            :enable-time-picker="false"
-            @update:modelValue="updateDatePicker"
-          />
-        </div>
-      </div>
-      <div class="grid grid-cols-2 w-[24rem]">
-        <div class="col-span-1">
-          <div class="font-bold p-2">Absolute time range</div>
-          <div class="p-2 px-4">
-            <div class="mt-2">From</div>
-            <input
-              v-model="startTime"
-              type="text"
-              class="p-1 w-full border bg-white text-black"
-              @click="onClickTimeInput"
-            />
-            <div class="mt-2">To</div>
-            <input
-              v-model="endTime"
-              type="text"
-              class="p-1 w-full border bg-white text-black"
-              @click="onClickTimeInput"
-            />
-            <button class="p-1 mt-3 w-full bg-gray-200 border rounded" @click="applyTimeRange">Apply time range</button>
-          </div>
-        </div>
-        <div class="col-span-1 border-l pb-3">
-          <div class="p-2 font-bold">Relative time range</div>
-          <div v-for="r in relativeTimeRanges">
-            <div
-              class="p-1 px-4 cursor-pointer hover:bg-gray-200"
-              :class="{
-                'text-bold bg-gray-300': rangeToText(r) == rangeToText(range),
-              }"
-              @click="onSelectRelativeTimeRange(r)"
-            >
-              {{ rangeToText(r) }}
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="border-t p-2">
-        {{ timezone }}
-        <div class="float-right px-2 bg-gray-200">
-          {{ offsetString }}
-        </div>
-      </div>
-    </section>
-  </section>
-</template>
-
-<script>
-import Datepicker from '@vuepic/vue-datepicker';
-import { useConfigStore } from '@/stores/config';
-import { useTimeStore } from '@/stores/time';
+<script setup>
+import VueDatePicker from '@vuepic/vue-datepicker';
 import '@vuepic/vue-datepicker/dist/main.css';
 
+import { useConfigStore } from '@/stores/config';
+import { useTimeStore } from '@/stores/time';
+</script>
+<script>
 export default {
-  components: { Datepicker },
+  components: { VueDatePicker },
   data() {
     return {
       timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
@@ -193,21 +113,108 @@ export default {
 };
 </script>
 
+<template>
+  <section v-click-outside="close" class="relative">
+    <button
+      class="py-2 px-4 text-gray-900 bg-white rounded border border-gray-200 hover:bg-gray-100 hover:text-blue-700"
+      @click="toggleIsOpen"
+    >
+      <i class="mdi mdi-clock-outline" />
+      {{ btnText }}
+      <i class="mdi" :class="isOpen ? 'mdi-chevron-up' : 'mdi-chevron-down'" />
+    </button>
+    <section
+      v-if="isOpen"
+      class="absolute top-[100%] right-0 w-full min-w-fit mt-1 rounded bg-white dark:bg-stone-900 border"
+    >
+      <div class="relative">
+        <div class="absolute top-0 right-[100%] mr-[1px]" :class="{ hidden: !showCalendar }">
+          <VueDatePicker
+            ref="datepicker"
+            v-model="localDate"
+            week-start="0"
+            range
+            inline
+            no-today
+            auto-apply
+            close-on-auto-apply
+            enable-seconds
+            multi-calendars
+            :dark="dark"
+            :max-date="new Date()"
+            :multi-static="false"
+            :start-date="new Date(new Date().getFullYear(), new Date().getMonth() - 1)"
+            :enable-time-picker="false"
+            @update:modelValue="updateDatePicker"
+            timezone="UTC"
+          />
+        </div>
+      </div>
+      <div class="grid grid-cols-2 w-[24rem]">
+        <div class="col-span-1">
+          <div class="font-bold p-2">Absolute time range</div>
+          <div class="p-2 px-4">
+            <div class="mt-2">From</div>
+            <input
+              v-model="startTime"
+              type="text"
+              class="p-1 w-full border bg-white text-black"
+              @click="onClickTimeInput"
+            />
+            <div class="mt-2">To</div>
+            <input
+              v-model="endTime"
+              type="text"
+              class="p-1 w-full border bg-white text-black"
+              @click="onClickTimeInput"
+            />
+            <button class="p-1 mt-3 w-full bg-gray-200 border rounded" @click="applyTimeRange">Apply time range</button>
+          </div>
+        </div>
+        <div class="col-span-1 border-l pb-3">
+          <div class="p-2 font-bold">Relative time range</div>
+          <div v-for="r in relativeTimeRanges">
+            <div
+              class="p-1 px-4 cursor-pointer hover:bg-gray-200"
+              :class="{
+                'text-bold bg-gray-300': rangeToText(r) == rangeToText(range),
+              }"
+              @click="onSelectRelativeTimeRange(r)"
+            >
+              {{ rangeToText(r) }}
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="border-t p-2">
+        {{ timezone }}
+        <div class="float-right px-2 bg-gray-200">
+          {{ offsetString }}
+        </div>
+      </div>
+    </section>
+  </section>
+</template>
+
 <style>
 .hideDP .dp__menu {
   @apply hidden;
 }
+
 .dp__menu {
   @apply text-xs;
 }
+
 .dp__arrow_top {
   @apply hidden;
 }
+
 .dp__theme_light,
 .dp__theme_dark {
   --dp-hover-color: var(--dp-primary-color);
   --dp-hover-text-color: var(--dp-primary-text-color);
 }
+
 .dp__range_between {
   color: var(--dp-primary-text-color);
 }
