@@ -32,16 +32,13 @@ export default {
       try {
         const target = this.panelConfig.targets[0];
         const response = await fetch(
-          '/api/v1/remote/query?dstype=prometheus&' +
-            new URLSearchParams({
-              query: target.expr,
-              time: this.timeRange[1],
-            }),
+          '/api/v1/remote/query?' +
+            new URLSearchParams({ dstype: 'prometheus', query: target.expr, time: this.timeRange[1] }),
         );
-        const data = await response.json();
+        const jsonData = await response.json();
 
-        const result = data.data.result;
-        const resultType = data.data.resultType;
+        const result = jsonData.data.result;
+        const resultType = jsonData.data.resultType;
 
         let value;
         if (resultType == 'scalar') value = result[1];

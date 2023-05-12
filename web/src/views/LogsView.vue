@@ -1,8 +1,10 @@
-<script>
+<script setup>
 import { useTimeStore } from '@/stores/time';
 import TimeRangePicker from '@/components/TimeRangePicker.vue';
 import RunButton from '@/components/RunButton.vue';
-
+import Util from '@/lib/util';
+</script>
+<script>
 export default {
   components: {
     TimeRangePicker,
@@ -19,6 +21,7 @@ export default {
       namespaces: [],
       workloads: [],
       lastExecuted: null,
+      logType: '',
       metadata: {},
       queryType: 'raw',
       expr: 'pod{namespace="kube-system"}',
@@ -40,36 +43,6 @@ export default {
       timerID: null,
     };
   },
-  computed: {
-    rows() {
-      const labels = this.getLogLabels();
-      const classes = ['text-green-600', 'text-cyan-600', 'text-blue-600', 'text-purple-600', 'text-pink-600'];
-      return this.result.map(x => {
-        const idx = x.indexOf(' ');
-
-        let columns = [{ text: x.substr(0, 20), class: 'text-yellow-500' }];
-        if (idx == 20) {
-          return {
-            columns: [...columns, { text: ' ' }, { text: x.substr(idx) }],
-          };
-        }
-        columns.push({ text: '[' });
-        const parts = x.substr(21, idx - 22).split('|');
-        parts.forEach((text, i) => {
-          columns.push({
-            text: text,
-            class: classes[i] + ' cursor-pointer hover:underline',
-            label: labels[i],
-          });
-          columns.push({ text: '|' });
-        });
-        columns.pop();
-        return {
-          columns: [...columns, { text: ']' }, { text: x.substr(idx) }],
-        };
-      });
-    },
-  },
   mounted() {
     useTimeStore().timerManager = 'LogsView';
     this.fetchMetadata();
@@ -83,6 +56,21 @@ export default {
     window.removeEventListener('resize', this.chartResize);
   },
   methods: {
+    detectLogType() {
+      if (this.result.length < 1) {
+        this.logType = '';
+        return;
+      }
+      if (Object.prototype.hasOwnProperty.call(this.result[0], 'namespace')) {
+        this.logType = 'pod';
+        return;
+      }
+      if (Object.prototype.hasOwnProperty.call(this.result[0], 'node')) {
+        this.logType = 'node';
+        return;
+      }
+      this.logType = '';
+    },
     selectObject(kind, namespace, name) {
       if (kind != 'pod') name += '-.*';
       this.expr = `pod{namespace="${namespace}", pod="${name}"}`;
@@ -141,17 +129,22 @@ export default {
       this.loading = true;
       try {
         const response = await fetch(
-          '/api/v1/remote/query_range?dstype=lethe&' +
+          '/api/v1/remote/query_range?' +
             new URLSearchParams({
+              logFormat: 'json',
+              dstype: 'lethe',
               query: this.expr,
               start: timeRange[0],
               end: timeRange[1],
             }),
         );
-        const data = await response.json();
+        const jsonData = await response.json();
+        // console.log('jsonData.data.result=', jsonData.data.result)
         this.loading = false;
-        this.resultType = data.data.resultType;
-        this.result = data.data.result;
+        this.resultType = jsonData.data.resultType;
+        this.result = jsonData.data.result;
+        this.detectLogType();
+
         setTimeout(() => {
           if (this.$refs.logs) this.$refs.logs.scrollTop = 99999;
         }, 100);
@@ -180,74 +173,59 @@ export default {
     clickOutside() {
       this.selectMetric(null);
     },
-    async fetchMetadata() {
-      try {
-        const now = await useTimeStore().getNow();
-        const kinds = ['deployment', 'statefulset', 'daemonset', 'job', 'cronjob', 'pod'];
-        const groupBy = (arr, key) =>
-          arr.reduce((acc, item) => ((acc[item[key]] = [...(acc[item[key]] || []), item]), acc), {});
+    async fetchQuery(query) {
+      const now = await useTimeStore().getNow();
+      const response = await fetch(
+        '/api/v1/remote/query?' + new URLSearchParams({ dstype: 'prometheus', query: query, time: now }),
+      );
+      return await response.json();
+    },
+    async fetchNode() {
+      const jsonData = await this.fetchQuery('kube_node_created');
+      this.nodes = jsonData.data.result.map(x => {
+        return { name: x.metric.node };
+      });
+    },
+    async fetchNamespace() {
+      const kinds = ['deployment', 'statefulset', 'daemonset', 'job', 'cronjob', 'pod'];
+      const groupBy = (arr, key) =>
+        arr.reduce((acc, item) => ((acc[item[key]] = [...(acc[item[key]] || []), item]), acc), {});
 
-        let response, data, namespaces;
-        response = await fetch(
-          '/api/v1/remote/query?dstype=prometheus&' +
-            new URLSearchParams({
-              query: 'kube_node_created',
-              time: now,
-            }),
+      let jsonData = await this.fetchQuery('kube_namespace_created');
+      let namespaces = jsonData.data.result.map(x => {
+        return { name: x.metric.namespace, isExpanded: false, workloads: [] };
+      });
+
+      for (const [_, kind] of kinds.entries()) {
+        // console.log(`${k}: ${kind}`);
+        jsonData = await this.fetchQuery(`kube_${kind}_created`);
+        const objects = groupBy(
+          jsonData.data.result.map(x => {
+            return {
+              namespace: x.metric.namespace,
+              isExpanded: false,
+              pods: [],
+              name: x.metric[kind == 'job' ? 'job_name' : kind],
+            };
+          }),
+          'namespace',
         );
-        data = await response.json();
-        this.nodes = data.data.result.map(x => {
-          return { name: x.metric.node };
-        });
-
-        response = await fetch(
-          '/api/v1/remote/query?dstype=prometheus&' +
-            new URLSearchParams({
-              query: 'kube_namespace_created',
-              time: now,
-            }),
-        );
-        data = await response.json();
-        namespaces = data.data.result.map(x => {
-          return { name: x.metric.namespace, isExpanded: false, workloads: [] };
-        });
-
-        for (const [_, kind] of kinds.entries()) {
-          // console.log(`${k}: ${kind}`);
-          response = await fetch(
-            '/api/v1/remote/query?dstype=prometheus&' +
-              new URLSearchParams({
-                query: `kube_${kind}_created`,
-                time: now,
-              }),
-          );
-          data = await response.json();
-          const objects = groupBy(
-            data.data.result.map(x => {
-              return {
-                namespace: x.metric.namespace,
+        Object.entries(objects).forEach(x => {
+          for (const [i, ns] of Object.entries(namespaces)) {
+            if (ns.name == x[0])
+              namespaces[i].workloads.push({
+                kind: kind,
                 isExpanded: false,
-                pods: [],
-                name: x.metric[kind == 'job' ? 'job_name' : kind],
-              };
-            }),
-            'namespace',
-          );
-          Object.entries(objects).forEach(x => {
-            for (const [i, ns] of Object.entries(namespaces)) {
-              if (ns.name == x[0])
-                namespaces[i].workloads.push({
-                  kind: kind,
-                  isExpanded: false,
-                  objects: x[1],
-                });
-            }
-          });
-        }
-        this.namespaces = namespaces;
-      } catch (error) {
-        console.error(error);
+                objects: x[1],
+              });
+          }
+        });
       }
+      this.namespaces = namespaces;
+    },
+    async fetchMetadata() {
+      this.fetchNode();
+      this.fetchNamespace();
     },
   },
 };
@@ -300,26 +278,22 @@ export default {
             [{{ errorResponse.status }}] {{ errorResponse.data.error }}
           </div>
         </div>
-        <div v-else-if="result && result.length < 1">
-          <div class="rounded bg-slate-200 text-center py-20">empty query result</div>
-        </div>
-        <div v-else-if="result">
-          <div ref="logs" class="font-mono overflow-y-auto border bg-white max-h-[80vh]">
-            <div v-if="resultType == 'vector'">
-              <div v-for="row in result" class="border-b text-lg p-2">
-                {{ row }}
-              </div>
-            </div>
-            <div v-else>
-              <table>
-                <tr v-for="row in rows">
-                  <td class="border-b border-slate-100 hover:bg-slate-200">
-                    <span v-for="column in row.columns" :class="column.class" @click="onClickColumn(column)">{{
-                      column.text
-                    }}</span>
-                  </td>
-                </tr>
-              </table>
+        <div v-else-if="result.length > 0">
+          <div class="text-xs font-mono bg-white">
+            <div v-for="row in result" class="border-b">
+              <span class="bg-slate-100">
+                <span class="mr-1 text-yellow-400">{{ Util.utc2local(row.time) }}</span>
+                <template v-if="logType == 'pod'">
+                  <span class="mr-1 text-green-400">{{ row.namespace }}</span>
+                  <span class="mr-1 text-teal-400">{{ row.pod }}</span>
+                  <span class="mr-1 text-sky-400">{{ row.container }}</span>
+                </template>
+                <template v-if="logType == 'node'">
+                  <span class="mr-1 text-green-400">{{ row.node }}</span>
+                  <span class="mr-1 text-teal-400">{{ row.process }}</span>
+                </template>
+              </span>
+              {{ row.log }}
             </div>
           </div>
         </div>
