@@ -1,4 +1,4 @@
-VERSION := v0.1.13
+VERSION := v0.2.0
 IMAGE := ghcr.io/kuoss/venti:$(VERSION)
 
 MAKEFLAGS += -j2

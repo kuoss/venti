@@ -1,4 +1,4 @@
-FROM golang:1.19-alpine AS base1
+FROM golang:1.20-alpine AS base1
 ARG VERSION
 WORKDIR /temp/
 RUN apk add --no-cache git npm make gcc musl-dev
@@ -15,7 +15,8 @@ RUN cd web && npm run build
 RUN mkdir -p             /app/web/
 RUN cp -a /temp/web/dist /app/web/
 
-FROM alpine:3.17
+FROM alpine:3.18
 COPY --from=base2 /app /app
+RUN apk add --no-cache curl
 WORKDIR /app
 ENTRYPOINT ["/app/venti"]
