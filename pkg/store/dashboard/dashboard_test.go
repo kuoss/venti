@@ -51,7 +51,7 @@ func init() {
 			{Title: "event", Type: "logs", Headers: []string(nil), Targets: []model.Target{{Expr: "pod{namespace=\"kube-system\",pod=\"eventrouter-.*\"}", Legend: "", Legends: []string(nil), Unit: "", Columns: []string(nil), Headers: []string(nil), Key: "", Thresholds: []model.Threshold(nil)}}, ChartOptions: (*model.ChartOptions)(nil)}}}}}
 
 	var err error
-	store1, err = New("etc/dashboards/*.yml")
+	store1, err = New("etc/dashboards")
 	if err != nil {
 		panic(err)
 	}
@@ -69,12 +69,12 @@ func TestNew(t *testing.T) {
 			"",
 		},
 		{
-			"etc/dashboards/*.yaml",
+			"etc/hello",
 			nil,
-			"no dashboard file: pattern: etc/dashboards/*.yaml",
+			"getDashboardFilesFromPath err: no dashboard file: dirpath: etc/hello",
 		},
 		{
-			"etc/dashboards/*.yml",
+			"etc/dashboards",
 			&DashboardStore{dashboards: []model.Dashboard{*sampleDashboard}},
 			"",
 		},

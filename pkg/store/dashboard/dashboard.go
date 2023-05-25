@@ -14,18 +14,32 @@ type DashboardStore struct {
 	dashboards []model.Dashboard
 }
 
-func New(pattern string) (*DashboardStore, error) {
-	logger.Debugf("NewDashboardStore...")
-	if pattern == "" {
-		pattern = "etc/dashboards/*.yml"
+func getDashboardFilesFromPath(dirpath string) ([]string, error) {
+	if dirpath == "" {
+		dirpath = "etc/dashboards"
 	}
-	files, err := filepath.Glob(pattern)
+	files, err := filepath.Glob(dirpath + "/*.y*ml")
 	if err != nil {
 		return nil, fmt.Errorf("glob err: %w", err)
 	}
-	if len(files) < 1 {
-		return nil, fmt.Errorf("no dashboard file: pattern: %s", pattern)
+	files2, err := filepath.Glob(dirpath + "/*/*.y*ml")
+	if err != nil {
+		return nil, fmt.Errorf("glob err: %w", err)
 	}
+	files = append(files, files2...)
+	if len(files) < 1 {
+		return nil, fmt.Errorf("no dashboard file: dirpath: %s", dirpath)
+	}
+	return files, nil
+}
+
+func New(dirpath string) (*DashboardStore, error) {
+	logger.Debugf("NewDashboardStore...")
+	files, err := getDashboardFilesFromPath(dirpath)
+	if err != nil {
+		return nil, fmt.Errorf("getDashboardFilesFromPath err: %w", err)
+	}
+
 	var dashboards []model.Dashboard
 	for _, filename := range files {
 		dashboard, err := loadDashboardFromFile(filename)
