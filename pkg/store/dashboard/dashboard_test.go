@@ -59,7 +59,7 @@ func init() {
 
 func TestNew(t *testing.T) {
 	testCases := []struct {
-		pattern   string
+		dirpath   string
 		want      *DashboardStore
 		wantError string
 	}{
@@ -81,7 +81,7 @@ func TestNew(t *testing.T) {
 	}
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("#%d", i), func(t *testing.T) {
-			store, err := New(tc.pattern)
+			store, err := New(tc.dirpath)
 			if tc.wantError == "" {
 				assert.NoError(t, err)
 			} else {
