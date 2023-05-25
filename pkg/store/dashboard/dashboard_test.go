@@ -51,7 +51,7 @@ func init() {
 			{Title: "event", Type: "logs", Headers: []string(nil), Targets: []model.Target{{Expr: "pod{namespace=\"kube-system\",pod=\"eventrouter-.*\"}", Legend: "", Legends: []string(nil), Unit: "", Columns: []string(nil), Headers: []string(nil), Key: "", Thresholds: []model.Threshold(nil)}}, ChartOptions: (*model.ChartOptions)(nil)}}}}}
 
 	var err error
-	store1, err = New("etc/dashboards/*.yml")
+	store1, err = New("etc/dashboards")
 	if err != nil {
 		panic(err)
 	}
@@ -59,7 +59,7 @@ func init() {
 
 func TestNew(t *testing.T) {
 	testCases := []struct {
-		pattern   string
+		dirpath   string
 		want      *DashboardStore
 		wantError string
 	}{
@@ -69,19 +69,19 @@ func TestNew(t *testing.T) {
 			"",
 		},
 		{
-			"etc/dashboards/*.yaml",
+			"etc/hello",
 			nil,
-			"no dashboard file: pattern: etc/dashboards/*.yaml",
+			"getDashboardFilesFromPath err: no dashboard file: dirpath: etc/hello",
 		},
 		{
-			"etc/dashboards/*.yml",
+			"etc/dashboards",
 			&DashboardStore{dashboards: []model.Dashboard{*sampleDashboard}},
 			"",
 		},
 	}
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("#%d", i), func(t *testing.T) {
-			store, err := New(tc.pattern)
+			store, err := New(tc.dirpath)
 			if tc.wantError == "" {
 				assert.NoError(t, err)
 			} else {

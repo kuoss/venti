@@ -14,6 +14,7 @@ RUN cd web && npm install --force
 RUN cd web && npm run build
 RUN mkdir -p             /app/web/
 RUN cp -a /temp/web/dist /app/web/
+RUN mkdir -p             /app/data/ ## for user sqlite file
 
 FROM alpine:3.18
 COPY --from=base2 /app /app

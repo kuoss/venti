@@ -36,13 +36,12 @@ func NewStores(cfg *model.Config) (*Stores, error) {
 
 	// dashboard
 	logger.Debugf("new dashboard store...")
-	dashboardStore, err := dashboard.New("etc/dashboards/*.yml")
+	dashboardStore, err := dashboard.New("etc/dashboards")
 	if err != nil {
 		return nil, fmt.Errorf("NewDashboardStore err: %w", err)
 	}
 
 	// datasource
-	logger.Infof("hello 1")
 	var discoverer discovery.Discoverer
 	if cfg.DatasourceConfig.Discovery.Enabled {
 		discoverer, err = kubernetes.NewK8sStore()
