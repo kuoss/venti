@@ -57,7 +57,7 @@ func loadDashboardFromFile(filename string) (*model.Dashboard, error) {
 	yamlBytes, err := os.ReadFile(filename)
 	if err != nil {
 		return nil, fmt.Errorf("error on ReadFile: %w", err)
-	}
+	} 
 	var dashboard *model.Dashboard
 	if err := yaml.UnmarshalStrict(yamlBytes, &dashboard); err != nil {
 		return nil, fmt.Errorf("error on UnmarshalStrict: %w", err)

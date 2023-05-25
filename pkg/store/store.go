@@ -42,7 +42,6 @@ func NewStores(cfg *model.Config) (*Stores, error) {
 	}
 
 	// datasource
-	logger.Infof("hello 1")
 	var discoverer discovery.Discoverer
 	if cfg.DatasourceConfig.Discovery.Enabled {
 		discoverer, err = kubernetes.NewK8sStore()
