@@ -42,8 +42,9 @@ export default {
   methods: {
     async init() {
       try {
-        const response = await this.axios.get('/api/datasources');
-        this.datasources = response.data.filter(x => x.type == 'Prometheus' && x.is_discovered);
+        const response = await fetch('/api/v1/datasources');
+        const jsonData = await response.json();
+        this.datasources = jsonData;
       } catch (error) {
         console.error(error);
       }
@@ -54,17 +55,15 @@ export default {
       this.$emit('setIsLoading', true);
       try {
         let rows = [];
-        for (const datasource of this.datasources) {
+        this.datasources.forEach((ds, dsid) => {
+          if (ds.type != 'prometheus' || !ds.isDiscovered) {
+            return
+          }
           let row = [];
           for (const target of this.panelConfig.targets) {
-            const response = await this.axios.get('/api/prometheus/query', {
-              params: {
-                host: datasource.host,
-                expr: target.expr,
-                time: this.timeRange[1],
-              },
-            });
-            const result = response.data.data.result;
+            const response = await fetch('/api/v1/remote/query?' + new URLSearchParams({ dsid: dsid, query: target.expr, time: this.timeRange[1] }));
+            const jsonData = await response.json();
+            const result = jsonData.data.result;
             if (!target.legends) {
               row.push(result[0].value[1]);
               continue;
@@ -75,7 +74,7 @@ export default {
             }
           }
           rows.push(row);
-        }
+        })
         this.rows = rows;
       } catch (error) {
         console.error(error);
