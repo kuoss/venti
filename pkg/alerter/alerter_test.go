@@ -175,7 +175,8 @@ func TestProcessRuleAlert(t *testing.T) {
 		// ok
 		{
 			&model.RuleAlert{Rule: model.Rule{Alert: "alert1", Expr: "up"}, Alerts: []model.Alert{{Datasource: datasource5}}},
-			[]model.Fire{{Labels: map[string]string{"alertname": "alert1", "firer": "venti"}, Annotations: map[string]string{"summary": "placeholder summary"}}},
+			[]model.Fire{
+				{Labels: map[string]string{"alertname": "alert1", "firer": "venti", "severity": "info"}, Annotations: map[string]string{"summary": "placeholder summary"}}},
 		},
 		// error
 		{
@@ -185,7 +186,7 @@ func TestProcessRuleAlert(t *testing.T) {
 	}
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("#%d", i), func(t *testing.T) {
-			got := alerter1.processRuleAlert(tc.ruleAlert)
+			got := alerter1.processRuleAlert(tc.ruleAlert, &map[string]string{"severity": "info"})
 			require.Equal(t, tc.want, got)
 		})
 	}
@@ -273,9 +274,8 @@ func TestEvaluateAlert(t *testing.T) {
 			&model.Rule{},
 			&model.Alert{},
 			[]model.Fire{
-				{Labels: map[string]string{"alertname": "placeholder name", "firer": "venti"}, Annotations: map[string]string{"summary": "placeholder summary"}},
-				{Labels: map[string]string{"alertname": "placeholder name", "firer": "venti"}, Annotations: map[string]string{"summary": "placeholder summary"}},
-			},
+				{Labels: map[string]string{"alertname": "placeholder name", "firer": "venti", "severity": "info"}, Annotations: map[string]string{"summary": "placeholder summary"}},
+				{Labels: map[string]string{"alertname": "placeholder name", "firer": "venti", "severity": "info"}, Annotations: map[string]string{"summary": "placeholder summary"}}},
 		},
 		// pending
 		{
@@ -287,7 +287,7 @@ func TestEvaluateAlert(t *testing.T) {
 	}
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("#%d", i), func(tt *testing.T) {
-			fires := evaluateAlert(tc.queryData, tc.rule, tc.alert)
+			fires := evaluateAlert(tc.queryData, tc.rule, tc.alert, &map[string]string{"severity": "info"})
 			require.Equal(tt, tc.want, fires)
 		})
 	}
@@ -302,8 +302,7 @@ func TestGetFires_zero_QueryData(t *testing.T) {
 		{
 			&model.Rule{},
 			[]model.Fire{
-				{Labels: map[string]string{"alertname": "placeholder name", "firer": "venti"}, Annotations: map[string]string{"summary": "placeholder summary"}},
-			},
+				{Labels: map[string]string{"alertname": "placeholder name", "firer": "venti", "severity": "info"}, Annotations: map[string]string{"summary": "placeholder summary"}}},
 		},
 		{
 			&model.Rule{
@@ -311,8 +310,7 @@ func TestGetFires_zero_QueryData(t *testing.T) {
 				Labels:      map[string]string{"lorem": "ipsum"},
 			},
 			[]model.Fire{
-				{Labels: map[string]string{"alertname": "placeholder name", "firer": "venti", "lorem": "ipsum"}, Annotations: map[string]string{"hello": "world", "summary": "placeholder summary"}},
-			},
+				{Labels: map[string]string{"alertname": "placeholder name", "firer": "venti", "lorem": "ipsum", "severity": "info"}, Annotations: map[string]string{"hello": "world", "summary": "placeholder summary"}}},
 		},
 		{
 			&model.Rule{
@@ -321,8 +319,7 @@ func TestGetFires_zero_QueryData(t *testing.T) {
 				Labels:      map[string]string{"lorem": "ipsum"},
 			},
 			[]model.Fire{
-				{Labels: map[string]string{"alertname": "alert1", "firer": "venti", "lorem": "ipsum"}, Annotations: map[string]string{"hello": "world", "summary": "lorem={{ $labels.lorem }} value={{ $value }}"}},
-			},
+				{Labels: map[string]string{"alertname": "alert1", "firer": "venti", "lorem": "ipsum", "severity": "info"}, Annotations: map[string]string{"hello": "world", "summary": "lorem={{ $labels.lorem }} value={{ $value }}"}}},
 		},
 		{
 			&model.Rule{
@@ -331,13 +328,12 @@ func TestGetFires_zero_QueryData(t *testing.T) {
 				Labels:      map[string]string{"lorem": "ipsum"},
 			},
 			[]model.Fire{
-				{Labels: map[string]string{"alertname": "alert1", "firer": "venti", "lorem": "ipsum"}, Annotations: map[string]string{"hello": "world", "summary": "lorem={{ $labels.lorem }} value={{}}"}},
-			},
+				{Labels: map[string]string{"alertname": "alert1", "firer": "venti", "lorem": "ipsum", "severity": "info"}, Annotations: map[string]string{"hello": "world", "summary": "lorem={{ $labels.lorem }} value={{}}"}}},
 		},
 	}
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("#%d", i), func(tt *testing.T) {
-			fires := getFires(tc.rule, queryData)
+			fires := getFires(tc.rule, queryData, &map[string]string{"severity": "info"})
 			require.Equal(tt, tc.want, fires)
 		})
 	}
@@ -364,7 +360,7 @@ func TestGetFires_vector_zero_Result(t *testing.T) {
 	}
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("#%d", i), func(tt *testing.T) {
-			fires := getFires(tc.rule, queryData)
+			fires := getFires(tc.rule, queryData, &map[string]string{"severity": "info"})
 			require.Equal(tt, tc.want, fires)
 		})
 	}
@@ -392,9 +388,7 @@ func TestGetFires_vector_two_Result(t *testing.T) {
 		{
 			&model.Rule{},
 			[]model.Fire{
-				{Labels: map[string]string{"alertname": "placeholder name", "firer": "venti"}, Annotations: map[string]string{"summary": "placeholder summary"}},
-				{Labels: map[string]string{"alertname": "placeholder name", "firer": "venti"}, Annotations: map[string]string{"summary": "placeholder summary"}},
-			},
+				{Labels: map[string]string{"alertname": "placeholder name", "firer": "venti", "severity": "info"}, Annotations: map[string]string{"summary": "placeholder summary"}}, model.Fire{Labels: map[string]string{"alertname": "placeholder name", "firer": "venti", "severity": "info"}, Annotations: map[string]string{"summary": "placeholder summary"}}},
 		},
 		{
 			&model.Rule{
@@ -402,9 +396,7 @@ func TestGetFires_vector_two_Result(t *testing.T) {
 				Labels:      map[string]string{"lorem": "ipsum"},
 			},
 			[]model.Fire{
-				{Labels: map[string]string{"alertname": "placeholder name", "firer": "venti", "lorem": "ipsum"}, Annotations: map[string]string{"hello": "world", "summary": "placeholder summary"}},
-				{Labels: map[string]string{"alertname": "placeholder name", "firer": "venti", "lorem": "ipsum"}, Annotations: map[string]string{"hello": "world", "summary": "placeholder summary"}},
-			},
+				{Labels: map[string]string{"alertname": "placeholder name", "firer": "venti", "lorem": "ipsum", "severity": "info"}, Annotations: map[string]string{"hello": "world", "summary": "placeholder summary"}}, model.Fire{Labels: map[string]string{"alertname": "placeholder name", "firer": "venti", "lorem": "ipsum", "severity": "info"}, Annotations: map[string]string{"hello": "world", "summary": "placeholder summary"}}},
 		},
 		{
 			&model.Rule{
@@ -413,9 +405,7 @@ func TestGetFires_vector_two_Result(t *testing.T) {
 				Labels:      map[string]string{"rule": "pod-v1"},
 			},
 			[]model.Fire{
-				{Labels: map[string]string{"alertname": "alert1", "firer": "venti", "rule": "pod-v1"}, Annotations: map[string]string{"summary": "pod=pod1 value=1111"}},
-				{Labels: map[string]string{"alertname": "alert1", "firer": "venti", "rule": "pod-v1"}, Annotations: map[string]string{"summary": "pod=pod2 value=2222"}},
-			},
+				{Labels: map[string]string{"alertname": "alert1", "firer": "venti", "rule": "pod-v1", "severity": "info"}, Annotations: map[string]string{"summary": "pod=pod1 value=1111"}}, model.Fire{Labels: map[string]string{"alertname": "alert1", "firer": "venti", "rule": "pod-v1", "severity": "info"}, Annotations: map[string]string{"summary": "pod=pod2 value=2222"}}},
 		},
 		{
 			&model.Rule{
@@ -424,14 +414,12 @@ func TestGetFires_vector_two_Result(t *testing.T) {
 				Labels:      map[string]string{"rule": "pod-v1"},
 			},
 			[]model.Fire{
-				{Labels: map[string]string{"alertname": "alert1", "firer": "venti", "rule": "pod-v1"}, Annotations: map[string]string{"summary": "pod={{ $labels.pod }} value={{}}"}},
-				{Labels: map[string]string{"alertname": "alert1", "firer": "venti", "rule": "pod-v1"}, Annotations: map[string]string{"summary": "pod={{ $labels.pod }} value={{}}"}},
-			},
+				{Labels: map[string]string{"alertname": "alert1", "firer": "venti", "rule": "pod-v1", "severity": "info"}, Annotations: map[string]string{"summary": "pod={{ $labels.pod }} value={{}}"}}, model.Fire{Labels: map[string]string{"alertname": "alert1", "firer": "venti", "rule": "pod-v1", "severity": "info"}, Annotations: map[string]string{"summary": "pod={{ $labels.pod }} value={{}}"}}},
 		},
 	}
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("#%d", i), func(tt *testing.T) {
-			fires := getFires(tc.rule, queryData)
+			fires := getFires(tc.rule, queryData, &map[string]string{"severity": "info"})
 			require.Equal(tt, tc.want, fires)
 		})
 	}
@@ -516,11 +504,14 @@ func TestRenderSummary_error_on_Parse(t *testing.T) {
 		},
 	}
 	for i, tc := range testCases {
-		t.Run(fmt.Sprintf("#%d", i), func(tt *testing.T) {
+		t.Run(fmt.Sprintf("#%d", i), func(t *testing.T) {
 			output, err := renderSummary(tc.input, tc.sample)
-			require.NotNil(tt, err)
-			require.Error(tt, err, tc.wantError)
-			require.Equal(tt, tc.input, output)
+			if tc.wantError == "" {
+				require.NoError(t, err)
+			} else {
+				require.EqualError(t, err, tc.wantError)
+			}
+			require.Equal(t, tc.input, output)
 		})
 	}
 }
@@ -534,12 +525,12 @@ func TestRenderSummary_error_on_Execute(t *testing.T) {
 		{
 			"AlwaysOn value={{}",
 			&commonModel.Sample{},
-			`error on Parse: template: :1: missing value for command`,
+			`error on Parse: template: :1: unexpected "}" in command`,
 		},
 		{
 			"AlwaysOn value={{ }",
 			&commonModel.Sample{},
-			`error on Parse: template: :1: missing value for command`,
+			`error on Parse: template: :1: unexpected "}" in command`,
 		},
 		{
 			"AlwaysOn value={{ }}",
@@ -558,11 +549,14 @@ func TestRenderSummary_error_on_Execute(t *testing.T) {
 		},
 	}
 	for i, tc := range testCases {
-		t.Run(fmt.Sprintf("#%d", i), func(tt *testing.T) {
-			output, err := renderSummary(tc.input, tc.sample)
-			require.NotNil(tt, err)
-			require.Error(tt, err, tc.wantError)
-			require.Equal(tt, tc.input, output)
+		t.Run(fmt.Sprintf("#%d", i), func(t *testing.T) {
+			got, err := renderSummary(tc.input, tc.sample)
+			if tc.wantError == "" {
+				require.NoError(t, err)
+			} else {
+				require.EqualError(t, err, tc.wantError)
+			}
+			require.Equal(t, tc.input, got)
 		})
 	}
 }
@@ -574,7 +568,7 @@ func TestSendFires_ok(t *testing.T) {
 			Annotations: map[string]string{"lorem": "ipsum"},
 		},
 	})
-	require.Nil(t, err)
+	require.NoError(t, err)
 }
 
 func TestSendFires_error_on_Post(t *testing.T) {

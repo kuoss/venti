@@ -90,7 +90,7 @@ func (a *alerter) processAlertFiles() error {
 	for i := range a.alertingStore.AlertFiles {
 		for j := range a.alertingStore.AlertFiles[i].AlertGroups {
 			for k := range a.alertingStore.AlertFiles[i].AlertGroups[j].RuleAlerts {
-				temps := a.processRuleAlert(&a.alertingStore.AlertFiles[i].AlertGroups[j].RuleAlerts[k])
+				temps := a.processRuleAlert(&a.alertingStore.AlertFiles[i].AlertGroups[j].RuleAlerts[k], &a.alertingStore.AlertFiles[i].CommonLabels)
 				fires = append(fires, temps...)
 			}
 		}
@@ -102,7 +102,7 @@ func (a *alerter) processAlertFiles() error {
 	return nil
 }
 
-func (a *alerter) processRuleAlert(ruleAlert *model.RuleAlert) []model.Fire {
+func (a *alerter) processRuleAlert(ruleAlert *model.RuleAlert, commonLabels *map[string]string) []model.Fire {
 	var fires []model.Fire
 	rule := &ruleAlert.Rule
 	for i := range ruleAlert.Alerts {
@@ -112,7 +112,7 @@ func (a *alerter) processRuleAlert(ruleAlert *model.RuleAlert) []model.Fire {
 			logger.Warnf("queryAlert err: %s", err.Error())
 			continue
 		}
-		temps := evaluateAlert(queryData, rule, alert)
+		temps := evaluateAlert(queryData, rule, alert, commonLabels)
 		fires = append(fires, temps...)
 	}
 	return fires
@@ -149,7 +149,7 @@ func (a *alerter) queryAlert(rule *model.Rule, alert *model.Alert) (model.QueryD
 	return queryResult.Data, err
 }
 
-func evaluateAlert(queryData model.QueryData, rule *model.Rule, alert *model.Alert) []model.Fire {
+func evaluateAlert(queryData model.QueryData, rule *model.Rule, alert *model.Alert, commonLabels *map[string]string) []model.Fire {
 	var fires []model.Fire
 	// inactive
 	if len(queryData.Result) < 1 {
@@ -164,16 +164,23 @@ func evaluateAlert(queryData model.QueryData, rule *model.Rule, alert *model.Ale
 	// pending
 	if alert.ActiveAt.Add(time.Duration(rule.For)).After(commonModel.Now()) {
 		alert.State = promRule.StatePending
+		logger.Infof("evaluateAlert: [pending] %s", rule.Alert)
 		return fires
 	}
 	// firing
+	logger.Infof("evaluateAlert: [firing] %s", rule.Alert)
 	alert.State = promRule.StateFiring
-	return getFires(rule, queryData)
+	return getFires(rule, queryData, commonLabels)
 }
 
-func getFires(rule *model.Rule, data model.QueryData) []model.Fire {
+func getFires(rule *model.Rule, data model.QueryData, commonLabels *map[string]string) []model.Fire {
 	labels := map[string]string{}
 	annotations := map[string]string{}
+	if commonLabels != nil {
+		for k, v := range *commonLabels {
+			labels[k] = v
+		}
+	}
 	if rule.Labels != nil {
 		for k, v := range rule.Labels {
 			labels[k] = v

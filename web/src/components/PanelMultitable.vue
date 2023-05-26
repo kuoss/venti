@@ -1,20 +1,6 @@
-<template>
-  <table class="w-full border-collapse">
-    <tr class="border-b">
-      <th v-for="h in panelConfig.headers" class="px-2 py-1 bg-slate-50">
-        {{ h }}
-      </th>
-    </tr>
-    <tr v-for="(row, i) in rows" class="border-b">
-      <td class="px-2 py-1">
-        {{ datasources[i].host }}
-      </td>
-      <td v-for="cell in row" class="border-l px-2 py-1" :class="{ 'text-right': !isNaN(cell) }">
-        {{ cell }}
-      </td>
-    </tr>
-  </table>
-</template>
+<script setup>
+import { useDatasourceStore } from '@/stores/datasource';
+</script>
 
 <script>
 export default {
@@ -41,13 +27,14 @@ export default {
   },
   methods: {
     async fetchDatasources() {
-      try {
-        const response = await fetch('/api/v1/datasources');
-        const jsonData = await response.json();
-        this.datasources = jsonData;
-      } catch (error) {
-        console.error(error);
-      }
+      // try {
+      //   const response = await fetch('/api/v1/datasources');
+      //   const jsonData = await response.json();
+      //   this.datasources = jsonData;
+      // } catch (error) {
+      //   console.error(error);
+      // }
+      this.datasources = await useDatasourceStore().getDatasources();
       this.fetchData();
     },
     async fetchData() {
@@ -59,24 +46,25 @@ export default {
           const ds = this.datasources[i];
           if (ds.type != 'prometheus' || !ds.isDiscovered) continue;
 
-          let row = [];
+          let row = [ds.name];
           for (const target of this.panelConfig.targets) {
             const response = await fetch(
               '/api/v1/remote/query?' + new URLSearchParams({ dsid: i, query: target.expr, time: this.timeRange[1] }),
             );
             const jsonData = await response.json();
             const result = jsonData.data.result;
-            if (!target.legends) {
-              row.push(result[0].value[1]);
+            if (!('legends' in target)) {
+              row.push(result[0]?.value[1] ?? '-');
               continue;
             }
             for (const legend of target.legends) {
               const value = result.map(x => legend.replace(/\{\{(.*?)\}\}/g, (i, m) => x.metric[m]))[0];
-              row.push(value);
+              row.push(value ?? '-');
             }
           }
           rows.push(row);
         }
+        console.log(rows);
         this.rows = rows;
       } catch (error) {
         console.error(error);
@@ -86,3 +74,18 @@ export default {
   },
 };
 </script>
+
+<template>
+  <table class="w-full border-collapse">
+    <tr class="border-b">
+      <th v-for="h in panelConfig.headers" class="px-2 py-1 bg-slate-50">
+        {{ h }}
+      </th>
+    </tr>
+    <tr v-for="row in rows" class="border-b">
+      <td v-for="cell in row" class="border-l px-2 py-1" :class="{ 'text-right': !isNaN(cell) }">
+        {{ cell }}
+      </td>
+    </tr>
+  </table>
+</template>
