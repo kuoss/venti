@@ -33,14 +33,14 @@ export default {
       for (const i in targets) {
         try {
           const target = targets[i];
-          const response = await this.axios.get('/api/prometheus/query', {
-            params: {
-              expr: target.expr,
-              time: this.timeRange[1],
-            },
-          });
+
+          const response = await fetch(
+            '/api/v1/remote/query?' +
+              new URLSearchParams({ dstype: 'prometheus', query: target.expr, time: this.timeRange[1] }),
+          );
+          const jsonData = await response.json();
           let rows = {};
-          response.data.data.result.forEach(x => {
+          jsonData.data.result.forEach(x => {
             const key = x.metric[target.key];
             let row = {};
             target.columns.forEach(c => {
