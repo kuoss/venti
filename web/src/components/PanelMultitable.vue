@@ -37,10 +37,10 @@ export default {
     },
   },
   mounted() {
-    this.init();
+    this.fetchDatasources();
   },
   methods: {
-    async init() {
+    async fetchDatasources() {
       try {
         const response = await fetch('/api/v1/datasources');
         const jsonData = await response.json();
@@ -55,13 +55,15 @@ export default {
       this.$emit('setIsLoading', true);
       try {
         let rows = [];
-        this.datasources.forEach((ds, dsid) => {
-          if (ds.type != 'prometheus' || !ds.isDiscovered) {
-            return
-          }
+        for (let i = 0; i < this.datasources.length; i++) {
+          const ds = this.datasources[i];
+          if (ds.type != 'prometheus' || !ds.isDiscovered) continue;
+
           let row = [];
           for (const target of this.panelConfig.targets) {
-            const response = await fetch('/api/v1/remote/query?' + new URLSearchParams({ dsid: dsid, query: target.expr, time: this.timeRange[1] }));
+            const response = await fetch(
+              '/api/v1/remote/query?' + new URLSearchParams({ dsid: i, query: target.expr, time: this.timeRange[1] }),
+            );
             const jsonData = await response.json();
             const result = jsonData.data.result;
             if (!target.legends) {
@@ -74,7 +76,7 @@ export default {
             }
           }
           rows.push(row);
-        })
+        }
         this.rows = rows;
       } catch (error) {
         console.error(error);

@@ -34,8 +34,10 @@ export default {
         try {
           const target = targets[i];
 
-
-          const response = await fetch('/api/v1/remote/query?' + new URLSearchParams({ dstype: 'prometheus', query: target.expr, time: this.timeRange[1] }));
+          const response = await fetch(
+            '/api/v1/remote/query?' +
+              new URLSearchParams({ dstype: 'prometheus', query: target.expr, time: this.timeRange[1] }),
+          );
           const jsonData = await response.json();
           let rows = {};
           jsonData.data.result.forEach(x => {
