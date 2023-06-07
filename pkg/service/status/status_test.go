@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	service1    *StatusService
+	service1  *StatusService
 	goVersion string = runtime.Version()
 )
 

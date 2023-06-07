@@ -20,8 +20,8 @@ import (
 )
 
 type alerter struct {
-	alertingService      *alerting.AlertingService
-	remoteService        *remote.RemoteService
+	alertingService    *alerting.AlertingService
+	remoteService      *remote.RemoteService
 	evaluationInterval time.Duration
 	repeat             bool
 	alertmanagerURL    string
@@ -29,9 +29,9 @@ type alerter struct {
 
 func New(alertingService *alerting.AlertingService, remoteService *remote.RemoteService) *alerter {
 	return &alerter{
-		alertingService:      alertingService,
-		remoteService:        remoteService,
-		evaluationInterval: 20 * time.Second,                   // TODO: configurable
+		alertingService:    alertingService,
+		remoteService:      remoteService,
+		evaluationInterval: 20 * time.Second,                     // TODO: configurable
 		alertmanagerURL:    alertingService.GetAlertmanagerURL(), // TODO: multiple alertmanagers
 	}
 }

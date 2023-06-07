@@ -15,8 +15,8 @@ import (
 )
 
 var (
-	servers     *ms.Servers
-	datasources []model.Datasource
+	servers       *ms.Servers
+	datasources   []model.Datasource
 	remoteService *RemoteService
 )
 

@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	service1          *DashboardService
+	service1        *DashboardService
 	sampleDashboard *model.Dashboard
 )
 
