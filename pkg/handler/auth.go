@@ -10,7 +10,7 @@ import (
 	"github.com/kuoss/common/logger"
 	"github.com/kuoss/venti/pkg/handler/api"
 	"github.com/kuoss/venti/pkg/model"
-	userStore "github.com/kuoss/venti/pkg/store/user"
+	userService "github.com/kuoss/venti/pkg/service/user"
 	"gorm.io/gorm"
 
 	"github.com/gin-gonic/gin"
@@ -19,10 +19,10 @@ import (
 
 type authHandler struct {
 	// todo service to database
-	userStore *userStore.UserStore
+	userService *userService.UserService
 }
 
-func NewAuthHandler(s *userStore.UserStore) *authHandler {
+func NewAuthHandler(s *userService.UserService) *authHandler {
 	return &authHandler{s}
 }
 
@@ -38,7 +38,7 @@ func (h *authHandler) Login(c *gin.Context) {
 		return
 	}
 
-	user, err := h.userStore.FindByUsername(username)
+	user, err := h.userService.FindByUsername(username)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			api.ResponseError(c, api.ErrorUnauthorized, fmt.Errorf("username not found"))
@@ -55,7 +55,7 @@ func (h *authHandler) Login(c *gin.Context) {
 	}
 
 	user = issueToken(user)
-	err = h.userStore.Save(user)
+	err = h.userService.Save(user)
 	if err != nil {
 		logger.Errorf("update token err: %s", err.Error())
 		api.ResponseError(c, api.ErrorInternal, fmt.Errorf("token save err: %w", err))
@@ -99,14 +99,14 @@ func (h *authHandler) Logout(c *gin.Context) {
 	tokenFromHeader = strings.TrimPrefix(tokenFromHeader, "Bearer ")
 	userID := c.GetHeader("UserID")
 
-	user, err := h.userStore.FindByUserIdAndToken(userID, tokenFromHeader)
+	user, err := h.userService.FindByUserIdAndToken(userID, tokenFromHeader)
 	if err != nil {
 		return
 	}
 
 	user.Token = ""
 	user.TokenExpires = time.Now().Add(-480 * time.Hour)
-	err = h.userStore.Save(user)
+	err = h.userService.Save(user)
 	if err != nil {
 		return
 	}

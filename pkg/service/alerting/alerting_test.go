@@ -6,14 +6,14 @@ import (
 	"testing"
 
 	"github.com/kuoss/venti/pkg/model"
-	"github.com/kuoss/venti/pkg/store/datasource"
-	"github.com/kuoss/venti/pkg/store/discovery"
+	"github.com/kuoss/venti/pkg/service/datasource"
+	"github.com/kuoss/venti/pkg/service/discovery"
 	"github.com/stretchr/testify/require"
 )
 
 var (
-	datasourceStore *datasource.DatasourceStore
-	ruleFiles       = []model.RuleFile{{
+	datasourceService *datasource.DatasourceService
+	ruleFiles         = []model.RuleFile{{
 		Kind:               "AlertRuleFile",
 		CommonLabels:       map[string]string{"rulefile": "sample-v3", "severity": "silence"},
 		DatasourceSelector: model.DatasourceSelector{System: "", Type: "prometheus"},
@@ -41,14 +41,14 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
-	err = setDatasourceStore()
+	err = setDatasourceService()
 	if err != nil {
 		panic(err)
 	}
-	fmt.Printf("datasourceStore=%#v\n", datasourceStore)
+	fmt.Printf("datasourceService=%#v\n", datasourceService)
 }
 
-func setDatasourceStore() error {
+func setDatasourceService() error {
 	datasourceConfig := model.DatasourceConfig{
 		Datasources: []model.Datasource{
 			{Name: "mainPrometheus", Type: model.DatasourceTypePrometheus, URL: "http://prometheus:9090", IsMain: true},
@@ -65,7 +65,7 @@ func setDatasourceStore() error {
 		},
 	}
 	var err error
-	datasourceStore, err = datasource.New(&datasourceConfig, discovery.Discoverer(nil))
+	datasourceService, err = datasource.New(&datasourceConfig, discovery.Discoverer(nil))
 	if err != nil {
 		return fmt.Errorf("datasource.New err: %w", err)
 	}
@@ -96,7 +96,7 @@ func TestNew(t *testing.T) {
 	}
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("#%d", i), func(t *testing.T) {
-			got := New(tc.file, ruleFiles, datasourceStore)
+			got := New(tc.file, ruleFiles, datasourceService)
 			require.NotEmpty(t, got)
 			require.NotEmpty(t, got.AlertFiles)
 			require.Equal(t, tc.want, got.AlertingFile)
@@ -170,8 +170,8 @@ func TestGetAlertmanagerURL(t *testing.T) {
 	}
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("#%d", i), func(t *testing.T) {
-			store := New(tc.file, ruleFiles, datasourceStore)
-			require.Equal(t, tc.want, store.GetAlertmanagerURL())
+			service := New(tc.file, ruleFiles, datasourceService)
+			require.Equal(t, tc.want, service.GetAlertmanagerURL())
 		})
 	}
 }

@@ -3,14 +3,14 @@ package handler
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/kuoss/venti/pkg/model"
-	"github.com/kuoss/venti/pkg/store"
+	"github.com/kuoss/venti/pkg/service"
 )
 
-func NewRouter(cfg *model.Config, stores *store.Stores) *gin.Engine {
+func NewRouter(cfg *model.Config, services *service.Services) *gin.Engine {
 
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()
-	handlers := loadHandlers(cfg, stores)
+	handlers := loadHandlers(cfg, services)
 
 	api := router.Group("/api/v1")
 	// TODO: api.Use(tokenRequired)

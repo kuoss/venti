@@ -10,7 +10,7 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-type DashboardStore struct {
+type DashboardService struct {
 	dashboards []model.Dashboard
 }
 
@@ -33,8 +33,8 @@ func getDashboardFilesFromPath(dirpath string) ([]string, error) {
 	return files, nil
 }
 
-func New(dirpath string) (*DashboardStore, error) {
-	logger.Debugf("NewDashboardStore...")
+func New(dirpath string) (*DashboardService, error) {
+	logger.Debugf("NewDashboardService...")
 	files, err := getDashboardFilesFromPath(dirpath)
 	if err != nil {
 		return nil, fmt.Errorf("getDashboardFilesFromPath err: %w", err)
@@ -49,7 +49,7 @@ func New(dirpath string) (*DashboardStore, error) {
 		}
 		dashboards = append(dashboards, *dashboard)
 	}
-	return &DashboardStore{dashboards: dashboards}, nil
+	return &DashboardService{dashboards: dashboards}, nil
 }
 
 func loadDashboardFromFile(filename string) (*model.Dashboard, error) {
@@ -65,6 +65,6 @@ func loadDashboardFromFile(filename string) (*model.Dashboard, error) {
 	return dashboard, nil
 }
 
-func (s *DashboardStore) Dashboards() []model.Dashboard {
+func (s *DashboardService) Dashboards() []model.Dashboard {
 	return s.dashboards
 }

@@ -9,10 +9,10 @@ import (
 
 	ms "github.com/kuoss/venti/pkg/mock/servers"
 	"github.com/kuoss/venti/pkg/model"
-	"github.com/kuoss/venti/pkg/store/alerting"
-	dsStore "github.com/kuoss/venti/pkg/store/datasource"
-	"github.com/kuoss/venti/pkg/store/discovery"
-	"github.com/kuoss/venti/pkg/store/remote"
+	"github.com/kuoss/venti/pkg/service/alerting"
+	dsService "github.com/kuoss/venti/pkg/service/datasource"
+	"github.com/kuoss/venti/pkg/service/discovery"
+	"github.com/kuoss/venti/pkg/service/remote"
 	commonModel "github.com/prometheus/common/model"
 	"github.com/stretchr/testify/require"
 )
@@ -67,14 +67,14 @@ func setup() {
 		Datasources: servers.GetDatasources(),
 	}
 
-	datasourceStore, err := dsStore.New(datasourceConfig, discovery.Discoverer(nil))
+	datasourceService, err := dsService.New(datasourceConfig, discovery.Discoverer(nil))
 	if err != nil {
 		panic(err)
 	}
 
-	remoteStore := remote.New(&http.Client{}, 30*time.Second)
-	alertingStore := alerting.New("", ruleFiles1, datasourceStore)
-	alerter1 = New(alertingStore, remoteStore)
+	remoteService := remote.New(&http.Client{}, 30*time.Second)
+	alertingService := alerting.New("", ruleFiles1, datasourceService)
+	alerter1 = New(alertingService, remoteService)
 	alerter1.SetAlertmanagerURL(servers.GetServersByType(ms.TypeAlertmanager)[0].URL)
 }
 
@@ -95,11 +95,11 @@ func TestSetAlertmanagerURL(t *testing.T) {
 }
 
 func TestStartAndStop(t *testing.T) {
-	datasourceStore, err := dsStore.New(&model.DatasourceConfig{}, discovery.Discoverer(nil))
+	datasourceService, err := dsService.New(&model.DatasourceConfig{}, discovery.Discoverer(nil))
 	require.NoError(t, err)
-	alertingStore := alerting.New("", ruleFiles1, datasourceStore)
-	remoteStore := remote.New(&http.Client{}, 30*time.Second)
-	tempAlerter := New(alertingStore, remoteStore)
+	alertingService := alerting.New("", ruleFiles1, datasourceService)
+	remoteService := remote.New(&http.Client{}, 30*time.Second)
+	tempAlerter := New(alertingService, remoteService)
 
 	tempAlerter.SetAlertmanagerURL(servers.Svrs[0].Server.URL)
 	tempAlerter.evaluationInterval = 1000 * time.Millisecond
@@ -122,8 +122,8 @@ func TestOnce(t *testing.T) {
 }
 
 func TestProcessAlertFiles(t *testing.T) {
-	remoteStore := remote.New(&http.Client{}, 30*time.Second)
-	// tempAlerter_ok2.alertingStore.AlertFiles[0].AlertGroups[0].RuleAlerts[0].Rule = model.Rule{Alert: "alert1", Expr: "unmarshalable"}
+	remoteService := remote.New(&http.Client{}, 30*time.Second)
+	// tempAlerter_ok2.alertingService.AlertFiles[0].AlertGroups[0].RuleAlerts[0].Rule = model.Rule{Alert: "alert1", Expr: "unmarshalable"}
 
 	testCases := []struct {
 		alertmanagerURL   string
@@ -151,8 +151,8 @@ func TestProcessAlertFiles(t *testing.T) {
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("#%d", i), func(t *testing.T) {
 
-			alertingStore := alerting.New("", ruleFiles1, &dsStore.DatasourceStore{})
-			alerter := New(alertingStore, remoteStore)
+			alertingService := alerting.New("", ruleFiles1, &dsService.DatasourceService{})
+			alerter := New(alertingService, remoteService)
 			alerter.SetAlertmanagerURL(tc.alertmanagerURL)
 
 			err := alerter.processAlertFiles()

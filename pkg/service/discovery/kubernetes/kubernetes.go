@@ -12,11 +12,11 @@ import (
 	"k8s.io/client-go/rest"
 )
 
-type k8sStore struct {
+type k8sService struct {
 	client kubernetes.Interface
 }
 
-func NewK8sStore() (*k8sStore, error) {
+func NewK8sService() (*k8sService, error) {
 	clusterCfg, err := rest.InClusterConfig()
 	if err != nil {
 		return nil, fmt.Errorf("cannot InClusterConfig: %w", err)
@@ -25,10 +25,10 @@ func NewK8sStore() (*k8sStore, error) {
 	if err != nil {
 		return nil, fmt.Errorf("cannot NewForConfig: %w", err)
 	}
-	return &k8sStore{client: clientset}, nil
+	return &k8sService{client: clientset}, nil
 }
 
-func (s *k8sStore) Do(discovery model.Discovery) ([]model.Datasource, error) {
+func (s *k8sService) Do(discovery model.Discovery) ([]model.Datasource, error) {
 
 	services, err := s.client.CoreV1().Services("").List(context.Background(), metav1.ListOptions{})
 	if err != nil {
@@ -37,7 +37,7 @@ func (s *k8sStore) Do(discovery model.Discovery) ([]model.Datasource, error) {
 	return s.getDatasourcesFromServices(services.Items, discovery), nil
 }
 
-func (s *k8sStore) getDatasourcesFromServices(services []v1.Service, discovery model.Discovery) []model.Datasource {
+func (s *k8sService) getDatasourcesFromServices(services []v1.Service, discovery model.Discovery) []model.Datasource {
 	var datasources []model.Datasource
 
 	for _, service := range services {

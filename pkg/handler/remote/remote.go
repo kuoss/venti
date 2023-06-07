@@ -9,19 +9,19 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/kuoss/venti/pkg/handler/api"
 	"github.com/kuoss/venti/pkg/model"
-	dsStore "github.com/kuoss/venti/pkg/store/datasource"
-	"github.com/kuoss/venti/pkg/store/remote"
+	dsService "github.com/kuoss/venti/pkg/service/datasource"
+	"github.com/kuoss/venti/pkg/service/remote"
 )
 
 type RemoteHandler struct {
-	datasourceStore *dsStore.DatasourceStore
-	remoteStore     *remote.RemoteStore
+	datasourceService *dsService.DatasourceService
+	remoteService     *remote.RemoteService
 }
 
-func New(datasourceStore *dsStore.DatasourceStore, remoteStore *remote.RemoteStore) *RemoteHandler {
+func New(datasourceService *dsService.DatasourceService, remoteService *remote.RemoteService) *RemoteHandler {
 	return &RemoteHandler{
-		datasourceStore,
-		remoteStore,
+		datasourceService,
+		remoteService,
 	}
 }
 
@@ -58,7 +58,7 @@ func (h *RemoteHandler) remoteAction(c *gin.Context, action remote.Action, rawQu
 		api.ResponseError(c, api.ErrorInternal, fmt.Errorf("error on getDatasourceWithParams: %w", err))
 		return
 	}
-	code, body, err := h.remoteStore.GET(c.Request.Context(), &datasource, action, rawQuery)
+	code, body, err := h.remoteService.GET(c.Request.Context(), &datasource, action, rawQuery)
 	if err != nil {
 		api.ResponseError(c, api.ErrorInternal, fmt.Errorf("error on GET: %w", err))
 		return
@@ -78,7 +78,7 @@ func (h *RemoteHandler) getDatasourceWithParams(dsID string, dsType string) (mod
 		if err != nil {
 			return model.Datasource{}, fmt.Errorf("invalid dsid: %w", err)
 		}
-		datasource, err := h.datasourceStore.GetDatasourceByIndex(dsIndex)
+		datasource, err := h.datasourceService.GetDatasourceByIndex(dsIndex)
 		if err != nil {
 			return model.Datasource{}, fmt.Errorf("error on GetDatasourceByIndex: %w", err)
 		}
@@ -90,7 +90,7 @@ func (h *RemoteHandler) getDatasourceWithParams(dsID string, dsType string) (mod
 		return model.Datasource{}, errors.New("invalid dstype")
 	}
 	// Returns the main datasource for the requested dsType
-	datasource, err := h.datasourceStore.GetMainDatasourceByType(model.DatasourceType(dsType))
+	datasource, err := h.datasourceService.GetMainDatasourceByType(model.DatasourceType(dsType))
 	if err != nil {
 		return model.Datasource{}, fmt.Errorf("error on GetMainDatasourceByType: %w", err)
 	}

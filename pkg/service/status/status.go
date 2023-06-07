@@ -6,12 +6,12 @@ import (
 	"github.com/kuoss/venti/pkg/model"
 )
 
-type StatusStore struct {
+type StatusService struct {
 	ventiVersion model.VentiVersion
 }
 
-func New(cfg *model.Config) *StatusStore {
-	return &StatusStore{
+func New(cfg *model.Config) *StatusService {
+	return &StatusService{
 		ventiVersion: model.VentiVersion{
 			Version:   cfg.Version,
 			GoVersion: runtime.Version(),
@@ -19,6 +19,6 @@ func New(cfg *model.Config) *StatusStore {
 	}
 }
 
-func (s *StatusStore) BuildInfo() model.VentiVersion {
+func (s *StatusService) BuildInfo() model.VentiVersion {
 	return s.ventiVersion
 }

@@ -7,7 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/kuoss/venti/pkg/model"
-	"github.com/kuoss/venti/pkg/store/status"
+	"github.com/kuoss/venti/pkg/service/status"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -17,13 +17,13 @@ var (
 )
 
 func init() {
-	statusStore := status.New(&model.Config{
+	statusService := status.New(&model.Config{
 		Version:          "test",
 		DatasourceConfig: model.DatasourceConfig{},
 		UserConfig:       model.UserConfig{},
 	})
 
-	statusHandler1 = NewStatusHandler(statusStore)
+	statusHandler1 = NewStatusHandler(statusService)
 	statusRouter = gin.New()
 	statusRouter.GET("/api/v1/status/buildinfo", statusHandler1.BuildInfo)
 }

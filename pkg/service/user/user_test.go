@@ -16,9 +16,9 @@ func init() {
 }
 
 func TestNew(t *testing.T) {
-	userStore, err := New("./data/venti.sqlite3", model.UserConfig{})
+	userService, err := New("./data/venti.sqlite3", model.UserConfig{})
 	require.NoError(t, err)
-	require.NotEmpty(t, userStore)
+	require.NotEmpty(t, userService)
 }
 
 func TestSetEtcUsers(t *testing.T) {

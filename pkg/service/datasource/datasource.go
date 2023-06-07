@@ -6,27 +6,27 @@ import (
 
 	"github.com/kuoss/common/logger"
 	"github.com/kuoss/venti/pkg/model"
-	"github.com/kuoss/venti/pkg/store/discovery"
+	"github.com/kuoss/venti/pkg/service/discovery"
 )
 
-// DatasourceStore
-type DatasourceStore struct {
+// DatasourceService
+type DatasourceService struct {
 	config      model.DatasourceConfig
 	datasources []model.Datasource
 	discoverer  discovery.Discoverer
 }
 
-// NewDatasourceStore return *DatasourceStore after service discovery (with k8s service)
-func New(cfg *model.DatasourceConfig, discoverer discovery.Discoverer) (*DatasourceStore, error) {
-	store := &DatasourceStore{*cfg, nil, discoverer}
-	err := store.load()
+// NewDatasourceService return *DatasourceService after service discovery (with k8s service)
+func New(cfg *model.DatasourceConfig, discoverer discovery.Discoverer) (*DatasourceService, error) {
+	service := &DatasourceService{*cfg, nil, discoverer}
+	err := service.load()
 	if err != nil {
 		return nil, fmt.Errorf("load err: %w", err)
 	}
-	return store, nil
+	return service, nil
 }
 
-func (s *DatasourceStore) load() error {
+func (s *DatasourceService) load() error {
 	// load from config
 	s.datasources = append(s.datasources, s.config.Datasources...)
 
@@ -51,7 +51,7 @@ func (s *DatasourceStore) load() error {
 // recognize as a datasource by annotation or name
 
 // ensure that there is one main datasource for each type
-func (s *DatasourceStore) setMainDatasources() {
+func (s *DatasourceService) setMainDatasources() {
 
 	existsMainPrometheus := false
 	existsMainLethe := false
@@ -94,7 +94,7 @@ func (s *DatasourceStore) setMainDatasources() {
 }
 
 // return single datasource
-func (s *DatasourceStore) GetMainDatasourceByType(typ model.DatasourceType) (model.Datasource, error) {
+func (s *DatasourceService) GetMainDatasourceByType(typ model.DatasourceType) (model.Datasource, error) {
 	for _, ds := range s.datasources {
 		if ds.Type == typ && ds.IsMain {
 			return ds, nil
@@ -103,7 +103,7 @@ func (s *DatasourceStore) GetMainDatasourceByType(typ model.DatasourceType) (mod
 	return model.Datasource{}, fmt.Errorf("datasource of type %s not found", typ)
 }
 
-func (s *DatasourceStore) GetDatasourceByIndex(index int) (model.Datasource, error) {
+func (s *DatasourceService) GetDatasourceByIndex(index int) (model.Datasource, error) {
 	cnt := len(s.datasources)
 	if cnt < 1 {
 		return model.Datasource{}, errors.New("no datasource")
@@ -115,11 +115,11 @@ func (s *DatasourceStore) GetDatasourceByIndex(index int) (model.Datasource, err
 }
 
 // return multiple datasources
-func (s *DatasourceStore) GetDatasources() []model.Datasource {
+func (s *DatasourceService) GetDatasources() []model.Datasource {
 	return s.datasources
 }
 
-func (s *DatasourceStore) GetDatasourcesWithSelector(selector model.DatasourceSelector) []model.Datasource {
+func (s *DatasourceService) GetDatasourcesWithSelector(selector model.DatasourceSelector) []model.Datasource {
 	outputs := s.datasources
 	outputs = filterBySystem(outputs, selector.System)
 	outputs = filterByType(outputs, selector.Type)

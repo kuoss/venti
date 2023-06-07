@@ -105,8 +105,8 @@ func TestDoDiscoveryWithoutAnnotationKey(t *testing.T) {
 			IsDiscovered: true,
 		}}
 
-	k8sStore := &k8sStore{fake.NewSimpleClientset(servicesWithoutAnnotation...)}
-	discovered, err := k8sStore.Do(model.Discovery{
+	k8sService := &k8sService{fake.NewSimpleClientset(servicesWithoutAnnotation...)}
+	discovered, err := k8sService.Do(model.Discovery{
 		Enabled:          true,
 		ByNamePrometheus: true,
 		ByNameLethe:      true,
@@ -155,8 +155,8 @@ func TestDoDiscoveryAnnotationKey(t *testing.T) {
 			IsDiscovered: true,
 		}}
 
-	k8sStore := &k8sStore{fake.NewSimpleClientset(servicesWithAnnotation...)}
-	discovered, err := k8sStore.Do(model.Discovery{
+	k8sService := &k8sService{fake.NewSimpleClientset(servicesWithAnnotation...)}
+	discovered, err := k8sService.Do(model.Discovery{
 		Enabled:          true,
 		AnnotationKey:    "kuoss.org/datasource-type",
 		ByNamePrometheus: false,

@@ -4,18 +4,18 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/kuoss/venti/pkg/store/status"
+	"github.com/kuoss/venti/pkg/service/status"
 )
 
 type statusHandler struct {
-	statusStore *status.StatusStore
+	statusService *status.StatusService
 }
 
-func NewStatusHandler(statusStore *status.StatusStore) *statusHandler {
-	return &statusHandler{statusStore}
+func NewStatusHandler(statusService *status.StatusService) *statusHandler {
+	return &statusHandler{statusService}
 }
 
 // GET /api/status/buildinfo
 func (h *statusHandler) BuildInfo(c *gin.Context) {
-	c.JSON(http.StatusOK, h.statusStore.BuildInfo())
+	c.JSON(http.StatusOK, h.statusService.BuildInfo())
 }

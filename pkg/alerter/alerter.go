@@ -13,26 +13,26 @@ import (
 
 	"github.com/kuoss/common/logger"
 	"github.com/kuoss/venti/pkg/model"
-	"github.com/kuoss/venti/pkg/store/alerting"
-	"github.com/kuoss/venti/pkg/store/remote"
+	"github.com/kuoss/venti/pkg/service/alerting"
+	"github.com/kuoss/venti/pkg/service/remote"
 	commonModel "github.com/prometheus/common/model"
 	promRule "github.com/prometheus/prometheus/rules"
 )
 
 type alerter struct {
-	alertingStore      *alerting.AlertingStore
-	remoteStore        *remote.RemoteStore
+	alertingService      *alerting.AlertingService
+	remoteService        *remote.RemoteService
 	evaluationInterval time.Duration
 	repeat             bool
 	alertmanagerURL    string
 }
 
-func New(alertingStore *alerting.AlertingStore, remoteStore *remote.RemoteStore) *alerter {
+func New(alertingService *alerting.AlertingService, remoteService *remote.RemoteService) *alerter {
 	return &alerter{
-		alertingStore:      alertingStore,
-		remoteStore:        remoteStore,
+		alertingService:      alertingService,
+		remoteService:        remoteService,
 		evaluationInterval: 20 * time.Second,                   // TODO: configurable
-		alertmanagerURL:    alertingStore.GetAlertmanagerURL(), // TODO: multiple alertmanagers
+		alertmanagerURL:    alertingService.GetAlertmanagerURL(), // TODO: multiple alertmanagers
 	}
 }
 
@@ -41,7 +41,7 @@ func (a *alerter) SetAlertmanagerURL(url string) {
 }
 
 func (a *alerter) Start() error {
-	if len(a.alertingStore.AlertFiles) < 1 {
+	if len(a.alertingService.AlertFiles) < 1 {
 		return fmt.Errorf("no alertFiles")
 	}
 	if a.alertmanagerURL == "" {
@@ -80,17 +80,17 @@ func (a *alerter) Once() {
 }
 
 func (a *alerter) processAlertFiles() error {
-	if a.alertingStore == nil {
-		return fmt.Errorf("nil alertingStore")
+	if a.alertingService == nil {
+		return fmt.Errorf("nil alertingService")
 	}
-	if len(a.alertingStore.AlertFiles) < 1 {
+	if len(a.alertingService.AlertFiles) < 1 {
 		return fmt.Errorf("no alert files")
 	}
 	var fires []model.Fire
-	for i := range a.alertingStore.AlertFiles {
-		for j := range a.alertingStore.AlertFiles[i].AlertGroups {
-			for k := range a.alertingStore.AlertFiles[i].AlertGroups[j].RuleAlerts {
-				temps := a.processRuleAlert(&a.alertingStore.AlertFiles[i].AlertGroups[j].RuleAlerts[k], &a.alertingStore.AlertFiles[i].CommonLabels)
+	for i := range a.alertingService.AlertFiles {
+		for j := range a.alertingService.AlertFiles[i].AlertGroups {
+			for k := range a.alertingService.AlertFiles[i].AlertGroups[j].RuleAlerts {
+				temps := a.processRuleAlert(&a.alertingService.AlertFiles[i].AlertGroups[j].RuleAlerts[k], &a.alertingService.AlertFiles[i].CommonLabels)
 				fires = append(fires, temps...)
 			}
 		}
@@ -126,7 +126,7 @@ func (a *alerter) queryAlert(rule *model.Rule, alert *model.Alert) (model.QueryD
 	ctx, cancel := context.WithTimeout(context.TODO(), 10*time.Second)
 	defer cancel()
 
-	code, body, err := a.remoteStore.GET(ctx, alert.Datasource, remote.ActionQuery, "query="+url.QueryEscape(rule.Expr))
+	code, body, err := a.remoteService.GET(ctx, alert.Datasource, remote.ActionQuery, "query="+url.QueryEscape(rule.Expr))
 	if err != nil {
 		return model.QueryData{}, fmt.Errorf("GET err: %w", err)
 	}
