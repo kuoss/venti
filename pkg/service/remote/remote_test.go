@@ -15,9 +15,9 @@ import (
 )
 
 var (
-	servers     *ms.Servers
-	datasources []model.Datasource
-	remoteStore *RemoteStore
+	servers       *ms.Servers
+	datasources   []model.Datasource
+	remoteService *RemoteService
 )
 
 func TestMain(m *testing.M) {
@@ -42,7 +42,7 @@ func setup() {
 		{Type: ms.TypePrometheus, Port: 0, Name: "prometheus3"},
 	})
 	datasources = servers.GetDatasources()
-	remoteStore = New(&http.Client{}, 15*time.Second)
+	remoteService = New(&http.Client{}, 15*time.Second)
 }
 
 func shutdown() {
@@ -58,8 +58,8 @@ func TestNew(t *testing.T) {
 	assert.Equal(t, "lethe1", datasources[0].Name)
 	assert.Equal(t, "prometheus3", datasources[4].Name)
 
-	assert.Equal(t, &http.Client{}, remoteStore.httpClient)
-	assert.Equal(t, 15*time.Second, remoteStore.timeout)
+	assert.Equal(t, &http.Client{}, remoteService.httpClient)
+	assert.Equal(t, 15*time.Second, remoteService.timeout)
 }
 
 func TestGET(t *testing.T) {
@@ -158,7 +158,7 @@ func TestGET(t *testing.T) {
 	}
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("#%d", i), func(tt *testing.T) {
-			code, body, err := remoteStore.GET(context.TODO(), &model.Datasource{URL: tc.url}, tc.action, tc.rawQuery)
+			code, body, err := remoteService.GET(context.TODO(), &model.Datasource{URL: tc.url}, tc.action, tc.rawQuery)
 			if tc.wantError == "" {
 				assert.NoError(tt, err)
 			} else {
@@ -190,7 +190,7 @@ func TestGET_basicAuth(t *testing.T) {
 	}
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("#%d", i), func(tt *testing.T) {
-			code, body, err := remoteStore.GET(context.TODO(), tc.datasource, ActionQuery, "query=up")
+			code, body, err := remoteService.GET(context.TODO(), tc.datasource, ActionQuery, "query=up")
 			if tc.wantError == "" {
 				assert.NoError(tt, err)
 			} else {

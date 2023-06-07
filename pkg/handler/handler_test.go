@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/kuoss/venti/pkg/model"
-	"github.com/kuoss/venti/pkg/store"
+	"github.com/kuoss/venti/pkg/service"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -19,11 +19,11 @@ func TestLoadHandlers(t *testing.T) {
 			},
 		},
 	}
-	stores, err := store.NewStores(cfg)
+	services, err := service.NewServices(cfg)
 	assert.NoError(t, err)
-	assert.NotEmpty(t, stores)
+	assert.NotEmpty(t, services)
 
-	handlers := loadHandlers(cfg, stores)
+	handlers := loadHandlers(cfg, services)
 	assert.NotEmpty(t, handlers)
 	assert.NotEmpty(t, handlers.alertHandler)
 	assert.NotEmpty(t, handlers.authHandler)

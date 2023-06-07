@@ -10,11 +10,11 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-type AlertRuleStore struct {
+type AlertRuleService struct {
 	alertRuleFiles []model.RuleFile
 }
 
-func New(pattern string) (alertRuleStore *AlertRuleStore, err error) {
+func New(pattern string) (alertRuleService *AlertRuleService, err error) {
 	logger.Infof("loading alertrules...")
 	if pattern == "" {
 		pattern = "etc/alertrules/*.y*ml"
@@ -33,7 +33,7 @@ func New(pattern string) (alertRuleStore *AlertRuleStore, err error) {
 		}
 		alertRuleFiles = append(alertRuleFiles, *alertRuleFile)
 	}
-	alertRuleStore = &AlertRuleStore{alertRuleFiles: alertRuleFiles}
+	alertRuleService = &AlertRuleService{alertRuleFiles: alertRuleFiles}
 	return
 }
 
@@ -50,6 +50,6 @@ func loadAlertRuleFileFromFilename(filename string) (*model.RuleFile, error) {
 	return alertRuleFile, nil
 }
 
-func (s *AlertRuleStore) AlertRuleFiles() []model.RuleFile {
+func (s *AlertRuleService) AlertRuleFiles() []model.RuleFile {
 	return s.alertRuleFiles
 }

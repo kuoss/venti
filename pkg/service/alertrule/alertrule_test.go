@@ -38,41 +38,41 @@ func init() {
 func TestNew(t *testing.T) {
 	testCases := []struct {
 		pattern   string
-		want      *AlertRuleStore
+		want      *AlertRuleService
 		wantError string
 	}{
 		// ok
 		{
 			"etc/alertrules/*.y*ml",
-			&AlertRuleStore{alertRuleFiles: ruleFiles1},
+			&AlertRuleService{alertRuleFiles: ruleFiles1},
 			"",
 		},
 		{
 			"",
-			&AlertRuleStore{alertRuleFiles: ruleFiles1},
+			&AlertRuleService{alertRuleFiles: ruleFiles1},
 			"",
 		},
 		// error
 		{
 			"asdf",
-			&AlertRuleStore{alertRuleFiles: []model.RuleFile(nil)},
+			&AlertRuleService{alertRuleFiles: []model.RuleFile(nil)},
 			"",
 		},
 		{
 			"[]",
-			(*AlertRuleStore)(nil),
+			(*AlertRuleService)(nil),
 			"error on Glob: syntax error in pattern",
 		},
 	}
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("#%d", i), func(t *testing.T) {
-			store, err := New(tc.pattern)
+			service, err := New(tc.pattern)
 			if tc.wantError == "" {
 				assert.NoError(t, err)
 			} else {
 				assert.EqualError(t, err, tc.wantError)
 			}
-			assert.Equal(t, tc.want, store)
+			assert.Equal(t, tc.want, service)
 		})
 	}
 }
@@ -105,9 +105,9 @@ func TestAlertRuleFiles(t *testing.T) {
 	}
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("#%d", i), func(t *testing.T) {
-			store, err := New(tc.pattern)
+			service, err := New(tc.pattern)
 			assert.NoError(t, err)
-			ruleFiles := store.AlertRuleFiles()
+			ruleFiles := service.AlertRuleFiles()
 			assert.Equal(t, tc.want, ruleFiles)
 		})
 	}

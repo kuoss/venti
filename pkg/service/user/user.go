@@ -13,11 +13,11 @@ import (
 // todo remove
 // const dbfilepath = "./data/venti.sqlite3"
 
-type UserStore struct {
+type UserService struct {
 	db *gorm.DB
 }
 
-func New(filepath string, config model.UserConfig) (*UserStore, error) {
+func New(filepath string, config model.UserConfig) (*UserService, error) {
 	log.Println("Initializing database...")
 
 	db, err := gorm.Open(sqlite.Open(filepath), &gorm.Config{})
@@ -30,7 +30,7 @@ func New(filepath string, config model.UserConfig) (*UserStore, error) {
 		return nil, fmt.Errorf("auto migration failed: %w", err)
 	}
 	setEtcUsers(db, config)
-	return &UserStore{db}, nil
+	return &UserService{db}, nil
 }
 
 func setEtcUsers(db *gorm.DB, config model.UserConfig) {
@@ -52,18 +52,18 @@ func setEtcUsers(db *gorm.DB, config model.UserConfig) {
 	}
 }
 
-func (s *UserStore) FindByUsername(name string) (model.User, error) {
+func (s *UserService) FindByUsername(name string) (model.User, error) {
 	var user model.User
 	tx := s.db.First(&user, "username = ?", name)
 	return user, tx.Error
 }
 
-func (s *UserStore) FindByUserIdAndToken(id, token string) (model.User, error) {
+func (s *UserService) FindByUserIdAndToken(id, token string) (model.User, error) {
 	var user model.User
 	tx := s.db.First(&user, "ID = ? AND token = ?", id, token)
 	return user, tx.Error
 }
 
-func (s *UserStore) Save(user model.User) error {
+func (s *UserService) Save(user model.User) error {
 	return s.db.Save(&user).Error
 }

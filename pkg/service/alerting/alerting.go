@@ -6,17 +6,17 @@ import (
 
 	"github.com/kuoss/common/logger"
 	"github.com/kuoss/venti/pkg/model"
-	"github.com/kuoss/venti/pkg/store/datasource"
+	"github.com/kuoss/venti/pkg/service/datasource"
 	"gopkg.in/yaml.v2"
 )
 
-type AlertingStore struct {
+type AlertingService struct {
 	AlertingFile model.AlertingFile
 	AlertFiles   []model.AlertFile
 }
 
-func New(file string, ruleFiles []model.RuleFile, datasourceStore *datasource.DatasourceStore) (alertingStore *AlertingStore) {
-	logger.Infof("initializing alerting store...")
+func New(file string, ruleFiles []model.RuleFile, datasourceService *datasource.DatasourceService) (alertingService *AlertingService) {
+	logger.Infof("initializing alerting service...")
 	alertingFile, err := loadAlertingFile(file)
 	if err != nil {
 		logger.Warnf("loadAlertingFile err: %s", err.Error())
@@ -25,7 +25,7 @@ func New(file string, ruleFiles []model.RuleFile, datasourceStore *datasource.Da
 	var alertFiles []model.AlertFile
 	for _, ruleFile := range ruleFiles {
 		var alertGroups []model.AlertGroup
-		datasources := datasourceStore.GetDatasourcesWithSelector(ruleFile.DatasourceSelector)
+		datasources := datasourceService.GetDatasourcesWithSelector(ruleFile.DatasourceSelector)
 		for _, ruleGroup := range ruleFile.RuleGroups {
 			var ruleAlerts []model.RuleAlert
 			for _, rule := range ruleGroup.Rules {
@@ -52,7 +52,7 @@ func New(file string, ruleFiles []model.RuleFile, datasourceStore *datasource.Da
 			AlertGroups:        alertGroups,
 		})
 	}
-	return &AlertingStore{
+	return &AlertingService{
 		AlertingFile: *alertingFile,
 		AlertFiles:   alertFiles,
 	}
@@ -74,7 +74,7 @@ func loadAlertingFile(file string) (*model.AlertingFile, error) {
 	return alertingFile, nil
 }
 
-func (s *AlertingStore) GetAlertmanagerURL() string {
+func (s *AlertingService) GetAlertmanagerURL() string {
 	if len(s.AlertingFile.Alertings) > 0 {
 		return s.AlertingFile.Alertings[0].URL
 	}

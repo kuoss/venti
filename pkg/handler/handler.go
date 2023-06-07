@@ -3,7 +3,7 @@ package handler
 import (
 	"github.com/kuoss/venti/pkg/handler/remote"
 	"github.com/kuoss/venti/pkg/model"
-	"github.com/kuoss/venti/pkg/store"
+	"github.com/kuoss/venti/pkg/service"
 )
 
 type Handlers struct {
@@ -17,15 +17,15 @@ type Handlers struct {
 	statusHandler     *statusHandler
 }
 
-func loadHandlers(cfg *model.Config, stores *store.Stores) *Handlers {
+func loadHandlers(cfg *model.Config, services *service.Services) *Handlers {
 	return &Handlers{
-		NewAlertHandler(stores.AlertingStore),
-		NewAuthHandler(stores.UserStore),
+		NewAlertHandler(services.AlertingService),
+		NewAuthHandler(services.UserService),
 		NewConfigHandler(cfg),
-		NewDashboardHandler(stores.DashboardStore),
-		NewDatasourceHandler(stores.DatasourceStore, stores.RemoteStore),
+		NewDashboardHandler(services.DashboardService),
+		NewDatasourceHandler(services.DatasourceService, services.RemoteService),
 		NewProbeHandler(),
-		remote.New(stores.DatasourceStore, stores.RemoteStore),
-		NewStatusHandler(stores.StatusStore),
+		remote.New(services.DatasourceService, services.RemoteService),
+		NewStatusHandler(services.StatusService),
 	}
 }

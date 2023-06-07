@@ -1,4 +1,4 @@
-package store
+package service
 
 import (
 	"os"
@@ -19,7 +19,7 @@ func init() {
 	logger.Infof("init")
 }
 
-func TestNewStores(t *testing.T) {
+func TestNewServices(t *testing.T) {
 	datasourceConfig := model.DatasourceConfig{
 		Datasources: []model.Datasource{
 			{Name: "mainPrometheus", Type: model.DatasourceTypePrometheus, URL: "http://prometheus:9090", IsMain: true},
@@ -35,27 +35,27 @@ func TestNewStores(t *testing.T) {
 			ByNameLethe:      true,
 		},
 	}
-	got, err := NewStores(&model.Config{DatasourceConfig: datasourceConfig})
+	got, err := NewServices(&model.Config{DatasourceConfig: datasourceConfig})
 	assert.NoError(t, err)
 	assert.NotEmpty(t, got)
-	assert.NotEmpty(t, got.AlertRuleStore)
-	assert.NotEmpty(t, got.AlertingStore)
-	assert.NotEmpty(t, got.DashboardStore)
-	assert.NotEmpty(t, got.DatasourceStore)
-	assert.NotEmpty(t, got.RemoteStore)
-	assert.NotEmpty(t, got.StatusStore)
-	assert.NotEmpty(t, got.UserStore)
+	assert.NotEmpty(t, got.AlertRuleService)
+	assert.NotEmpty(t, got.AlertingService)
+	assert.NotEmpty(t, got.DashboardService)
+	assert.NotEmpty(t, got.DatasourceService)
+	assert.NotEmpty(t, got.RemoteService)
+	assert.NotEmpty(t, got.StatusService)
+	assert.NotEmpty(t, got.UserService)
 }
 
-func TestNewStoresError(t *testing.T) {
-	got, err := NewStores(&model.Config{})
+func TestNewServicesError(t *testing.T) {
+	got, err := NewServices(&model.Config{})
 	assert.NoError(t, err)
 	assert.NotEmpty(t, got)
-	assert.NotEmpty(t, got.AlertRuleStore)
-	assert.NotEmpty(t, got.AlertingStore)
-	assert.NotEmpty(t, got.DashboardStore)
-	assert.Empty(t, got.DatasourceStore)
-	assert.NotEmpty(t, got.RemoteStore)
-	assert.NotEmpty(t, got.StatusStore)
-	assert.NotEmpty(t, got.UserStore)
+	assert.NotEmpty(t, got.AlertRuleService)
+	assert.NotEmpty(t, got.AlertingService)
+	assert.NotEmpty(t, got.DashboardService)
+	assert.Empty(t, got.DatasourceService)
+	assert.NotEmpty(t, got.RemoteService)
+	assert.NotEmpty(t, got.StatusService)
+	assert.NotEmpty(t, got.UserService)
 }

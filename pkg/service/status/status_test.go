@@ -11,12 +11,12 @@ import (
 )
 
 var (
-	store1    *StatusStore
+	service1  *StatusService
 	goVersion string = runtime.Version()
 )
 
 func init() {
-	store1 = New(&model.Config{
+	service1 = New(&model.Config{
 		Version: "test",
 	})
 }
@@ -24,15 +24,15 @@ func init() {
 func TestNew(t *testing.T) {
 	testCases := []struct {
 		cfg  *model.Config
-		want *StatusStore
+		want *StatusService
 	}{
 		{
 			&model.Config{},
-			&StatusStore{ventiVersion: model.VentiVersion{Version: "", GoVersion: goVersion}},
+			&StatusService{ventiVersion: model.VentiVersion{Version: "", GoVersion: goVersion}},
 		},
 		{
 			&model.Config{Version: "hello"},
-			&StatusStore{ventiVersion: model.VentiVersion{Version: "hello", GoVersion: goVersion}},
+			&StatusService{ventiVersion: model.VentiVersion{Version: "hello", GoVersion: goVersion}},
 		},
 	}
 	for i, tc := range testCases {
@@ -44,7 +44,7 @@ func TestNew(t *testing.T) {
 }
 
 func TestBuildInfo(t *testing.T) {
-	got := store1.BuildInfo()
+	got := service1.BuildInfo()
 	assert.Equal(t, "test", got.Version)
 	assert.Equal(t, goVersion, got.GoVersion)
 }

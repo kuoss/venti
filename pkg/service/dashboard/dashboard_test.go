@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	store1          *DashboardStore
+	service1        *DashboardService
 	sampleDashboard *model.Dashboard
 )
 
@@ -51,7 +51,7 @@ func init() {
 			{Title: "event", Type: "logs", Headers: []string(nil), Targets: []model.Target{{Expr: "pod{namespace=\"kube-system\",pod=\"eventrouter-.*\"}", Legend: "", Legends: []string(nil), Unit: "", Columns: []string(nil), Headers: []string(nil), Key: "", Thresholds: []model.Threshold(nil)}}, ChartOptions: (*model.ChartOptions)(nil)}}}}}
 
 	var err error
-	store1, err = New("etc/dashboards")
+	service1, err = New("etc/dashboards")
 	if err != nil {
 		panic(err)
 	}
@@ -60,12 +60,12 @@ func init() {
 func TestNew(t *testing.T) {
 	testCases := []struct {
 		dirpath   string
-		want      *DashboardStore
+		want      *DashboardService
 		wantError string
 	}{
 		{
 			"",
-			&DashboardStore{dashboards: []model.Dashboard{*sampleDashboard}},
+			&DashboardService{dashboards: []model.Dashboard{*sampleDashboard}},
 			"",
 		},
 		{
@@ -75,19 +75,19 @@ func TestNew(t *testing.T) {
 		},
 		{
 			"etc/dashboards",
-			&DashboardStore{dashboards: []model.Dashboard{*sampleDashboard}},
+			&DashboardService{dashboards: []model.Dashboard{*sampleDashboard}},
 			"",
 		},
 	}
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("#%d", i), func(t *testing.T) {
-			store, err := New(tc.dirpath)
+			service, err := New(tc.dirpath)
 			if tc.wantError == "" {
 				assert.NoError(t, err)
 			} else {
 				assert.EqualError(t, err, tc.wantError)
 			}
-			assert.Equal(t, tc.want, store)
+			assert.Equal(t, tc.want, service)
 		})
 	}
 }
@@ -122,6 +122,6 @@ func TestLoadDashboardFromFile(t *testing.T) {
 
 func TestDashboards(t *testing.T) {
 	want := []model.Dashboard{*sampleDashboard}
-	got := store1.Dashboards()
+	got := service1.Dashboards()
 	assert.Equal(t, want, got)
 }

@@ -12,9 +12,9 @@ import (
 	"github.com/kuoss/common/logger"
 	ms "github.com/kuoss/venti/pkg/mock/servers"
 	"github.com/kuoss/venti/pkg/model"
-	dsStore "github.com/kuoss/venti/pkg/store/datasource"
-	"github.com/kuoss/venti/pkg/store/discovery"
-	"github.com/kuoss/venti/pkg/store/remote"
+	dsService "github.com/kuoss/venti/pkg/service/datasource"
+	"github.com/kuoss/venti/pkg/service/discovery"
+	"github.com/kuoss/venti/pkg/service/remote"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -44,12 +44,12 @@ func setup() {
 		{Type: ms.TypeLethe, Port: 0, Name: "lethe2", IsMain: false},
 	})
 	var discoverer discovery.Discoverer
-	datasourceStore, err := dsStore.New(&model.DatasourceConfig{Datasources: servers.GetDatasources()}, discoverer)
+	datasourceService, err := dsService.New(&model.DatasourceConfig{Datasources: servers.GetDatasources()}, discoverer)
 	if err != nil {
 		panic(err)
 	}
-	remoteStore := remote.New(&http.Client{}, 30*time.Second)
-	remoteHandler1 = New(datasourceStore, remoteStore)
+	remoteService := remote.New(&http.Client{}, 30*time.Second)
+	remoteHandler1 = New(datasourceService, remoteService)
 
 	// router
 	remoteRouter = gin.New()
@@ -60,18 +60,18 @@ func setup() {
 }
 
 func TestNew(t *testing.T) {
-	assert.NotEmpty(t, remoteHandler1.datasourceStore)
+	assert.NotEmpty(t, remoteHandler1.datasourceService)
 
-	assert.NotEmpty(t, remoteHandler1.remoteStore)
+	assert.NotEmpty(t, remoteHandler1.remoteService)
 
 	var ds model.Datasource
 	var err error
 
-	ds, err = remoteHandler1.datasourceStore.GetDatasourceByIndex(0)
+	ds, err = remoteHandler1.datasourceService.GetDatasourceByIndex(0)
 	assert.NoError(t, err)
 	assert.Equal(t, "prometheus1", ds.Name)
 
-	ds, err = remoteHandler1.datasourceStore.GetDatasourceByIndex(3)
+	ds, err = remoteHandler1.datasourceService.GetDatasourceByIndex(3)
 	assert.NoError(t, err)
 	assert.Equal(t, "lethe2", ds.Name)
 }

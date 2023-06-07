@@ -12,7 +12,7 @@ import (
 	"github.com/kuoss/venti/pkg/model"
 )
 
-type RemoteStore struct {
+type RemoteService struct {
 	httpClient *http.Client
 	timeout    time.Duration
 }
@@ -27,14 +27,14 @@ const (
 	ActionTargets    Action = "/api/v1/targets"
 )
 
-func New(httpClient *http.Client, timeout time.Duration) *RemoteStore {
-	return &RemoteStore{
+func New(httpClient *http.Client, timeout time.Duration) *RemoteService {
+	return &RemoteService{
 		httpClient: httpClient,
 		timeout:    timeout,
 	}
 }
 
-func (r *RemoteStore) GET(ctx context.Context, datasource *model.Datasource, action Action, rawQuery string) (code int, body string, err error) {
+func (r *RemoteService) GET(ctx context.Context, datasource *model.Datasource, action Action, rawQuery string) (code int, body string, err error) {
 	u, err := url.Parse(datasource.URL)
 	if err != nil {
 		return 0, "", fmt.Errorf("error on Parse: %w", err)

@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/kuoss/venti/pkg/model"
-	"github.com/kuoss/venti/pkg/store"
+	"github.com/kuoss/venti/pkg/service"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -18,10 +18,10 @@ func TestSetupRouter(t *testing.T) {
 			},
 		},
 	}
-	stores, err := store.NewStores(cfg)
+	services, err := service.NewServices(cfg)
 	assert.NoError(t, err)
 
-	handlers := loadHandlers(cfg, stores)
+	handlers := loadHandlers(cfg, services)
 	assert.NotEmpty(t, handlers)
 	assert.NotEmpty(t, handlers.alertHandler)
 	assert.NotEmpty(t, handlers.authHandler)
@@ -31,6 +31,6 @@ func TestSetupRouter(t *testing.T) {
 	assert.NotEmpty(t, handlers.remoteHandler)
 	assert.NotEmpty(t, handlers.statusHandler)
 
-	router := NewRouter(cfg, stores)
+	router := NewRouter(cfg, services)
 	assert.NotEmpty(t, router)
 }

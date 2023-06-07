@@ -6,13 +6,13 @@ import (
 	"time"
 
 	"github.com/kuoss/venti/pkg/model"
-	"github.com/kuoss/venti/pkg/store/discovery"
+	"github.com/kuoss/venti/pkg/service/discovery"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 var (
-	store *DatasourceStore
+	service *DatasourceService
 
 	datasourceConfig = model.DatasourceConfig{
 		QueryTimeout: time.Second * 10,
@@ -36,25 +36,25 @@ var (
 
 func init() {
 	var err error
-	store, err = New(&datasourceConfig, discovery.Discoverer(nil))
+	service, err = New(&datasourceConfig, discovery.Discoverer(nil))
 	if err != nil {
-		store = &DatasourceStore{}
+		service = &DatasourceService{}
 	}
 }
 
 func TestNew(t *testing.T) {
 	testCases := []struct {
 		cfg  *model.DatasourceConfig
-		want *DatasourceStore
+		want *DatasourceService
 	}{
 		{
 			&model.DatasourceConfig{},
-			&DatasourceStore{},
+			&DatasourceService{},
 		},
 		{
 			&model.DatasourceConfig{Datasources: []model.Datasource{
 				{Name: "mainPrometheus", Type: model.DatasourceTypePrometheus, URL: "http://prometheus:9090", IsMain: true}}},
-			&DatasourceStore{config: model.DatasourceConfig{QueryTimeout: 0, Datasources: []model.Datasource{
+			&DatasourceService{config: model.DatasourceConfig{QueryTimeout: 0, Datasources: []model.Datasource{
 				{Type: "prometheus", Name: "mainPrometheus", URL: "http://prometheus:9090", BasicAuth: false, BasicAuthUser: "", BasicAuthPassword: "", IsMain: true, IsDiscovered: false}}, Discovery: model.Discovery{Enabled: false, MainNamespace: "", AnnotationKey: "", ByNamePrometheus: false, ByNameLethe: false}}, datasources: []model.Datasource{model.Datasource{Type: "prometheus", Name: "mainPrometheus", URL: "http://prometheus:9090", BasicAuth: false, BasicAuthUser: "", BasicAuthPassword: "", IsMain: true, IsDiscovered: false}}, discoverer: discovery.Discoverer(nil)},
 		},
 	}
@@ -65,8 +65,8 @@ func TestNew(t *testing.T) {
 			require.Equal(t, tc.want, got)
 		})
 	}
-	// assert.Equal(t, store.config, datasourceConfig)
-	// assert.ElementsMatch(t, store.datasources, datasources)
+	// assert.Equal(t, service.config, datasourceConfig)
+	// assert.ElementsMatch(t, service.datasources, datasources)
 }
 
 func TestGetDatasourcesWithSelector(t *testing.T) {
@@ -113,7 +113,7 @@ func TestGetDatasourcesWithSelector(t *testing.T) {
 	}
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("#%d %v", i, tc.selector), func(tt *testing.T) {
-			dss := store.GetDatasourcesWithSelector(tc.selector)
+			dss := service.GetDatasourcesWithSelector(tc.selector)
 			names := []string{}
 			for _, ds := range dss {
 				names = append(names, ds.Name)
