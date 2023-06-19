@@ -13,7 +13,7 @@ func NewRouter(cfg *model.Config, services *service.Services) *gin.Engine {
 	handlers := loadHandlers(cfg, services)
 
 	api := router.Group("/api/v1")
-	// TODO: api.Use(tokenRequired)
+	// fixme: api.Use(tokenRequired)
 	{
 		api.GET("/alerts", handlers.alertHandler.AlertRuleFiles)
 		api.GET("/config/version", handlers.configHandler.Version)
