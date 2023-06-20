@@ -2,10 +2,10 @@ package handler
 
 import (
 	"fmt"
-	"github.com/kuoss/venti/pkg/handler/api"
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/kuoss/venti/pkg/handler/api"
 )
 
 func tokenRequired() gin.HandlerFunc {
