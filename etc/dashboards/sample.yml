@@ -18,6 +18,16 @@ rows:
     targets:
     - expr: kubernetes_build_info{job="kubernetes-apiservers"}
       legend: "{{git_version}}"
+  - title: no data I
+    type: stat
+    targets:
+    - expr: kubernetes_build_info{job="no-data"}
+      legend: "{{git_version}}"
+  - title: no data II
+    type: stat
+    targets:
+    - expr: no_data
+      legend: "hello {{world}}"
 - panels:
   - title: node
     type: piechart
@@ -133,8 +143,26 @@ rows:
     targets:
     - expr: sum(container_memory_working_set_bytes{namespace=~"$namespace", instance=~"$node", container!=""}) by (namespace, pod) / 1024 / 1024
       legend: "{{namespace}}/{{pod}}"
+  - title: no data I
+    type: time_series
+    targets:
+    - expr: sum(container_memory_working_set_bytes{namespace=~"$namespace", instance="no-data", container!=""}) by (namespace, pod) / 1024 / 1024
+      legend: "{{namespace}}/{{pod}}"
+  - title: no data
+    type: time_series
+    targets:
+    - expr: no_data
+      legend: "hello {{world}}"
 - panels:
   - title: event
     type: logs
     targets:
-    - expr: pod{namespace="kube-system",pod="eventrouter-.*"}
+    - expr: pod{namespace=~"kube-system|logmon",container="eventrouter"}
+  - title: no data I
+    type: logs
+    targets:
+    - expr: pod{namespace=~"kube-system|logmon",container="no_data"}
+  - title: no data II
+    type: logs
+    targets:
+    - expr: no_data

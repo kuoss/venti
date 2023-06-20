@@ -13,8 +13,8 @@ mock-prometheus:
 	docker rm -f prometheus; docker run -d -p9090:9090 --name prometheus prom/prometheus
 
 # dev server (port 5173)
-run-dev:
-	hack/run-dev.sh
+dev:
+	hack/dev.sh
 
 # gin server (port 8080)
 run-watch: run-watch-go run-watch-web
