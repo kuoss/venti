@@ -1,7 +1,8 @@
 package handler
 
 import (
-	"net/http"
+	"fmt"
+	"github.com/kuoss/venti/pkg/handler/api"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -11,25 +12,19 @@ func tokenRequired() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		token := c.GetHeader("Authorization")
 		if token == "" || !strings.HasPrefix(token, "Bearer ") {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
-				"message": "valid token required",
-			})
-			return
+			api.ResponseError(c, api.ErrorUnauthorized, fmt.Errorf("token required"))
+			c.Abort()
 		}
 		at := strings.Split(token, " ")
 		if len(at) != 2 {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
-				"message": "valid token required",
-			})
-			return
+			api.ResponseError(c, api.ErrorUnauthorized, fmt.Errorf("valid token required"))
+			c.Abort()
 		}
 		token = at[1]
 		// fixme: decide token
 		if token != "fixme" {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
-				"message": "valid token required",
-			})
-			return
+			api.ResponseError(c, api.ErrorUnauthorized, fmt.Errorf("valid token required"))
+			c.Abort()
 		}
 		c.Next()
 	}
