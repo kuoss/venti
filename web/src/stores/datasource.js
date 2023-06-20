@@ -23,7 +23,13 @@ export const useDatasourceStore = defineStore('datasource', {
 
         const resp2 = await fetch('/api/v1/datasources/targets');
         const temp = await resp2.json();
-        const targetInfos = temp.map(x => JSON.parse(x));
+
+        const targetInfos = temp.map(x => {
+          // JSON string "{\"data\":{\"activeTargets\":[...]},\"status\":\"success\"}"
+          if (x.charAt(0) == '{' && x.charAt(x.length - 1) == '}') return JSON.parse(x);
+          // not JSON string "\u003chtml\u003e\r\n\u003chead\u003e\u003ctitle\u003e503 Service Temporarily Unavailable..."
+          return { "data": { "activeTargets": [] }, "status": "error" }
+        })
 
         for (let i = 0; i < targetInfos.length; i++) {
           const targetInfo = targetInfos[i];
