@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestInValidToken(t *testing.T) {
+func TestInvalidToken(t *testing.T) {
 
 	gin.SetMode(gin.TestMode)
 	r := gin.Default()
@@ -26,7 +26,7 @@ func TestInValidToken(t *testing.T) {
 	r.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusUnauthorized, w.Code)
-	assert.Equal(t, "{\"message\":\"valid token required\"}", w.Body.String())
+	assert.Equal(t, "{\"error\":\"valid token required\",\"errorType\":\"unauthorized\",\"status\":\"error\"}", w.Body.String())
 }
 
 func TestValidToken(t *testing.T) {
