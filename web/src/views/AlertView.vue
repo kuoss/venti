@@ -83,13 +83,13 @@ export default {
                 </span>
               </td>
               <td class="px-2">
-                {{ f.commonLabels.severity }}
+                {{ f.commonLabels?.severity }}
               </td>
               <td class="px-2">
                 {{ ra.rule.alert }}
               </td>
               <td class="px-2 max-w-[30vw] truncate hover:whitespace-normal">
-                {{ ra.rule.annotations.summary }}
+                {{ ra.rule.annotations?.summary }}
               </td>
               <td class="px-2 max-w-[20vw] truncate hover:whitespace-normal text-cyan-500">
                 <a
