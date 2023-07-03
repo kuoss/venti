@@ -25,6 +25,7 @@ type alerter struct {
 	evaluationInterval time.Duration
 	repeat             bool
 	alertmanagerURL    string
+	client             http.Client
 }
 
 func New(alertingService *alerting.AlertingService, remoteService *remote.RemoteService) *alerter {
@@ -33,6 +34,9 @@ func New(alertingService *alerting.AlertingService, remoteService *remote.Remote
 		remoteService:      remoteService,
 		evaluationInterval: 20 * time.Second,                     // TODO: configurable
 		alertmanagerURL:    alertingService.GetAlertmanagerURL(), // TODO: multiple alertmanagers
+		client: http.Client{
+			Timeout: 5 * time.Second,
+		},
 	}
 }
 
@@ -264,10 +268,11 @@ func (a *alerter) sendFires(fires []model.Fire) error {
 		return fmt.Errorf("error on Marshal: %w", err)
 	}
 	buff := bytes.NewBuffer(pbytes)
-	resp, err := http.Post(a.alertmanagerURL+"/api/v1/alerts", "application/json", buff)
+	resp, err := a.client.Post(a.alertmanagerURL+"/api/v1/alerts", "application/json", buff)
 	if err != nil {
 		return fmt.Errorf("error on Post: %w", err)
 	}
+	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("statusCode is not ok(200)")
 	}
