@@ -1,4 +1,4 @@
-FROM golang:1.20-alpine AS base1
+FROM golang:1.18-alpine AS base1
 ARG VERSION
 WORKDIR /temp/
 RUN apk add --no-cache git npm make gcc musl-dev
@@ -16,7 +16,7 @@ RUN mkdir -p             /app/web/
 RUN cp -a /temp/web/dist /app/web/
 RUN mkdir -p             /app/data/ ## for user sqlite file
 
-FROM alpine:3.18
+FROM alpine:3.15
 COPY --from=base2 /app /app
 RUN apk add --no-cache curl
 WORKDIR /app
