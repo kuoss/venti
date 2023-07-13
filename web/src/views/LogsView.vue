@@ -72,8 +72,8 @@ export default {
       this.logType = '';
     },
     selectObject(kind, namespace, name) {
-      if (kind != 'pod') name += '-.*';
-      this.expr = `pod{namespace="${namespace}", pod="${name}"}`;
+      if (kind == 'pod') this.expr = `pod{namespace="${namespace}", pod="${name}"}`;
+      else this.expr = `pod{namespace="${namespace}", pod=~"${name}-.*"}`;
     },
     onClickColumn(c) {
       if (!c.label) return;
@@ -100,22 +100,11 @@ export default {
     updateTimeRange(r) {
       this.range = r;
     },
-    selectEventNamespace(ns_name) {
-      this.expr = `pod{namespace="kube-system",pod="eventrouter-.*"} |= "${ns_name}"`;
+    selectEvent() {
+      this.expr = `pod{namespace="kube-system",container="eventrouter"}`;
     },
     selectNode(name) {
       this.expr = `node{node="${name}"}`;
-    },
-    selectNamespace(name, idx) {
-      this.expr = `pod{namespace="${name}"}`;
-      this.namespaces[idx].showPods = !this.namespaces[idx].showPods;
-    },
-    selectPod(ns_name, ns_idx, pod_name, pod_idx) {
-      this.expr = `pod{namespace="${ns_name}", pod="${pod_name}"}`;
-      this.namespaces[ns_idx].pods[pod_idx].showContainers = !this.namespaces[ns_idx].pods[pod_idx].showContainers;
-    },
-    selectContainer(namespace, pod, container) {
-      this.expr = `pod{namespace="${namespace}", pod="${pod}", container="${container}"}`;
     },
     async execute() {
       if (this.expr.length < 1) {
@@ -314,23 +303,15 @@ export default {
           <div class="w-full py-2 text-center">Targets</div>
         </div>
         <div class="overflow-y-auto border-l border-2 w-full bg-slate-200 border-b" style="height: calc(100vh - 90px)">
-          <div class="bg-gray-100 text-center cursor-pointer" @click="expr = 'audit'">audit</div>
-          <div
-            class="bg-gray-100 text-center cursor-pointer"
-            @click="expr = 'pod{namespace=\'kube-system\',pod=\'eventrouter-.*\'}'"
-          >
+          <div class="bg-gray-100 text-center cursor-pointer">event</div>
+          <div class="cursor-pointer" @click="selectEvent">
             event
           </div>
-          <div v-for="ns in namespaces">
-            <div class="cursor-pointer" @click="selectEventNamespace(ns.name)">
-              {{ ns.name }}
-            </div>
-          </div>
-          <div class="bg-gray-100 text-center cursor-pointer" @click="expr = 'node'">node</div>
+          <div class="bg-gray-100 text-center cursor-pointer">node</div>
           <div v-for="node in nodes" class="cursor-pointer" @click="selectNode(node.name)">
             {{ node.name }}
           </div>
-          <div class="bg-gray-100 text-center cursor-pointer" @click="expr = 'pod'">pod</div>
+          <div class="bg-gray-100 text-center cursor-pointer">pod</div>
           <div v-for="ns in namespaces">
             <div class="cursor-pointer" @click="ns.isExpanded = !ns.isExpanded">
               <i class="mdi" :class="[ns.isExpanded ? 'mdi-chevron-down' : 'mdi-chevron-right']" />
