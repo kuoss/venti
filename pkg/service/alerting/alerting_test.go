@@ -26,17 +26,6 @@ var (
 				{Record: "", Alert: "S01-Monday", Expr: "day_of_week() == 1 and hour() < 2", For: 0, KeepFiringFor: 0, Labels: map[string]string(nil), Annotations: map[string]string{"summary": "Monday"}},
 				{Record: "", Alert: "S02-NewNamespace", Expr: "time() - kube_namespace_created < 120", For: 0, KeepFiringFor: 0, Labels: map[string]string(nil), Annotations: map[string]string{"summary": "labels={{ $labels }} namespace={{ $labels.namespace }} value={{ $value }}"}},
 			}}}}}
-
-	// alertFiles1 = []model.AlertFile{{
-	// 	Kind:               "",
-	// 	CommonLabels:       map[string]string{"rulefile": "sample-v3", "severity": "silence"},
-	// 	DatasourceSelector: model.DatasourceSelector{System: "", Type: "prometheus"},
-	// 	AlertGroups: []model.AlertGroup{{
-	// 		Name: "sample", Interval: 0, Limit: 0,
-	// 		RuleAlerts: []model.RuleAlert{
-	// 			{Rule: model.Rule{Record: "", Alert: "S00-AlwaysOn", Expr: "vector(1234)", For: 0, KeepFiringFor: 0, Labels: map[string]string{"hello": "world"}, Annotations: map[string]string{"summary": "AlwaysOn value={{ $value }}"}}, Alerts: []model.Alert{}},
-	// 			{Rule: model.Rule{Record: "", Alert: "S01-Monday", Expr: "day_of_week() == 1 and hour() < 2", For: 0, KeepFiringFor: 0, Labels: map[string]string(nil), Annotations: map[string]string{"summary": "Monday"}}, Alerts: []model.Alert{}},
-	// 			{Rule: model.Rule{Record: "", Alert: "S02-NewNamespace", Expr: "time() - kube_namespace_created < 120", For: 0, KeepFiringFor: 0, Labels: map[string]string(nil), Annotations: map[string]string{"summary": "labels={{ $labels }} namespace={{ $labels.namespace }} value={{ $value }}"}}, Alerts: []model.Alert{}}}}}}}
 )
 
 func TestMain(m *testing.M) {
