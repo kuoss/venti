@@ -53,12 +53,6 @@ func setup() {
 		panic(err)
 	}
 	services.AlertingService.AlertingFile.Alertings[0].URL = alertmanagerMock.URL
-	// var datasourceService *datasource.DatasourceService
-	// alertingService := alerting.New("etc/alerting.yml", []model.RuleFile{}, datasourceService)
-	// alertingService.AlertingFile.Alertings = []model.Alerting{
-	// 	{URL: alertmanagerMock.URL},
-	// }
-
 	handlers = loadHandlers(cfg, services)
 }
 
