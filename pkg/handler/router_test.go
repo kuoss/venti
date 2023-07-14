@@ -3,25 +3,10 @@ package handler
 import (
 	"testing"
 
-	"github.com/kuoss/venti/pkg/model"
-	"github.com/kuoss/venti/pkg/service"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestSetupRouter(t *testing.T) {
-	cfg := &model.Config{
-		Version:    "Unknown",
-		UserConfig: model.UserConfig{},
-		DatasourceConfig: model.DatasourceConfig{
-			Datasources: []model.Datasource{
-				{Type: model.DatasourceTypePrometheus, Name: "prometheus", IsMain: true},
-			},
-		},
-	}
-	services, err := service.NewServices(cfg)
-	assert.NoError(t, err)
-
-	handlers := loadHandlers(cfg, services)
 	assert.NotEmpty(t, handlers)
 	assert.NotEmpty(t, handlers.alertHandler)
 	assert.NotEmpty(t, handlers.authHandler)
