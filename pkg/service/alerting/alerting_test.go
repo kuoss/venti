@@ -197,5 +197,8 @@ func TestGetAlertmanagerURL(t *testing.T) {
 }
 
 func TestSendTestAlert(t *testing.T) {
-
+	service := New("etc/alerting.yml", ruleFiles, datasourceService)
+	service.AlertingFile.Alertings[0].URL = alertmanagerMock.URL
+	err := service.SendTestAlert()
+	require.NoError(t, err)
 }
