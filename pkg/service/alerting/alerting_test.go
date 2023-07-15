@@ -5,6 +5,8 @@ import (
 	"os"
 	"testing"
 
+	"github.com/kuoss/venti/pkg/mocker"
+	"github.com/kuoss/venti/pkg/mocker/alertmanager"
 	"github.com/kuoss/venti/pkg/model"
 	"github.com/kuoss/venti/pkg/service/datasource"
 	"github.com/kuoss/venti/pkg/service/discovery"
@@ -12,6 +14,7 @@ import (
 )
 
 var (
+	alertmanagerMock  *mocker.Server
 	datasourceService *datasource.DatasourceService
 	ruleFiles         = []model.RuleFile{{
 		Kind:               "AlertRuleFile",
@@ -23,21 +26,23 @@ var (
 				{Record: "", Alert: "S01-Monday", Expr: "day_of_week() == 1 and hour() < 2", For: 0, KeepFiringFor: 0, Labels: map[string]string(nil), Annotations: map[string]string{"summary": "Monday"}},
 				{Record: "", Alert: "S02-NewNamespace", Expr: "time() - kube_namespace_created < 120", For: 0, KeepFiringFor: 0, Labels: map[string]string(nil), Annotations: map[string]string{"summary": "labels={{ $labels }} namespace={{ $labels.namespace }} value={{ $value }}"}},
 			}}}}}
-
-	// alertFiles1 = []model.AlertFile{{
-	// 	Kind:               "",
-	// 	CommonLabels:       map[string]string{"rulefile": "sample-v3", "severity": "silence"},
-	// 	DatasourceSelector: model.DatasourceSelector{System: "", Type: "prometheus"},
-	// 	AlertGroups: []model.AlertGroup{{
-	// 		Name: "sample", Interval: 0, Limit: 0,
-	// 		RuleAlerts: []model.RuleAlert{
-	// 			{Rule: model.Rule{Record: "", Alert: "S00-AlwaysOn", Expr: "vector(1234)", For: 0, KeepFiringFor: 0, Labels: map[string]string{"hello": "world"}, Annotations: map[string]string{"summary": "AlwaysOn value={{ $value }}"}}, Alerts: []model.Alert{}},
-	// 			{Rule: model.Rule{Record: "", Alert: "S01-Monday", Expr: "day_of_week() == 1 and hour() < 2", For: 0, KeepFiringFor: 0, Labels: map[string]string(nil), Annotations: map[string]string{"summary": "Monday"}}, Alerts: []model.Alert{}},
-	// 			{Rule: model.Rule{Record: "", Alert: "S02-NewNamespace", Expr: "time() - kube_namespace_created < 120", For: 0, KeepFiringFor: 0, Labels: map[string]string(nil), Annotations: map[string]string{"summary": "labels={{ $labels }} namespace={{ $labels.namespace }} value={{ $value }}"}}, Alerts: []model.Alert{}}}}}}}
 )
 
-func init() {
-	err := os.Chdir("../../..")
+func TestMain(m *testing.M) {
+	setup()
+	code := m.Run()
+	shutdown()
+	os.Exit(code)
+}
+
+func setup() {
+	var err error
+	alertmanagerMock, err = alertmanager.New(0)
+	if err != nil {
+		panic(err)
+	}
+
+	err = os.Chdir("../../..") // project root
 	if err != nil {
 		panic(err)
 	}
@@ -46,6 +51,10 @@ func init() {
 		panic(err)
 	}
 	fmt.Printf("datasourceService=%#v\n", datasourceService)
+}
+
+func shutdown() {
+	alertmanagerMock.Close()
 }
 
 func setDatasourceService() error {
@@ -174,4 +183,11 @@ func TestGetAlertmanagerURL(t *testing.T) {
 			require.Equal(t, tc.want, service.GetAlertmanagerURL())
 		})
 	}
+}
+
+func TestSendTestAlert(t *testing.T) {
+	service := New("etc/alerting.yml", ruleFiles, datasourceService)
+	service.AlertingFile.Alertings[0].URL = alertmanagerMock.URL
+	err := service.SendTestAlert()
+	require.NoError(t, err)
 }

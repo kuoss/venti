@@ -16,6 +16,7 @@ func NewRouter(cfg *model.Config, services *service.Services) *gin.Engine {
 	// fixme: api.Use(tokenRequired())
 	{
 		api.GET("/alerts", handlers.alertHandler.AlertRuleFiles)
+		api.GET("/alerts/test", handlers.alertHandler.SendTestAlert)
 		api.GET("/config/version", handlers.configHandler.Version)
 		api.GET("/dashboards", handlers.dashboardHandler.Dashboards)
 

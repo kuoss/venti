@@ -1,8 +1,12 @@
 package alerting
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
+	"net/http"
 	"os"
+	"time"
 
 	"github.com/kuoss/common/logger"
 	"github.com/kuoss/venti/pkg/model"
@@ -79,4 +83,28 @@ func (s *AlertingService) GetAlertmanagerURL() string {
 		return s.AlertingFile.Alertings[0].URL
 	}
 	return ""
+}
+
+func (s *AlertingService) SendTestAlert() error {
+	fires := []model.Fire{
+		{Labels: map[string]string{"test": "alert", "alert": "test", "pizza": "🍕"}},
+	}
+	pbytes, err := json.Marshal(fires)
+	if err != nil {
+		// test not reachable: memory full?
+		return fmt.Errorf("error on Marshal: %w", err)
+	}
+	buff := bytes.NewBuffer(pbytes)
+	client := http.Client{
+		Timeout: 5 * time.Second,
+	}
+	resp, err := client.Post(s.GetAlertmanagerURL()+"/api/v1/alerts", "application/json", buff)
+	if err != nil {
+		return fmt.Errorf("error on Post: %w", err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("statusCode is not ok(200)")
+	}
+	return nil
 }
