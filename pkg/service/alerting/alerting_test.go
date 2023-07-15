@@ -42,7 +42,7 @@ func setup() {
 		panic(err)
 	}
 
-	err = os.Chdir("../../..")
+	err = os.Chdir("../../..") // project root
 	if err != nil {
 		panic(err)
 	}
