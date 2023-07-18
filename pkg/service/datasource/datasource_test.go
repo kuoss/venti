@@ -1,6 +1,7 @@
 package datasource
 
 import (
+	"errors"
 	"fmt"
 	"testing"
 	"time"
@@ -42,31 +43,72 @@ func init() {
 	}
 }
 
+type discovererOkMock struct{}
+
+func (m *discovererOkMock) Do(discovery model.Discovery) ([]model.Datasource, error) {
+	return []model.Datasource{}, nil
+}
+
+type discovererErrorMock struct{}
+
+func (m *discovererErrorMock) Do(discovery model.Discovery) ([]model.Datasource, error) {
+	return nil, errors.New("mock error")
+}
+
 func TestNew(t *testing.T) {
 	testCases := []struct {
-		cfg  *model.DatasourceConfig
-		want *DatasourceService
+		cfg        *model.DatasourceConfig
+		discoverer discovery.Discoverer
+		want       *DatasourceService
+		wantError  string
 	}{
 		{
 			&model.DatasourceConfig{},
+			discovery.Discoverer(nil),
 			&DatasourceService{},
+			"",
 		},
 		{
 			&model.DatasourceConfig{Datasources: []model.Datasource{
 				{Name: "mainPrometheus", Type: model.DatasourceTypePrometheus, URL: "http://prometheus:9090", IsMain: true}}},
-			&DatasourceService{config: model.DatasourceConfig{QueryTimeout: 0, Datasources: []model.Datasource{
-				{Type: "prometheus", Name: "mainPrometheus", URL: "http://prometheus:9090", BasicAuth: false, BasicAuthUser: "", BasicAuthPassword: "", IsMain: true, IsDiscovered: false}}, Discovery: model.Discovery{Enabled: false, MainNamespace: "", AnnotationKey: "", ByNamePrometheus: false, ByNameLethe: false}}, datasources: []model.Datasource{model.Datasource{Type: "prometheus", Name: "mainPrometheus", URL: "http://prometheus:9090", BasicAuth: false, BasicAuthUser: "", BasicAuthPassword: "", IsMain: true, IsDiscovered: false}}, discoverer: discovery.Discoverer(nil)},
+			discovery.Discoverer(nil),
+			&DatasourceService{
+				config: model.DatasourceConfig{
+					Datasources: []model.Datasource{{Type: "prometheus", Name: "mainPrometheus", URL: "http://prometheus:9090", IsMain: true}},
+					Discovery:   model.Discovery{Enabled: false, MainNamespace: "", AnnotationKey: "", ByNamePrometheus: false, ByNameLethe: false}},
+				datasources: []model.Datasource{{Type: "prometheus", Name: "mainPrometheus", URL: "http://prometheus:9090", IsMain: true}},
+				discoverer:  discovery.Discoverer(nil),
+			},
+			"",
+		},
+		{
+			&model.DatasourceConfig{Datasources: []model.Datasource{}, Discovery: model.Discovery{Enabled: true}},
+			&discovererOkMock{},
+			&DatasourceService{
+				config: model.DatasourceConfig{
+					Datasources: []model.Datasource{},
+					Discovery:   model.Discovery{Enabled: true}},
+				discoverer: &discovererOkMock{},
+			},
+			"",
+		},
+		{
+			&model.DatasourceConfig{Datasources: []model.Datasource{}, Discovery: model.Discovery{Enabled: true}},
+			&discovererErrorMock{},
+			nil, "load err: discoverer.Do err: mock error",
 		},
 	}
-	for i, tc := range testCases {
-		t.Run(fmt.Sprintf("#%d", i), func(t *testing.T) {
-			got, err := New(tc.cfg, discovery.Discoverer(nil))
-			require.NoError(t, err)
+	for _, tc := range testCases {
+		t.Run("", func(t *testing.T) {
+			got, err := New(tc.cfg, tc.discoverer)
+			if tc.wantError == "" {
+				require.NoError(t, err)
+			} else {
+				require.EqualError(t, err, tc.wantError)
+			}
 			require.Equal(t, tc.want, got)
 		})
 	}
-	// assert.Equal(t, service.config, datasourceConfig)
-	// assert.ElementsMatch(t, service.datasources, datasources)
 }
 
 func TestGetDatasourcesWithSelector(t *testing.T) {

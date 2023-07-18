@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/kuoss/common/logger"
 	"github.com/kuoss/venti/pkg/model"
 	"github.com/kuoss/venti/pkg/service/discovery"
 )
@@ -35,14 +34,10 @@ func (s *DatasourceService) load() error {
 
 		discoveredDatasources, err := s.discoverer.Do(s.config.Discovery)
 		if err != nil {
-			logger.Errorf("error on discoverDatasources: %s", err)
+			return fmt.Errorf("discoverer.Do err: %w", err)
 		}
 		s.datasources = append(s.datasources, discoveredDatasources...)
 	}
-	// if len(s.datasources) < 1 {
-	// 	return fmt.Errorf("no datasource")
-	// }
-	// set main datasources
 	s.setMainDatasources()
 	return nil
 }
