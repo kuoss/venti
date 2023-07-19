@@ -35,7 +35,7 @@ export default {
       }
       this.isLoading = false;
     },
-    sendTestAlert() {
+    async sendTestAlert() {
       try {
         const response = await fetch('/api/v1/alerts/test');
         const jsonData = await response.json();
