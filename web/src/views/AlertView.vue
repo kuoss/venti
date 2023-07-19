@@ -9,6 +9,7 @@ export default {
       alertFiles: [],
       isLoading: false,
       repeat: true,
+      testAlertSent: false,
     };
   },
   mounted() {
@@ -34,6 +35,16 @@ export default {
       }
       this.isLoading = false;
     },
+    async sendTestAlert() {
+      try {
+        const response = await fetch('/api/v1/alerts/test');
+        const jsonData = await response.json();
+        console.log(jsonData)
+      } catch (error) {
+        console.error(error);
+      }
+      this.testAlertSent = true;
+    }
   },
 };
 </script>
@@ -45,6 +56,9 @@ export default {
         <div><i class="mdi mdi-18px mdi-database-outline" /> Alert</div>
         <div class="flex ml-auto">
           <div class="inline-flex">
+            <button class="h-rounded-group py-2 px-4 text-gray-900 bg-white border border-common" v-if="!testAlertSent" @click="sendTestAlert">
+              <i class="mdi mdi-cube-send" /> Send Test Alert
+            </button>
             <button class="h-rounded-group py-2 px-4 text-gray-900 bg-white border border-common">
               <i class="mdi mdi-refresh mdi-spin" />
             </button>
