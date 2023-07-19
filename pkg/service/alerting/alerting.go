@@ -87,7 +87,7 @@ func (s *AlertingService) GetAlertmanagerURL() string {
 
 func (s *AlertingService) SendTestAlert() error {
 	fires := []model.Fire{
-		{Labels: map[string]string{"test": "alert", "alert": "test", "pizza": "🍕"}},
+		{Labels: map[string]string{"test": "test", "severity": "info", "pizza": "🍕"}},
 	}
 	pbytes, err := json.Marshal(fires)
 	if err != nil {
