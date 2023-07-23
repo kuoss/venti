@@ -11,12 +11,12 @@ var servers *ms.Servers
 
 func init() {
 	servers = ms.New(ms.Requirements{
-		{Type: ms.TypeAlertmanager, Port: 0, Name: "alertmanager1", IsMain: false, BasicAuth: false},
-		{Type: ms.TypeLethe, Port: 0, Name: "lethe1", IsMain: true, BasicAuth: false},
-		{Type: ms.TypeLethe, Port: 0, Name: "lethe2", IsMain: false, BasicAuth: false},
-		{Type: ms.TypePrometheus, Port: 0, Name: "prometheus1", IsMain: true, BasicAuth: false},
-		{Type: ms.TypePrometheus, Port: 0, Name: "prometheus2", IsMain: false, BasicAuth: false},
-		{Type: ms.TypePrometheus, Port: 0, Name: "prometheus3", IsMain: false, BasicAuth: true},
+		{Type: ms.TypeAlertmanager, Name: "alertmanager1", IsMain: false, BasicAuth: false},
+		{Type: ms.TypeLethe, Name: "lethe1", IsMain: true, BasicAuth: false},
+		{Type: ms.TypeLethe, Name: "lethe2", IsMain: false, BasicAuth: false},
+		{Type: ms.TypePrometheus, Name: "prometheus1", IsMain: true, BasicAuth: false},
+		{Type: ms.TypePrometheus, Name: "prometheus2", IsMain: false, BasicAuth: false},
+		{Type: ms.TypePrometheus, Name: "prometheus3", IsMain: false, BasicAuth: true},
 	})
 }
 

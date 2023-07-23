@@ -34,12 +34,12 @@ func setup() {
 		panic(err)
 	}
 	servers = ms.New(ms.Requirements{
-		{Type: ms.TypeAlertmanager, Port: 0, Name: "alertmanager1"},
-		{Type: ms.TypeLethe, Port: 0, Name: "lethe1", IsMain: true},
-		{Type: ms.TypeLethe, Port: 0, Name: "lethe2"},
-		{Type: ms.TypePrometheus, Port: 0, Name: "prometheus1", IsMain: true},
-		{Type: ms.TypePrometheus, Port: 0, Name: "prometheus2", BasicAuth: true},
-		{Type: ms.TypePrometheus, Port: 0, Name: "prometheus3"},
+		{Type: ms.TypeAlertmanager, Name: "alertmanager1"},
+		{Type: ms.TypeLethe, Name: "lethe1", IsMain: true},
+		{Type: ms.TypeLethe, Name: "lethe2"},
+		{Type: ms.TypePrometheus, Name: "prometheus1", IsMain: true},
+		{Type: ms.TypePrometheus, Name: "prometheus2", BasicAuth: true},
+		{Type: ms.TypePrometheus, Name: "prometheus3"},
 	})
 	datasources = servers.GetDatasources()
 	remoteService = New(&http.Client{}, 15*time.Second)

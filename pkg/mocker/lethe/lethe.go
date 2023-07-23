@@ -6,7 +6,7 @@ import (
 	"github.com/kuoss/venti/pkg/mocker"
 )
 
-func New(port int) (*mocker.Server, error) {
+func New() (*mocker.Server, error) {
 	s := mocker.New()
 
 	s.GET("/api/v1/status/buildinfo", handleBuildInfo)
@@ -14,7 +14,7 @@ func New(port int) (*mocker.Server, error) {
 	s.GET("/api/v1/query", handleQuery)
 	s.GET("/api/v1/query_range", handleQueryRange)
 
-	err := s.Start(port)
+	err := s.Start()
 	if err != nil {
 		err = fmt.Errorf("error on Start: %w", err)
 	}

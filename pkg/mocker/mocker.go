@@ -1,8 +1,6 @@
 package mocker
 
 import (
-	"fmt"
-	"net"
 	"net/http"
 	"net/http/httptest"
 )
@@ -54,19 +52,8 @@ func (s *Server) verifyBasicAuth(w http.ResponseWriter, r *http.Request) bool {
 	return true
 }
 
-func (s *Server) Start(port int) error {
+func (s *Server) Start() error {
 	s.server = httptest.NewUnstartedServer(s.mux)
-	// port == 0 : random port
-	if port > 1 {
-		if port > 65535 {
-			return fmt.Errorf("invalid port number: %d", port)
-		}
-		listener, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", port))
-		if err != nil {
-			return fmt.Errorf("error on Listen: %w", err)
-		}
-		s.server.Listener = listener
-	}
 	s.server.Start()
 	s.URL = s.server.URL
 	return nil

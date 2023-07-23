@@ -8,7 +8,7 @@ import (
 
 	"github.com/kuoss/venti/pkg/mocker"
 	mockerClient "github.com/kuoss/venti/pkg/mocker/client"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var (
@@ -37,7 +37,7 @@ func setup() {
 			"message": "Hello_" + name,
 		})
 	})
-	err := mainServer.Start(0)
+	err := mainServer.Start()
 	if err != nil {
 		panic(err)
 	}
@@ -49,57 +49,17 @@ func shutdown() {
 }
 
 func TestNew(t *testing.T) {
-	// default case
-	assert.NotZero(t, mainServer)
+	require.NotZero(t, mainServer)
 	u, err := url.Parse(mainServer.URL)
-	assert.NoError(t, err)
-	assert.Equal(t, "127.0.0.1", u.Hostname())
-	assert.NotEqual(t, "0", u.Port())
+	require.NoError(t, err)
+	require.Equal(t, "http", u.Scheme)
+	require.Equal(t, "127.0.0.1", u.Hostname())
 }
 
 func TestStart(t *testing.T) {
-	testCases := []struct {
-		port      int
-		wantError string
-		wantURL   string
-	}{
-		{
-			9999,
-			"",
-			"http://127.0.0.1:9999",
-		},
-		{
-			99999,
-			"invalid port number: 99999",
-			"",
-		},
-	}
-	for i, tc := range testCases {
-		t.Run(fmt.Sprintf("#%d", i), func(tt *testing.T) {
-			tempServer := mocker.New()
-			err := tempServer.Start(tc.port)
-			if tc.wantError == "" {
-				defer tempServer.Close()
-				assert.NoError(tt, err)
-			} else {
-				assert.EqualError(tt, err, tc.wantError)
-			}
-			assert.Equal(tt, tc.wantURL, tempServer.URL)
-		})
-	}
-}
-
-func TestNew_duplicate(t *testing.T) {
-	var err error
-
-	tempServer1 := mocker.New()
-	err = tempServer1.Start(1234)
-	assert.Nil(t, err)
-	defer tempServer1.Close()
-
-	tempServer2 := mocker.New()
-	err = tempServer2.Start(1234)
-	assert.Equal(t, "error on Listen: listen tcp 127.0.0.1:1234: bind: address already in use", err.Error())
+	tempServer := mocker.New()
+	err := tempServer.Start()
+	require.NoError(t, err)
 }
 
 func TestSetBasicAuth(t *testing.T) {
@@ -108,8 +68,8 @@ func TestSetBasicAuth(t *testing.T) {
 	tempServer.GET("/ping", func(c *mocker.Context) {
 		c.JSON(200, mocker.H{"message": "pong"})
 	})
-	err := tempServer.Start(0)
-	assert.NoError(t, err)
+	err := tempServer.Start()
+	require.NoError(t, err)
 
 	tempClient1 := mockerClient.New(tempServer.URL)
 
@@ -140,9 +100,9 @@ func TestSetBasicAuth(t *testing.T) {
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("#%d", i), func(tt *testing.T) {
 			code, body, err := tc.client.GET("/ping", "")
-			assert.NoError(t, err)
-			assert.Equal(t, tc.wantCode, code)
-			assert.Equal(t, tc.wantBody, body)
+			require.NoError(t, err)
+			require.Equal(t, tc.wantCode, code)
+			require.Equal(t, tc.wantBody, body)
 		})
 	}
 }
@@ -180,12 +140,12 @@ func Test_ping(t *testing.T) {
 		t.Run(fmt.Sprintf("#%d", i), func(tt *testing.T) {
 			code, body, err := mainClient.GET(tc.path, tc.rawQuery)
 			if tc.wantError == "" {
-				assert.NoError(tt, err)
+				require.NoError(tt, err)
 			} else {
-				assert.EqualError(tt, err, tc.wantError)
+				require.EqualError(tt, err, tc.wantError)
 			}
-			assert.Equal(tt, tc.wantCode, code)
-			assert.Equal(tt, tc.wantBody, body)
+			require.Equal(tt, tc.wantCode, code)
+			require.Equal(tt, tc.wantBody, body)
 		})
 	}
 }

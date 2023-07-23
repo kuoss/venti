@@ -15,7 +15,11 @@ var (
 )
 
 func init() {
-	server, _ = prometheus.New(0)
+	var err error
+	server, err = prometheus.New()
+	if err != nil {
+		panic(err)
+	}
 	client = mockerClient.New(server.URL)
 }
 
