@@ -15,7 +15,11 @@ var (
 )
 
 func init() {
-	server, _ = lethe.New(0)
+	var err error
+	server, err = lethe.New()
+	if err != nil {
+		panic(err)
+	}
 	client = mockerClient.New(server.URL)
 }
 

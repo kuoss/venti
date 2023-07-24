@@ -56,12 +56,12 @@ func setup() {
 		panic(err)
 	}
 	servers = ms.New(ms.Requirements{
-		{Type: ms.TypeAlertmanager, Port: 0, Name: "alertmanager1", IsMain: false},
-		{Type: ms.TypeLethe, Port: 0, Name: "lethe1", IsMain: true},
-		{Type: ms.TypeLethe, Port: 0, Name: "lethe2", IsMain: false},
-		{Type: ms.TypePrometheus, Port: 0, Name: "prometheus1", IsMain: true},
-		{Type: ms.TypePrometheus, Port: 0, Name: "prometheus2", IsMain: false},
-		{Type: ms.TypePrometheus, Port: 0, Name: "prometheus3", IsMain: false},
+		{Type: ms.TypeAlertmanager, Name: "alertmanager1", IsMain: false},
+		{Type: ms.TypeLethe, Name: "lethe1", IsMain: true},
+		{Type: ms.TypeLethe, Name: "lethe2", IsMain: false},
+		{Type: ms.TypePrometheus, Name: "prometheus1", IsMain: true},
+		{Type: ms.TypePrometheus, Name: "prometheus2", IsMain: false},
+		{Type: ms.TypePrometheus, Name: "prometheus3", IsMain: false},
 	})
 	datasourceConfig := &model.DatasourceConfig{
 		Datasources: servers.GetDatasources(),

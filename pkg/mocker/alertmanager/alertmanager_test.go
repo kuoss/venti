@@ -16,7 +16,7 @@ var (
 
 func init() {
 	var err error
-	server, err = alertmanager.New(0)
+	server, err = alertmanager.New()
 	if err != nil {
 		panic(err)
 	}

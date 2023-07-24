@@ -34,7 +34,6 @@ type Requirements []Requirement
 
 type Requirement struct {
 	Type      Type
-	Port      int
 	Name      string
 	IsMain    bool
 	BasicAuth bool
@@ -47,11 +46,11 @@ func New(requirements Requirements) *Servers {
 		var err error
 		switch r.Type {
 		case TypeAlertmanager:
-			server, err = alertmanager.New(r.Port)
+			server, err = alertmanager.New()
 		case TypeLethe:
-			server, err = lethe.New(r.Port)
+			server, err = lethe.New()
 		case TypePrometheus:
-			server, err = prometheus.New(r.Port)
+			server, err = prometheus.New()
 		}
 		if err != nil {
 			panic(err)

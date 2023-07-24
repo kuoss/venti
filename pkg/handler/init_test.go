@@ -35,7 +35,7 @@ func TestMain(m *testing.M) {
 
 func setup() {
 	var err error
-	alertmanagerMock, err = alertmanager.New(0)
+	alertmanagerMock, err = alertmanager.New()
 	if err != nil {
 		panic(err)
 	}
