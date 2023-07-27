@@ -174,10 +174,10 @@ func evaluateAlert(queryData model.QueryData, rule *model.Rule, alert *model.Ale
 	// firing
 	logger.Infof("evaluateAlert: [firing] %s", rule.Alert)
 	alert.State = promRule.StateFiring
-	return getFires(rule, queryData, commonLabels)
+	return getFires(rule, queryData, commonLabels, alert.Datasource)
 }
 
-func getFires(rule *model.Rule, data model.QueryData, commonLabels *map[string]string) []model.Fire {
+func getFires(rule *model.Rule, data model.QueryData, commonLabels *map[string]string, datasource *model.Datasource) []model.Fire {
 	labels := map[string]string{}
 	annotations := map[string]string{}
 	if commonLabels != nil {
@@ -198,6 +198,9 @@ func getFires(rule *model.Rule, data model.QueryData, commonLabels *map[string]s
 	labels["alertname"] = rule.Alert
 	if labels["alertname"] == "" {
 		labels["alertname"] = "placeholder name"
+	}
+	if datasource != nil {
+		labels["datasource"] = datasource.Name
 	}
 	labels["firer"] = "venti"
 
