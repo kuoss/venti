@@ -8,7 +8,6 @@ import (
 
 	"github.com/kuoss/venti/pkg/model"
 	"github.com/kuoss/venti/pkg/service/discovery"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -65,7 +64,7 @@ func TestNew(t *testing.T) {
 		{
 			&model.DatasourceConfig{},
 			discovery.Discoverer(nil),
-			&DatasourceService{},
+			&DatasourceService{datasources: []model.Datasource{}},
 			"",
 		},
 		{
@@ -88,7 +87,8 @@ func TestNew(t *testing.T) {
 				config: model.DatasourceConfig{
 					Datasources: []model.Datasource{},
 					Discovery:   model.Discovery{Enabled: true}},
-				discoverer: &discovererOkMock{},
+				datasources: []model.Datasource{},
+				discoverer:  &discovererOkMock{},
 			},
 			"",
 		},
@@ -160,7 +160,7 @@ func TestGetDatasourcesWithSelector(t *testing.T) {
 			for _, ds := range dss {
 				names = append(names, ds.Name)
 			}
-			assert.Equal(tt, tc.want, names)
+			require.Equal(tt, tc.want, names)
 		})
 	}
 }

@@ -27,11 +27,10 @@ func New(cfg *model.DatasourceConfig, discoverer discovery.Discoverer) (*Datasou
 
 func (s *DatasourceService) load() error {
 	// load from config
-	s.datasources = append(s.datasources, s.config.Datasources...)
+	s.datasources = append([]model.Datasource{}, s.config.Datasources...)
 
 	// load from discovery
 	if s.config.Discovery.Enabled {
-
 		discoveredDatasources, err := s.discoverer.Do(s.config.Discovery)
 		if err != nil {
 			return fmt.Errorf("discoverer.Do err: %w", err)

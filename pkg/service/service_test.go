@@ -6,7 +6,7 @@ import (
 
 	"github.com/kuoss/common/logger"
 	"github.com/kuoss/venti/pkg/model"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func init() {
@@ -36,26 +36,26 @@ func TestNewServices(t *testing.T) {
 		},
 	}
 	got, err := NewServices(&model.Config{DatasourceConfig: datasourceConfig})
-	assert.NoError(t, err)
-	assert.NotEmpty(t, got)
-	assert.NotEmpty(t, got.AlertRuleService)
-	assert.NotEmpty(t, got.AlertingService)
-	assert.NotEmpty(t, got.DashboardService)
-	assert.NotEmpty(t, got.DatasourceService)
-	assert.NotEmpty(t, got.RemoteService)
-	assert.NotEmpty(t, got.StatusService)
-	assert.NotEmpty(t, got.UserService)
+	require.NoError(t, err)
+	require.NotEmpty(t, got)
+	require.NotEmpty(t, got.AlertRuleService)
+	require.NotEmpty(t, got.AlertingService)
+	require.NotEmpty(t, got.DashboardService)
+	require.NotEmpty(t, got.DatasourceService)
+	require.NotEmpty(t, got.RemoteService)
+	require.NotEmpty(t, got.StatusService)
+	require.NotEmpty(t, got.UserService)
 }
 
 func TestNewServicesError(t *testing.T) {
 	got, err := NewServices(&model.Config{})
-	assert.NoError(t, err)
-	assert.NotEmpty(t, got)
-	assert.NotEmpty(t, got.AlertRuleService)
-	assert.NotEmpty(t, got.AlertingService)
-	assert.NotEmpty(t, got.DashboardService)
-	assert.Empty(t, got.DatasourceService)
-	assert.NotEmpty(t, got.RemoteService)
-	assert.NotEmpty(t, got.StatusService)
-	assert.NotEmpty(t, got.UserService)
+	require.NoError(t, err)
+	require.NotEmpty(t, got)
+	require.NotEmpty(t, got.AlertRuleService)
+	require.NotEmpty(t, got.AlertingService)
+	require.NotEmpty(t, got.DashboardService)
+	require.NotEmpty(t, got.DatasourceService)
+	require.NotEmpty(t, got.RemoteService)
+	require.NotEmpty(t, got.StatusService)
+	require.NotEmpty(t, got.UserService)
 }

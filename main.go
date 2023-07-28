@@ -5,6 +5,7 @@ import (
 	"github.com/kuoss/venti/pkg/alerter"
 	"github.com/kuoss/venti/pkg/config"
 	"github.com/kuoss/venti/pkg/handler"
+	"github.com/kuoss/venti/pkg/reloader"
 	"github.com/kuoss/venti/pkg/service"
 )
 
@@ -28,6 +29,16 @@ func main() {
 
 	// show starting & version
 	logger.Infof("💨 venti starting.... version %s", Version)
+
+	// reloader start
+	reloader, err := reloader.New()
+	if err != nil {
+		logger.Fatalf("reloader.New err: %s", err)
+	}
+	err = reloader.Start()
+	if err != nil {
+		logger.Fatalf("reloader.Start err: %s", err)
+	}
 
 	// alerter start
 	alerter := alerter.New(services.AlertingService, services.RemoteService)
