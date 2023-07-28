@@ -167,7 +167,7 @@ func TestProcessAlertFiles(t *testing.T) {
 }
 
 func TestProcessRuleAlert(t *testing.T) {
-	datasource5 := &model.Datasource{Type: model.DatasourceTypePrometheus, URL: servers.Svrs[5].Server.URL}
+	datasource5 := &model.Datasource{Name: "prom", Type: model.DatasourceTypePrometheus, URL: servers.Svrs[5].Server.URL}
 	testCases := []struct {
 		ruleAlert *model.RuleAlert
 		want      []model.Fire
@@ -176,7 +176,7 @@ func TestProcessRuleAlert(t *testing.T) {
 		{
 			&model.RuleAlert{Rule: model.Rule{Alert: "alert1", Expr: "up"}, Alerts: []model.Alert{{Datasource: datasource5}}},
 			[]model.Fire{
-				{Labels: map[string]string{"alertname": "alert1", "firer": "venti", "severity": "info"}, Annotations: map[string]string{"summary": "placeholder summary"}}},
+				{Labels: map[string]string{"alertname": "alert1", "datasource": "prom", "firer": "venti", "severity": "info"}, Annotations: map[string]string{"summary": "placeholder summary"}}},
 		},
 		// error
 		{
@@ -228,14 +228,14 @@ func TestQueryAlert(t *testing.T) {
 			"not success status (status=error, code=405)",
 		},
 	}
-	for i, tc := range testCases {
-		t.Run(fmt.Sprintf("#%d", i), func(tt *testing.T) {
-			queryData, err := alerter1.queryAlert(tc.rule, tc.alert)
-			require.Equal(tt, tc.want, queryData)
+	for _, tc := range testCases {
+		t.Run("", func(t *testing.T) {
+			got, err := alerter1.queryAlert(tc.rule, tc.alert)
+			require.Equal(t, tc.want, got)
 			if tc.wantError == "" {
-				require.NoError(tt, err)
+				require.NoError(t, err)
 			} else {
-				require.EqualError(tt, err, tc.wantError)
+				require.EqualError(t, err, tc.wantError)
 			}
 		})
 	}
@@ -275,7 +275,8 @@ func TestEvaluateAlert(t *testing.T) {
 			&model.Alert{},
 			[]model.Fire{
 				{Labels: map[string]string{"alertname": "placeholder name", "firer": "venti", "severity": "info"}, Annotations: map[string]string{"summary": "placeholder summary"}},
-				{Labels: map[string]string{"alertname": "placeholder name", "firer": "venti", "severity": "info"}, Annotations: map[string]string{"summary": "placeholder summary"}}},
+				{Labels: map[string]string{"alertname": "placeholder name", "firer": "venti", "severity": "info"}, Annotations: map[string]string{"summary": "placeholder summary"}},
+			},
 		},
 		// pending
 		{
@@ -285,89 +286,16 @@ func TestEvaluateAlert(t *testing.T) {
 			[]model.Fire(nil),
 		},
 	}
-	for i, tc := range testCases {
-		t.Run(fmt.Sprintf("#%d", i), func(tt *testing.T) {
-			fires := evaluateAlert(tc.queryData, tc.rule, tc.alert, &map[string]string{"severity": "info"})
-			require.Equal(tt, tc.want, fires)
+	for _, tc := range testCases {
+		t.Run("", func(t *testing.T) {
+			got := evaluateAlert(tc.queryData, tc.rule, tc.alert, &map[string]string{"severity": "info"})
+			require.Equal(t, tc.want, got)
 		})
 	}
 }
 
-func TestGetFires_zero_QueryData(t *testing.T) {
-	queryData := model.QueryData{}
-	testCases := []struct {
-		rule *model.Rule
-		want []model.Fire
-	}{
-		{
-			&model.Rule{},
-			[]model.Fire{
-				{Labels: map[string]string{"alertname": "placeholder name", "firer": "venti", "severity": "info"}, Annotations: map[string]string{"summary": "placeholder summary"}}},
-		},
-		{
-			&model.Rule{
-				Annotations: map[string]string{"hello": "world"},
-				Labels:      map[string]string{"lorem": "ipsum"},
-			},
-			[]model.Fire{
-				{Labels: map[string]string{"alertname": "placeholder name", "firer": "venti", "lorem": "ipsum", "severity": "info"}, Annotations: map[string]string{"hello": "world", "summary": "placeholder summary"}}},
-		},
-		{
-			&model.Rule{
-				Alert:       "alert1",
-				Annotations: map[string]string{"hello": "world", "summary": "lorem={{ $labels.lorem }} value={{ $value }}"},
-				Labels:      map[string]string{"lorem": "ipsum"},
-			},
-			[]model.Fire{
-				{Labels: map[string]string{"alertname": "alert1", "firer": "venti", "lorem": "ipsum", "severity": "info"}, Annotations: map[string]string{"hello": "world", "summary": "lorem={{ $labels.lorem }} value={{ $value }}"}}},
-		},
-		{
-			&model.Rule{
-				Alert:       "alert1",
-				Annotations: map[string]string{"hello": "world", "summary": "lorem={{ $labels.lorem }} value={{}}"},
-				Labels:      map[string]string{"lorem": "ipsum"},
-			},
-			[]model.Fire{
-				{Labels: map[string]string{"alertname": "alert1", "firer": "venti", "lorem": "ipsum", "severity": "info"}, Annotations: map[string]string{"hello": "world", "summary": "lorem={{ $labels.lorem }} value={{}}"}}},
-		},
-	}
-	for i, tc := range testCases {
-		t.Run(fmt.Sprintf("#%d", i), func(tt *testing.T) {
-			fires := getFires(tc.rule, queryData, &map[string]string{"severity": "info"})
-			require.Equal(tt, tc.want, fires)
-		})
-	}
-}
-
-func TestGetFires_vector_zero_Result(t *testing.T) {
-	queryData := model.QueryData{ResultType: commonModel.ValVector, Result: []commonModel.Sample{}}
-	testCases := []struct {
-		rule *model.Rule
-		want []model.Fire
-	}{
-		{
-			&model.Rule{},
-			[]model.Fire{},
-		},
-		{
-			&model.Rule{
-				Alert:       "alert1",
-				Annotations: map[string]string{"apple": "banana"},
-				Labels:      map[string]string{"lemon": "orange"},
-			},
-			[]model.Fire{},
-		},
-	}
-	for i, tc := range testCases {
-		t.Run(fmt.Sprintf("#%d", i), func(tt *testing.T) {
-			fires := getFires(tc.rule, queryData, &map[string]string{"severity": "info"})
-			require.Equal(tt, tc.want, fires)
-		})
-	}
-}
-
-func TestGetFires_vector_two_Result(t *testing.T) {
-	queryData := model.QueryData{ResultType: commonModel.ValVector, Result: []commonModel.Sample{
+func TestGetFires(t *testing.T) {
+	queryData1 := model.QueryData{ResultType: commonModel.ValVector, Result: []commonModel.Sample{
 		{
 			Metric:    map[commonModel.LabelName]commonModel.LabelValue{"pod": "pod1"},
 			Value:     1111,
@@ -381,22 +309,99 @@ func TestGetFires_vector_two_Result(t *testing.T) {
 			Histogram: &commonModel.SampleHistogram{},
 		},
 	}}
+
 	testCases := []struct {
-		rule *model.Rule
-		want []model.Fire
+		rule         *model.Rule
+		queryData    model.QueryData
+		commonLabels *map[string]string
+		datasource   *model.Datasource
+		want         []model.Fire
 	}{
 		{
 			&model.Rule{},
+			model.QueryData{ResultType: commonModel.ValVector, Result: []commonModel.Sample{}},
+			&map[string]string{"severity": "info"},
+			&model.Datasource{},
+			[]model.Fire{},
+		},
+		{
+			&model.Rule{},
+			model.QueryData{},
+			&map[string]string{"severity": "info"},
+			nil,
+			[]model.Fire{{Labels: map[string]string{"alertname": "placeholder name", "firer": "venti", "severity": "info"}, Annotations: map[string]string{"summary": "placeholder summary"}}},
+		},
+		{
+			&model.Rule{},
+			model.QueryData{},
+			&map[string]string{"severity": "info"},
+			&model.Datasource{Name: "temp-datasource"},
+			[]model.Fire{{Labels: map[string]string{"alertname": "placeholder name", "datasource": "temp-datasource", "firer": "venti", "severity": "info"}, Annotations: map[string]string{"summary": "placeholder summary"}}},
+		},
+		{
+			&model.Rule{},
+			queryData1,
+			&map[string]string{"severity": "info"},
+			&model.Datasource{Name: "temp-datasource"},
 			[]model.Fire{
-				{Labels: map[string]string{"alertname": "placeholder name", "firer": "venti", "severity": "info"}, Annotations: map[string]string{"summary": "placeholder summary"}}, model.Fire{Labels: map[string]string{"alertname": "placeholder name", "firer": "venti", "severity": "info"}, Annotations: map[string]string{"summary": "placeholder summary"}}},
+				{Labels: map[string]string{"alertname": "placeholder name", "datasource": "temp-datasource", "firer": "venti", "severity": "info"}, Annotations: map[string]string{"summary": "placeholder summary"}},
+				{Labels: map[string]string{"alertname": "placeholder name", "datasource": "temp-datasource", "firer": "venti", "severity": "info"}, Annotations: map[string]string{"summary": "placeholder summary"}},
+			},
+		},
+		{
+			&model.Rule{
+				Alert:       "alert1",
+				Annotations: map[string]string{"apple": "banana"},
+				Labels:      map[string]string{"lemon": "orange"},
+			},
+			model.QueryData{ResultType: commonModel.ValVector, Result: []commonModel.Sample{}},
+			&map[string]string{"severity": "info"},
+			&model.Datasource{},
+			[]model.Fire{},
 		},
 		{
 			&model.Rule{
 				Annotations: map[string]string{"hello": "world"},
 				Labels:      map[string]string{"lorem": "ipsum"},
 			},
+			model.QueryData{},
+			&map[string]string{"severity": "info"},
+			&model.Datasource{Name: "temp-datasource"},
+			[]model.Fire{{Labels: map[string]string{"alertname": "placeholder name", "datasource": "temp-datasource", "firer": "venti", "lorem": "ipsum", "severity": "info"}, Annotations: map[string]string{"hello": "world", "summary": "placeholder summary"}}},
+		},
+		{
+			&model.Rule{
+				Alert:       "alert1",
+				Annotations: map[string]string{"hello": "world", "summary": "lorem={{ $labels.lorem }} value={{ $value }}"},
+				Labels:      map[string]string{"lorem": "ipsum"},
+			},
+			model.QueryData{},
+			&map[string]string{"severity": "info"},
+			&model.Datasource{Name: "temp-datasource"},
+			[]model.Fire{{Labels: map[string]string{"alertname": "alert1", "datasource": "temp-datasource", "firer": "venti", "lorem": "ipsum", "severity": "info"}, Annotations: map[string]string{"hello": "world", "summary": "lorem={{ $labels.lorem }} value={{ $value }}"}}}},
+		{
+			&model.Rule{
+				Alert:       "alert1",
+				Annotations: map[string]string{"hello": "world", "summary": "lorem={{ $labels.lorem }} value={{}}"},
+				Labels:      map[string]string{"lorem": "ipsum"},
+			},
+			model.QueryData{},
+			&map[string]string{"severity": "info"},
+			&model.Datasource{Name: "temp-datasource"},
+			[]model.Fire{{Labels: map[string]string{"alertname": "alert1", "datasource": "temp-datasource", "firer": "venti", "lorem": "ipsum", "severity": "info"}, Annotations: map[string]string{"hello": "world", "summary": "lorem={{ $labels.lorem }} value={{}}"}}},
+		},
+		{
+			&model.Rule{
+				Annotations: map[string]string{"hello": "world"},
+				Labels:      map[string]string{"lorem": "ipsum"},
+			},
+			queryData1,
+			&map[string]string{"severity": "info"},
+			&model.Datasource{Name: "temp-datasource"},
 			[]model.Fire{
-				{Labels: map[string]string{"alertname": "placeholder name", "firer": "venti", "lorem": "ipsum", "severity": "info"}, Annotations: map[string]string{"hello": "world", "summary": "placeholder summary"}}, model.Fire{Labels: map[string]string{"alertname": "placeholder name", "firer": "venti", "lorem": "ipsum", "severity": "info"}, Annotations: map[string]string{"hello": "world", "summary": "placeholder summary"}}},
+				{Labels: map[string]string{"alertname": "placeholder name", "datasource": "temp-datasource", "firer": "venti", "lorem": "ipsum", "severity": "info"}, Annotations: map[string]string{"hello": "world", "summary": "placeholder summary"}},
+				{Labels: map[string]string{"alertname": "placeholder name", "datasource": "temp-datasource", "firer": "venti", "lorem": "ipsum", "severity": "info"}, Annotations: map[string]string{"hello": "world", "summary": "placeholder summary"}},
+			},
 		},
 		{
 			&model.Rule{
@@ -404,8 +409,13 @@ func TestGetFires_vector_two_Result(t *testing.T) {
 				Annotations: map[string]string{"summary": "pod={{ $labels.pod }} value={{ $value }}"},
 				Labels:      map[string]string{"rule": "pod-v1"},
 			},
+			queryData1,
+			&map[string]string{"severity": "info"},
+			&model.Datasource{Name: "temp-datasource"},
 			[]model.Fire{
-				{Labels: map[string]string{"alertname": "alert1", "firer": "venti", "rule": "pod-v1", "severity": "info"}, Annotations: map[string]string{"summary": "pod=pod1 value=1111"}}, model.Fire{Labels: map[string]string{"alertname": "alert1", "firer": "venti", "rule": "pod-v1", "severity": "info"}, Annotations: map[string]string{"summary": "pod=pod2 value=2222"}}},
+				{Labels: map[string]string{"alertname": "alert1", "datasource": "temp-datasource", "firer": "venti", "rule": "pod-v1", "severity": "info"}, Annotations: map[string]string{"summary": "pod=pod1 value=1111"}},
+				{Labels: map[string]string{"alertname": "alert1", "datasource": "temp-datasource", "firer": "venti", "rule": "pod-v1", "severity": "info"}, Annotations: map[string]string{"summary": "pod=pod2 value=2222"}},
+			},
 		},
 		{
 			&model.Rule{
@@ -413,14 +423,19 @@ func TestGetFires_vector_two_Result(t *testing.T) {
 				Annotations: map[string]string{"summary": "pod={{ $labels.pod }} value={{}}"}, // parse error
 				Labels:      map[string]string{"rule": "pod-v1"},
 			},
+			queryData1,
+			&map[string]string{"severity": "info"},
+			&model.Datasource{Name: "temp-datasource"},
 			[]model.Fire{
-				{Labels: map[string]string{"alertname": "alert1", "firer": "venti", "rule": "pod-v1", "severity": "info"}, Annotations: map[string]string{"summary": "pod={{ $labels.pod }} value={{}}"}}, model.Fire{Labels: map[string]string{"alertname": "alert1", "firer": "venti", "rule": "pod-v1", "severity": "info"}, Annotations: map[string]string{"summary": "pod={{ $labels.pod }} value={{}}"}}},
+				{Labels: map[string]string{"alertname": "alert1", "datasource": "temp-datasource", "firer": "venti", "rule": "pod-v1", "severity": "info"}, Annotations: map[string]string{"summary": "pod={{ $labels.pod }} value={{}}"}},
+				{Labels: map[string]string{"alertname": "alert1", "datasource": "temp-datasource", "firer": "venti", "rule": "pod-v1", "severity": "info"}, Annotations: map[string]string{"summary": "pod={{ $labels.pod }} value={{}}"}},
+			},
 		},
 	}
-	for i, tc := range testCases {
-		t.Run(fmt.Sprintf("#%d", i), func(tt *testing.T) {
-			fires := getFires(tc.rule, queryData, &map[string]string{"severity": "info"})
-			require.Equal(tt, tc.want, fires)
+	for _, tc := range testCases {
+		t.Run("", func(t *testing.T) {
+			got := getFires(tc.rule, tc.queryData, tc.commonLabels, tc.datasource)
+			require.Equal(t, tc.want, got)
 		})
 	}
 }
@@ -462,11 +477,11 @@ func TestRenderSummary_ok(t *testing.T) {
 			"labels=map[] namespace= value=42",
 		},
 	}
-	for i, tc := range testCases {
-		t.Run(fmt.Sprintf("#%d", i), func(tt *testing.T) {
-			ret, err := renderSummary(tc.input, tc.sample)
-			require.Nil(tt, err)
-			require.Equal(tt, tc.want, ret)
+	for _, tc := range testCases {
+		t.Run("", func(t *testing.T) {
+			got, err := renderSummary(tc.input, tc.sample)
+			require.Nil(t, err)
+			require.Equal(t, tc.want, got)
 		})
 	}
 }
@@ -503,15 +518,15 @@ func TestRenderSummary_error_on_Parse(t *testing.T) {
 			`error on Parse: template: :1: undefined variable "$notexist"`,
 		},
 	}
-	for i, tc := range testCases {
-		t.Run(fmt.Sprintf("#%d", i), func(t *testing.T) {
-			output, err := renderSummary(tc.input, tc.sample)
+	for _, tc := range testCases {
+		t.Run("", func(t *testing.T) {
+			got, err := renderSummary(tc.input, tc.sample)
 			if tc.wantError == "" {
 				require.NoError(t, err)
 			} else {
 				require.EqualError(t, err, tc.wantError)
 			}
-			require.Equal(t, tc.input, output)
+			require.Equal(t, tc.input, got)
 		})
 	}
 }
@@ -548,8 +563,8 @@ func TestRenderSummary_error_on_Execute(t *testing.T) {
 			`error on Parse: template: :1: undefined variable "$notexist"`,
 		},
 	}
-	for i, tc := range testCases {
-		t.Run(fmt.Sprintf("#%d", i), func(t *testing.T) {
+	for _, tc := range testCases {
+		t.Run("", func(t *testing.T) {
 			got, err := renderSummary(tc.input, tc.sample)
 			if tc.wantError == "" {
 				require.NoError(t, err)
