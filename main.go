@@ -31,7 +31,7 @@ func main() {
 	logger.Infof("💨 venti starting.... version %s", Version)
 
 	// reloader start
-	reloader, err := reloader.New()
+	reloader, err := reloader.New(nil)
 	if err != nil {
 		logger.Fatalf("reloader.New err: %s", err)
 	}

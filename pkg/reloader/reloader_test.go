@@ -23,7 +23,10 @@ func init() {
 			panic("not test-agent")
 		}
 		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte("{}"))
+		_, err := w.Write([]byte("{}"))
+		if err != nil {
+			panic(err)
+		}
 	}))
 	ts.Start()
 	defer ts.Close()
@@ -54,6 +57,7 @@ func TestStart(t *testing.T) {
 	reloader, err := New(clientset1)
 	require.NoError(t, err)
 	require.NotEmpty(t, reloader)
-	reloader.Start()
+	err = reloader.Start()
+	require.NoError(t, err)
 	time.Sleep(100 * time.Millisecond)
 }
