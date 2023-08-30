@@ -25,3 +25,9 @@ users:
   hash: $2y$12$LbMigrXXYhtJcQ0kwI5Wue1uYzF20idYdWECtl3P79Ack.GhwnDOO
   isAdmin: false
 ```
+
+## Contributors
+
+<a href="https://github.com/kuoss/venti/graphs/contributors">
+  <img src="https://contributors-img.web.app/image?repo=kuoss/venti" />
+</a>
