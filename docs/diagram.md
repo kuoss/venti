@@ -13,6 +13,8 @@ handler --> datasourceHandler
 handler --> probeHandler
 handler --> remoteHandler
 handler --> statusHandler
+handler --> handleSPA 
+handleSPA --> WEB
 
 alertHandler --> alertRuleService
 alertHandler --> alertingService
