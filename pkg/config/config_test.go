@@ -1,7 +1,6 @@
 package config
 
 import (
-	"fmt"
 	"os"
 	"testing"
 
@@ -53,8 +52,8 @@ func TestLoadDatasourceConfigFile(t *testing.T) {
 			"",
 		},
 	}
-	for i, tc := range testCases {
-		t.Run(fmt.Sprintf("#%d", i), func(t *testing.T) {
+	for _, tc := range testCases {
+		t.Run("", func(t *testing.T) {
 			got, err := loadDatasourceConfigFile(tc.file)
 			if tc.wantError == "" {
 				assert.NoError(t, err)
@@ -85,9 +84,46 @@ func TestLoadUserConfigFile(t *testing.T) {
 			"",
 		},
 	}
-	for i, tc := range testCases {
-		t.Run(fmt.Sprintf("#%d", i), func(t *testing.T) {
+	for _, tc := range testCases {
+		t.Run("", func(t *testing.T) {
 			got, err := loadUserConfigFile(tc.file)
+			if tc.wantError == "" {
+				assert.NoError(t, err)
+			} else {
+				assert.EqualError(t, err, tc.wantError)
+			}
+			assert.Equal(t, tc.want, got)
+		})
+	}
+}
+
+func TestLoadAlertingConfigFile(t *testing.T) {
+	testCases := []struct {
+		file      string
+		want      model.AlertingConfig
+		wantError string
+	}{
+		{
+			"",
+			model.AlertingConfig{},
+			"error on ReadFile: open : no such file or directory",
+		},
+		{
+			"etc/alerting.yml",
+			model.AlertingConfig{
+				AlertRelabelConfigs: nil,
+				AlertmanagerConfigs: model.AlertmanagerConfigs{
+					{StaticConfig: []*model.TargetGroup{
+						{Targets: []string{"localhost:9093"}},
+					}},
+				},
+			},
+			"",
+		},
+	}
+	for _, tc := range testCases {
+		t.Run("", func(t *testing.T) {
+			got, err := loadAlertingConfigFile(tc.file)
 			if tc.wantError == "" {
 				assert.NoError(t, err)
 			} else {

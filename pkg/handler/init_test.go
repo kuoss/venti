@@ -48,11 +48,19 @@ func setup() {
 		panic(err)
 	}
 	fmt.Println("working directory:", wd)
+	cfg.AlertingConfig = model.AlertingConfig{
+		AlertmanagerConfigs: model.AlertmanagerConfigs{
+			&model.AlertmanagerConfig{
+				StaticConfig: []*model.TargetGroup{
+					{Targets: []string{alertmanagerMock.URL}},
+				},
+			},
+		},
+	}
 	services, err = service.NewServices(cfg)
 	if err != nil {
 		panic(err)
 	}
-	services.AlertingService.AlertingFile.Alertings[0].URL = alertmanagerMock.URL
 	handlers = loadHandlers(cfg, services)
 }
 

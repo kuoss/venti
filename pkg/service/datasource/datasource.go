@@ -1,7 +1,6 @@
 package datasource
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/kuoss/venti/pkg/model"
@@ -10,6 +9,7 @@ import (
 
 // DatasourceService
 type DatasourceService struct {
+	loaded      bool
 	config      model.DatasourceConfig
 	datasources []model.Datasource
 	discoverer  discovery.Discoverer
@@ -17,7 +17,7 @@ type DatasourceService struct {
 
 // NewDatasourceService return *DatasourceService after service discovery (with k8s service)
 func New(cfg *model.DatasourceConfig, discoverer discovery.Discoverer) (*DatasourceService, error) {
-	service := &DatasourceService{*cfg, nil, discoverer}
+	service := &DatasourceService{false, *cfg, nil, discoverer}
 	err := service.load()
 	if err != nil {
 		return nil, fmt.Errorf("load err: %w", err)
@@ -27,7 +27,7 @@ func New(cfg *model.DatasourceConfig, discoverer discovery.Discoverer) (*Datasou
 
 func (s *DatasourceService) load() error {
 	// load from config
-	s.datasources = append(s.datasources, s.config.Datasources...)
+	datasources := s.config.Datasources
 
 	// load from discovery
 	if s.config.Discovery.Enabled {
@@ -36,9 +36,17 @@ func (s *DatasourceService) load() error {
 		if err != nil {
 			return fmt.Errorf("discoverer.Do err: %w", err)
 		}
-		s.datasources = append(s.datasources, discoveredDatasources...)
+		datasources = append(datasources, discoveredDatasources...)
 	}
-	s.setMainDatasources()
+	setMainDatasources(datasources)
+	s.datasources = datasources
+	return nil
+}
+
+func (s *DatasourceService) Reload() error {
+	if err := s.load(); err != nil {
+		return fmt.Errorf("Reload err: %w", err)
+	}
 	return nil
 }
 
@@ -46,12 +54,12 @@ func (s *DatasourceService) load() error {
 // recognize as a datasource by annotation or name
 
 // ensure that there is one main datasource for each type
-func (s *DatasourceService) setMainDatasources() {
+func setMainDatasources(datasources []model.Datasource) {
 
 	existsMainPrometheus := false
 	existsMainLethe := false
 
-	for _, ds := range s.datasources {
+	for _, ds := range datasources {
 		if !ds.IsMain {
 			continue
 		}
@@ -68,9 +76,9 @@ func (s *DatasourceService) setMainDatasources() {
 	// fallback for main prometheus datasource
 	// If there is no main prometheus, the first prometheus will be a main prometheus.
 	if !existsMainPrometheus {
-		for i, ds := range s.datasources {
+		for i, ds := range datasources {
 			if ds.Type == model.DatasourceTypePrometheus {
-				s.datasources[i].IsMain = true
+				datasources[i].IsMain = true
 				break
 			}
 		}
@@ -79,18 +87,25 @@ func (s *DatasourceService) setMainDatasources() {
 	// fallback for main lethe datasource
 	// If there is no main lethe, the first lethe will be a main lethe.
 	if !existsMainLethe {
-		for i, ds := range s.datasources {
+		for i, ds := range datasources {
 			if ds.Type == model.DatasourceTypeLethe {
-				s.datasources[i].IsMain = true
+				datasources[i].IsMain = true
 				break
 			}
 		}
 	}
 }
 
+// return deep copied datasources
+func (s *DatasourceService) getDatasources() []model.Datasource {
+	datasources := []model.Datasource{}
+	datasources = append(datasources, s.datasources...)
+	return datasources
+}
+
 // return single datasource
 func (s *DatasourceService) GetMainDatasourceByType(typ model.DatasourceType) (model.Datasource, error) {
-	for _, ds := range s.datasources {
+	for _, ds := range s.getDatasources() {
 		if ds.Type == typ && ds.IsMain {
 			return ds, nil
 		}
@@ -99,23 +114,20 @@ func (s *DatasourceService) GetMainDatasourceByType(typ model.DatasourceType) (m
 }
 
 func (s *DatasourceService) GetDatasourceByIndex(index int) (model.Datasource, error) {
-	cnt := len(s.datasources)
-	if cnt < 1 {
-		return model.Datasource{}, errors.New("no datasource")
-	}
-	if index >= len(s.datasources) {
+	datasources := s.getDatasources()
+	if index < 0 || index >= len(datasources) {
 		return model.Datasource{}, fmt.Errorf("datasource index[%d] not exists", index)
 	}
-	return s.datasources[index], nil
+	return datasources[index], nil
 }
 
 // return multiple datasources
 func (s *DatasourceService) GetDatasources() []model.Datasource {
-	return s.datasources
+	return s.getDatasources()
 }
 
 func (s *DatasourceService) GetDatasourcesWithSelector(selector model.DatasourceSelector) []model.Datasource {
-	outputs := s.datasources
+	outputs := s.getDatasources()
 	outputs = filterBySystem(outputs, selector.System)
 	outputs = filterByType(outputs, selector.Type)
 	return outputs

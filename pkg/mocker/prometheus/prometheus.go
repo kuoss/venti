@@ -38,7 +38,7 @@ func handleQuery(c *mocker.Context) {
 
 	// 200
 	if query == "up" {
-		c.JSONString(200, `{"status":"success","data":{"resultType":"vector","result":[{"metric":{"__name__":"up","job":"prometheus","instance":"localhost:9090"},"value":[1435781451.781,"1"]}]}}`)
+		c.JSONString(200, `{"status":"success","data":{"resultType":"vector","result":[{"metric":{"__name__":"up","job":"prometheus","instance":"localhost:9090"},"value":[1435781451.781,"1"]},{"metric":{"__name__":"up","job":"prometheus2","instance2":"localhost:9092"},"value":[1435781451.781,"1"]}]}}`)
 		return
 	}
 	// 200

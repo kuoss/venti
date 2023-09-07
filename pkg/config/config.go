@@ -17,18 +17,24 @@ func Load(version string) (*model.Config, error) {
 
 	datasourceConfig, err := loadDatasourceConfigFile("etc/datasources.yml")
 	if err != nil {
-		return nil, fmt.Errorf("error on loadDatasourceConfigFile: %w", err)
+		return nil, fmt.Errorf("loadDatasourceConfigFile err: %w", err)
 	}
 
 	userConfig, err := loadUserConfigFile("etc/users.yml")
 	if err != nil {
-		return nil, fmt.Errorf("error on loadUserConfigFile: %w", err)
+		return nil, fmt.Errorf("loadUserConfigFile err: %w", err)
+	}
+
+	alertingConfig, err := loadAlertingConfigFile("etc/alerting.yml")
+	if err != nil {
+		return nil, fmt.Errorf("loadAlertingConfigFile err: %w", err)
 	}
 
 	return &model.Config{
 		Version:          version,
 		DatasourceConfig: *datasourceConfig,
 		UserConfig:       *userConfig,
+		AlertingConfig:   alertingConfig,
 	}, nil
 }
 
@@ -64,4 +70,17 @@ func loadUserConfigFile(file string) (*model.UserConfig, error) {
 		return nil, fmt.Errorf("error on UnmarshalStrict: %w", err)
 	}
 	return userConfig, nil
+}
+
+func loadAlertingConfigFile(file string) (model.AlertingConfig, error) {
+	logger.Infof("loading alerting config file: %s", file)
+	yamlBytes, err := os.ReadFile(file)
+	if err != nil {
+		return model.AlertingConfig{}, fmt.Errorf("error on ReadFile: %w", err)
+	}
+	var alertingConfigFile *model.AlertingConfigFile
+	if err := yaml.UnmarshalStrict(yamlBytes, &alertingConfigFile); err != nil {
+		return model.AlertingConfig{}, fmt.Errorf("error on UnmarshalStrict: %w", err)
+	}
+	return alertingConfigFile.AlertingConfig, nil
 }

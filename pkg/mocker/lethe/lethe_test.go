@@ -49,19 +49,23 @@ func Test_api_v1_query(t *testing.T) {
 		},
 		{
 			"query=up",
-			200, `{"status":"success","data":{"resultType":"vector","result":[{"metric":{"__name__":"up","job":"prometheus","instance":"localhost:9090"},"value":[1435781451.781,"1"]}]}}`,
+			200, `{"status":"success","data":{"resultType":"vector","result":[{"metric":{"__name__":"up","job":"lethe","instance":"localhost:6060"},"value":[1435781451.781,"1"]}]}}`,
 		},
 		{
 			"query=not_exists",
 			200, `{"status":"success","data":{"resultType":"vector","result":[]}}`,
 		},
+		{
+			`query=pod{namespace="namespace01"}`,
+			200, `{"status":"success","data":{"resultType":"logs", "result":[{"time":"2009-11-10T22:59:00.000000Z","namespace":"namespace01","pod":"nginx-deployment-75675f5897-7ci7o","container":"nginx","log":"lerom ipsum"},{"time":"2009-11-10T22:59:00.000000Z","namespace":"namespace01","pod":"nginx-deployment-75675f5897-7ci7o","container":"nginx","log":"hello world"}]}}`,
+		},
 	}
 	for _, tc := range testCases {
-		t.Run(tc.rawQuery, func(tt *testing.T) {
+		t.Run("", func(t *testing.T) {
 			code, body, err := client.GET("/api/v1/query", tc.rawQuery)
-			assert.NoError(tt, err)
-			assert.Equal(tt, tc.wantCode, code)
-			assert.JSONEq(tt, tc.wantBody, body)
+			assert.NoError(t, err)
+			assert.Equal(t, tc.wantCode, code)
+			assert.Equal(t, tc.wantBody, body)
 		})
 	}
 }

@@ -11,7 +11,7 @@ import (
 )
 
 type AlertRuleService struct {
-	alertRuleFiles []model.RuleFile
+	AlertRuleFiles []model.RuleFile
 }
 
 func New(pattern string) (alertRuleService *AlertRuleService, err error) {
@@ -33,7 +33,7 @@ func New(pattern string) (alertRuleService *AlertRuleService, err error) {
 		}
 		alertRuleFiles = append(alertRuleFiles, *alertRuleFile)
 	}
-	alertRuleService = &AlertRuleService{alertRuleFiles: alertRuleFiles}
+	alertRuleService = &AlertRuleService{AlertRuleFiles: alertRuleFiles}
 	return
 }
 
@@ -50,6 +50,6 @@ func loadAlertRuleFileFromFilename(filename string) (*model.RuleFile, error) {
 	return alertRuleFile, nil
 }
 
-func (s *AlertRuleService) AlertRuleFiles() []model.RuleFile {
-	return s.alertRuleFiles
+func (s *AlertRuleService) GetAlertRuleFiles() []model.RuleFile {
+	return s.AlertRuleFiles
 }

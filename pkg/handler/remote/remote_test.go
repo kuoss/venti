@@ -108,22 +108,22 @@ func TestQuery(t *testing.T) {
 		},
 		{
 			"query=up",
-			200, `{"status":"success","data":{"resultType":"vector","result":[{"metric":{"__name__":"up","job":"prometheus","instance":"localhost:9090"},"value":[1435781451.781,"1"]}]}}`,
+			200, `{"status":"success","data":{"resultType":"vector","result":[{"metric":{"__name__":"up","job":"prometheus","instance":"localhost:9090"},"value":[1435781451.781,"1"]},{"metric":{"__name__":"up","job":"prometheus2","instance2":"localhost:9092"},"value":[1435781451.781,"1"]}]}}`,
 		},
 		{
 			"query=not_exists",
 			200, `{"status":"success","data":{"resultType":"vector","result":[]}}`,
 		},
 	}
-	for i, tc := range testCases {
-		t.Run(fmt.Sprintf("#%d - %s", i, tc.rawQuery), func(tt *testing.T) {
+	for _, tc := range testCases {
+		t.Run("", func(t *testing.T) {
 			w := httptest.NewRecorder()
 			req, err := http.NewRequest("GET", "/api/remote/query?dsid=0&"+tc.rawQuery, nil)
-			assert.NoError(tt, err)
+			assert.NoError(t, err)
 
 			remoteRouter.ServeHTTP(w, req)
-			assert.Equal(tt, tc.wantCode, w.Code)
-			assert.Equal(tt, tc.wantBody, w.Body.String())
+			assert.Equal(t, tc.wantCode, w.Code)
+			assert.Equal(t, tc.wantBody, w.Body.String())
 		})
 	}
 }
