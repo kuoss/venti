@@ -2,7 +2,6 @@ package remote
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"os"
 	"testing"
@@ -106,7 +105,7 @@ func TestGET(t *testing.T) {
 		},
 		{
 			datasources[4].URL, ActionQuery, "query=up",
-			200, `{"status":"success","data":{"resultType":"vector","result":[{"metric":{"__name__":"up","job":"prometheus","instance":"localhost:9090"},"value":[1435781451.781,"1"]}]}}`,
+			200, `{"status":"success","data":{"resultType":"vector","result":[{"metric":{"__name__":"up","job":"prometheus","instance":"localhost:9090"},"value":[1435781451.781,"1"]},{"metric":{"__name__":"up","job":"prometheus2","instance2":"localhost:9092"},"value":[1435781451.781,"1"]}]}}`,
 			"",
 		},
 		{
@@ -156,16 +155,16 @@ func TestGET(t *testing.T) {
 			"",
 		},
 	}
-	for i, tc := range testCases {
-		t.Run(fmt.Sprintf("#%d", i), func(tt *testing.T) {
+	for _, tc := range testCases {
+		t.Run("", func(t *testing.T) {
 			code, body, err := remoteService.GET(context.TODO(), &model.Datasource{URL: tc.url}, tc.action, tc.rawQuery)
 			if tc.wantError == "" {
-				assert.NoError(tt, err)
+				assert.NoError(t, err)
 			} else {
-				assert.EqualError(tt, err, tc.wantError)
+				assert.EqualError(t, err, tc.wantError)
 			}
-			assert.Equal(tt, tc.wantCode, code)
-			assert.Equal(tt, tc.wantBody, body)
+			assert.Equal(t, tc.wantCode, code)
+			assert.Equal(t, tc.wantBody, body)
 		})
 	}
 }
@@ -184,20 +183,20 @@ func TestGET_basicAuth(t *testing.T) {
 		},
 		{
 			&model.Datasource{URL: datasources[3].URL, BasicAuth: true, BasicAuthUser: "abc", BasicAuthPassword: "123"},
-			200, `{"status":"success","data":{"resultType":"vector","result":[{"metric":{"__name__":"up","job":"prometheus","instance":"localhost:9090"},"value":[1435781451.781,"1"]}]}}`,
+			200, `{"status":"success","data":{"resultType":"vector","result":[{"metric":{"__name__":"up","job":"prometheus","instance":"localhost:9090"},"value":[1435781451.781,"1"]},{"metric":{"__name__":"up","job":"prometheus2","instance2":"localhost:9092"},"value":[1435781451.781,"1"]}]}}`,
 			"",
 		},
 	}
-	for i, tc := range testCases {
-		t.Run(fmt.Sprintf("#%d", i), func(tt *testing.T) {
+	for _, tc := range testCases {
+		t.Run("", func(t *testing.T) {
 			code, body, err := remoteService.GET(context.TODO(), tc.datasource, ActionQuery, "query=up")
 			if tc.wantError == "" {
-				assert.NoError(tt, err)
+				assert.NoError(t, err)
 			} else {
-				assert.EqualError(tt, err, tc.wantError)
+				assert.EqualError(t, err, tc.wantError)
 			}
-			assert.Equal(tt, tc.wantCode, code)
-			assert.Equal(tt, tc.wantBody, body)
+			assert.Equal(t, tc.wantCode, code)
+			assert.Equal(t, tc.wantBody, body)
 		})
 	}
 }

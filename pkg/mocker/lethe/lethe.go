@@ -40,7 +40,12 @@ func handleQuery(c *mocker.Context) {
 
 	// 200
 	if query == "up" {
-		c.JSONString(200, `{"status":"success","data":{"resultType":"vector","result":[{"metric":{"__name__":"up","job":"prometheus","instance":"localhost:9090"},"value":[1435781451.781,"1"]}]}}`)
+		c.JSONString(200, `{"status":"success","data":{"resultType":"vector","result":[{"metric":{"__name__":"up","job":"lethe","instance":"localhost:6060"},"value":[1435781451.781,"1"]}]}}`)
+		return
+	}
+	// 200
+	if query == `pod{namespace="namespace01"}` {
+		c.JSONString(200, `{"status":"success","data":{"resultType":"logs", "result":[{"time":"2009-11-10T22:59:00.000000Z","namespace":"namespace01","pod":"nginx-deployment-75675f5897-7ci7o","container":"nginx","log":"lerom ipsum"},{"time":"2009-11-10T22:59:00.000000Z","namespace":"namespace01","pod":"nginx-deployment-75675f5897-7ci7o","container":"nginx","log":"hello world"}]}}`)
 		return
 	}
 	// 200 metric_not_exists
@@ -74,6 +79,13 @@ func handleQueryRange(c *mocker.Context) {
 	// 200
 	if query == "up" {
 		c.JSONString(200, `{"status":"success","data":{"resultType":"matrix","result":[{"metric":{"__name__":"up","job":"prometheus","instance":"localhost:9090"},"values":[[1435781430.781,"1"],[1435781445.781,"1"],[1435781460.781,"1"]]}]}}`)
+		return
+	}
+	// 200
+	if query == `pod{namespace="namespace01"}` {
+		c.JSONString(200, `{"status":"sucess","data":{"resultType":"logs", "result":[
+			{"time":"2009-11-10T22:59:00.000000Z","namespace":"namespace01","pod":"nginx-deployment-75675f5897-7ci7o","container":"nginx","log":"lerom ipsum"},
+			{"time":"2009-11-10T22:59:00.000000Z","namespace":"namespace01","pod":"nginx-deployment-75675f5897-7ci7o","container":"nginx","log":"hello world"}]}}`)
 		return
 	}
 	// 200 metric_not_exists

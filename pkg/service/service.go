@@ -67,7 +67,7 @@ func NewServices(cfg *model.Config) (*Services, error) {
 	}
 
 	// alerting
-	alertingService := alerting.New("", alertRuleService.AlertRuleFiles(), datasourceService)
+	alertingService := alerting.New(cfg, alertRuleService.GetAlertRuleFiles(), datasourceService, remoteService)
 
 	return &Services{
 		alertRuleService,

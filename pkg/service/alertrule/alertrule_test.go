@@ -44,18 +44,18 @@ func TestNew(t *testing.T) {
 		// ok
 		{
 			"etc/alertrules/*.y*ml",
-			&AlertRuleService{alertRuleFiles: ruleFiles1},
+			&AlertRuleService{AlertRuleFiles: ruleFiles1},
 			"",
 		},
 		{
 			"",
-			&AlertRuleService{alertRuleFiles: ruleFiles1},
+			&AlertRuleService{AlertRuleFiles: ruleFiles1},
 			"",
 		},
 		// error
 		{
 			"asdf",
-			&AlertRuleService{alertRuleFiles: []model.RuleFile(nil)},
+			&AlertRuleService{AlertRuleFiles: []model.RuleFile(nil)},
 			"",
 		},
 		{
@@ -107,7 +107,7 @@ func TestAlertRuleFiles(t *testing.T) {
 		t.Run(fmt.Sprintf("#%d", i), func(t *testing.T) {
 			service, err := New(tc.pattern)
 			assert.NoError(t, err)
-			ruleFiles := service.AlertRuleFiles()
+			ruleFiles := service.GetAlertRuleFiles()
 			assert.Equal(t, tc.want, ruleFiles)
 		})
 	}

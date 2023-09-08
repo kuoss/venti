@@ -2,7 +2,6 @@ package model
 
 import (
 	commonModel "github.com/prometheus/common/model"
-	promRule "github.com/prometheus/prometheus/rules"
 )
 
 /*
@@ -30,36 +29,7 @@ type RuleFile struct {
 	RuleGroups         []RuleGroup        `json:"groups" yaml:"groups"`
 }
 
-type AlertFile struct {
-	Kind               string             `json:"kind,omitempty"`
-	CommonLabels       map[string]string  `json:"commonLabels,omitempty"`
-	DatasourceSelector DatasourceSelector `json:"datasourceSelector"`
-	AlertGroups        []AlertGroup       `json:"groups"`
-}
-
-type AlertGroup struct {
-	Name       string               `json:"name"`
-	Interval   commonModel.Duration `json:"interval,omitempty"`
-	Limit      int                  `json:"limit,omitempty"`
-	RuleAlerts []RuleAlert          `json:"ruleAlerts"`
-}
-
-type RuleAlert struct {
-	Rule   Rule    `json:"rule"`
-	Alerts []Alert `json:"alerts"`
-}
-
-type Alert struct {
-	Datasource *Datasource         `json:"datasource"`
-	State      promRule.AlertState `json:"state"` // commonModel doesn't have pending state
-	ActiveAt   commonModel.Time    `json:"activeAt"`
-}
-
-type Fire struct {
-	Labels      map[string]string `json:"labels"`
-	Annotations map[string]string `json:"annotations"`
-}
-
+// https://github.com/prometheus/prometheus/blob/v2.43.0/model/rulefmt/rulefmt.go#L137
 type RuleGroup struct {
 	Name     string               `json:"name" yaml:"name"`
 	Interval commonModel.Duration `json:"interval,omitempty" yaml:"interval,omitempty"`
@@ -76,15 +46,3 @@ type Rule struct {
 	Labels        map[string]string    `json:"labels,omitempty" yaml:"labels,omitempty"`
 	Annotations   map[string]string    `json:"annotations,omitempty" yaml:"annotations,omitempty"`
 }
-
-type QueryResult struct {
-	Data   QueryData `json:"data"`
-	Status string    `json:"status"`
-}
-
-type QueryData struct {
-	ResultType commonModel.ValueType `json:"resultType"`
-	Result     []commonModel.Sample  `json:"result"`
-}
-
-// resultString: {"status":"success","data":{"resultType":"vector","result":[]}}

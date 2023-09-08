@@ -49,7 +49,7 @@ func Test_api_v1_query(t *testing.T) {
 		},
 		{
 			"query=up",
-			200, `{"status":"success","data":{"resultType":"vector","result":[{"metric":{"__name__":"up","job":"prometheus","instance":"localhost:9090"},"value":[1435781451.781,"1"]}]}}`,
+			200, `{"status":"success","data":{"resultType":"vector","result":[{"metric":{"__name__":"up","job":"prometheus","instance":"localhost:9090"},"value":[1435781451.781,"1"]},{"metric":{"__name__":"up","job":"prometheus2","instance2":"localhost:9092"},"value":[1435781451.781,"1"]}]}}`,
 		},
 		{
 			"query=not_exists",

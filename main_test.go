@@ -25,5 +25,5 @@ func Test_main(t *testing.T) {
 
 	assert.Contains(t, stderr, `level=info msg="loading configurations..."`)
 	assert.Contains(t, stderr, `level=info msg="loading datasource config file: etc/datasources.yml"`)
-	assert.Contains(t, stderr, `level=fatal msg="config.Load err: error on loadDatasourceConfigFile: error on ReadFile: open etc/datasources.yml: no such file or directory"`)
+	assert.Contains(t, stderr, `level=fatal msg="config.Load err: loadDatasourceConfigFile err: error on ReadFile: open etc/datasources.yml: no such file or directory"`)
 }

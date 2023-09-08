@@ -2,30 +2,64 @@ package alerting
 
 import (
 	"fmt"
+	"net/http"
 	"os"
 	"testing"
+	"time"
 
-	"github.com/kuoss/venti/pkg/mocker"
-	"github.com/kuoss/venti/pkg/mocker/alertmanager"
+	ms "github.com/kuoss/venti/pkg/mock/servers"
 	"github.com/kuoss/venti/pkg/model"
-	"github.com/kuoss/venti/pkg/service/datasource"
+	datasourceservice "github.com/kuoss/venti/pkg/service/datasource"
 	"github.com/kuoss/venti/pkg/service/discovery"
+	remoteservice "github.com/kuoss/venti/pkg/service/remote"
+	commonModel "github.com/prometheus/common/model"
 	"github.com/stretchr/testify/require"
 )
 
+type mockDatasourceService struct{}
+
+func (m *mockDatasourceService) Reload() error {
+	return fmt.Errorf("mock reload err")
+}
+
+func (m *mockDatasourceService) GetDatasourcesWithSelector(selector model.DatasourceSelector) []model.Datasource {
+	return []model.Datasource{}
+}
+
 var (
-	alertmanagerMock  *mocker.Server
-	datasourceService *datasource.DatasourceService
-	ruleFiles         = []model.RuleFile{{
-		Kind:               "AlertRuleFile",
-		CommonLabels:       map[string]string{"rulefile": "sample-v3", "severity": "silence"},
-		DatasourceSelector: model.DatasourceSelector{System: "", Type: "prometheus"},
-		RuleGroups: []model.RuleGroup{
-			{Name: "sample", Interval: 0, Limit: 0, Rules: []model.Rule{
-				{Record: "", Alert: "S00-AlwaysOn", Expr: "vector(1234)", For: 0, KeepFiringFor: 0, Labels: map[string]string{"hello": "world"}, Annotations: map[string]string{"summary": "AlwaysOn value={{ $value }}"}},
-				{Record: "", Alert: "S01-Monday", Expr: "day_of_week() == 1 and hour() < 2", For: 0, KeepFiringFor: 0, Labels: map[string]string(nil), Annotations: map[string]string{"summary": "Monday"}},
-				{Record: "", Alert: "S02-NewNamespace", Expr: "time() - kube_namespace_created < 120", For: 0, KeepFiringFor: 0, Labels: map[string]string(nil), Annotations: map[string]string{"summary": "labels={{ $labels }} namespace={{ $labels.namespace }} value={{ $value }}"}},
-			}}}}}
+	servers          *ms.Servers
+	alertingService1 *AlertingService
+	ruleFiles1       []model.RuleFile = []model.RuleFile{
+		{
+			Kind:               "AlertRuleFile",
+			CommonLabels:       map[string]string{"rulefile": "sample-v3", "severity": "silence"},
+			DatasourceSelector: model.DatasourceSelector{Type: model.DatasourceTypePrometheus},
+			RuleGroups: []model.RuleGroup{{
+				Name:     "sample",
+				Interval: 0,
+				Limit:    0,
+				Rules: []model.Rule{
+					{Alert: "Up", Expr: "up", For: 0, Labels: map[string]string{"hello": "world"}, Annotations: map[string]string{"summary": "Up value={{ $value }}"}},
+					{Alert: "AlwaysOn", Expr: "vector(1234)", For: 0, Labels: map[string]string{"hello": "world"}, Annotations: map[string]string{"summary": "AlwaysOn value={{ $value }}"}},
+					{Alert: "Monday", Expr: "day_of_week() == 1 and hour() < 2", For: 0, Labels: map[string]string{"hello": "world"}, Annotations: map[string]string{"summary": "Monday"}},
+					{Alert: "NewNamespace", Expr: "time() - kube_namespace_created < 120", For: 0, Labels: map[string]string{"hello": "world"}, Annotations: map[string]string{"summary": "labels={{ $labels }} namespace={{ $labels.namespace }} value={{ $value }}"}},
+				}},
+			},
+		},
+		{
+			Kind:               "AlertRuleFile",
+			CommonLabels:       map[string]string{"rulefile": "sample-v3", "severity": "silence"},
+			DatasourceSelector: model.DatasourceSelector{Type: model.DatasourceTypeLethe},
+			RuleGroups: []model.RuleGroup{{
+				Name:     "sample2",
+				Interval: 0,
+				Limit:    0,
+				Rules: []model.Rule{
+					{Alert: "Pod", Expr: `pod{namespace="namespace01"}`, For: 0, Labels: map[string]string{"hello": "world"}, Annotations: map[string]string{"summary": "PodLogs value={{ $value }}"}},
+				}},
+			},
+		},
+	}
 )
 
 func TestMain(m *testing.M) {
@@ -35,159 +69,322 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
-func setup() {
-	var err error
-	alertmanagerMock, err = alertmanager.New()
-	if err != nil {
-		panic(err)
-	}
-
-	err = os.Chdir("../../..") // project root
-	if err != nil {
-		panic(err)
-	}
-	err = setDatasourceService()
-	if err != nil {
-		panic(err)
-	}
-	fmt.Printf("datasourceService=%#v\n", datasourceService)
-}
-
 func shutdown() {
-	alertmanagerMock.Close()
+	servers.Close()
 }
 
-func setDatasourceService() error {
-	datasourceConfig := model.DatasourceConfig{
-		Datasources: []model.Datasource{
-			{Name: "mainPrometheus", Type: model.DatasourceTypePrometheus, URL: "http://prometheus:9090", IsMain: true},
-			{Name: "subPrometheus1", Type: model.DatasourceTypePrometheus, URL: "http://prometheus1:9090", IsMain: false},
-			{Name: "subPrometheus2", Type: model.DatasourceTypePrometheus, URL: "http://prometheus2:9090", IsMain: false},
-			{Name: "mainLethe", Type: model.DatasourceTypeLethe, URL: "http://lethe:3100", IsMain: true},
-			{Name: "subLethe1", Type: model.DatasourceTypeLethe, URL: "http://lethe1:3100", IsMain: false},
-			{Name: "subLethe2", Type: model.DatasourceTypeLethe, URL: "http://lethe2:3100", IsMain: false},
-		},
-		Discovery: model.Discovery{
-			Enabled:          false,
-			ByNamePrometheus: true,
-			ByNameLethe:      true,
-		},
-	}
-	var err error
-	datasourceService, err = datasource.New(&datasourceConfig, discovery.Discoverer(nil))
+func setup() {
+	err := os.Chdir("../..")
 	if err != nil {
-		return fmt.Errorf("datasource.New err: %w", err)
+		panic(err)
 	}
-	return nil
+	servers = ms.New(ms.Requirements{
+		{Type: ms.TypeAlertmanager, Name: "alertmanager1", IsMain: false},
+		{Type: ms.TypeLethe, Name: "lethe1", IsMain: true},
+		{Type: ms.TypeLethe, Name: "lethe2", IsMain: false},
+		{Type: ms.TypePrometheus, Name: "prometheus1", IsMain: true},
+		{Type: ms.TypePrometheus, Name: "prometheus2", IsMain: false},
+		{Type: ms.TypePrometheus, Name: "prometheus3", IsMain: false},
+	})
+	cfg := &model.Config{
+		AlertingConfig: model.AlertingConfig{
+			AlertmanagerConfigs: model.AlertmanagerConfigs{
+				&model.AlertmanagerConfig{
+					StaticConfig: []*model.TargetGroup{
+						{Targets: []string{servers.GetServersByType(ms.TypeAlertmanager)[0].URL}},
+					},
+				},
+			},
+		},
+	}
+	datasourceConfig := &model.DatasourceConfig{
+		Datasources: servers.GetDatasources(),
+	}
+	datasourceService, err := datasourceservice.New(datasourceConfig, discovery.Discoverer(nil))
+	if err != nil {
+		panic(err)
+	}
+	remoteService := remoteservice.New(&http.Client{}, 30*time.Second)
+	alertingService1 = New(cfg, ruleFiles1, datasourceService, remoteService)
 }
 
 func TestNew(t *testing.T) {
-	testCases := []struct {
-		file string
-		want model.AlertingFile
-	}{
-		{
-			file: "",
-			want: model.AlertingFile{Alertings: []model.Alerting{{Name: "alertmanager", Type: "alertmanager", URL: "http://localhost:9093"}}},
-		},
-		{
-			file: "asdf",
-			want: model.AlertingFile{Alertings: []model.Alerting(nil)},
-		},
-		{
-			file: "etc/alerting.yml",
-			want: model.AlertingFile{Alertings: []model.Alerting{{Name: "alertmanager", Type: "alertmanager", URL: "http://localhost:9093"}}},
-		},
-		{
-			file: "etc/alerting.yaml",
-			want: model.AlertingFile{Alertings: []model.Alerting(nil)},
-		},
-	}
-	for i, tc := range testCases {
-		t.Run(fmt.Sprintf("#%d", i), func(t *testing.T) {
-			got := New(tc.file, ruleFiles, datasourceService)
-			require.NotEmpty(t, got)
-			require.NotEmpty(t, got.AlertFiles)
-			require.Equal(t, tc.want, got.AlertingFile)
-		})
-	}
-
+	require.NotZero(t, alertingService1)
 }
 
-func TestLoadAlertingFile(t *testing.T) {
+func TestDoAlert(t *testing.T) {
+	t.Run("ok", func(t *testing.T) {
+		err := alertingService1.DoAlert()
+		require.NoError(t, err)
+	})
+
+	t.Run("no alertingRules", func(t *testing.T) {
+		temp := alertingService1.alertingRules
+		alertingService1.alertingRules = []AlertingRule{}
+		err := alertingService1.DoAlert()
+		require.EqualError(t, err, "no alertingRules")
+		alertingService1.alertingRules = temp
+	})
+
+	t.Run("reload err", func(t *testing.T) {
+		temp := alertingService1.datasourceService
+		alertingService1.datasourceService = &mockDatasourceService{}
+		alertingService1.datasourceReload = true
+		err := alertingService1.DoAlert()
+		require.EqualError(t, err, "reload err: mock reload err")
+		alertingService1.datasourceService = temp
+	})
+
+	t.Run("sendFire err", func(t *testing.T) {
+		temp := alertingService1.alertmanagerURL
+		alertingService1.alertmanagerURL = ""
+		err := alertingService1.DoAlert()
+		require.EqualError(t, err, `sendFires err: error on Post: Post "/api/v1/alerts": unsupported protocol scheme ""`)
+		alertingService1.alertmanagerURL = temp
+	})
+}
+
+func TestGetFiresFromAlertingRule(t *testing.T) {
 	testCases := []struct {
-		file      string
-		want      *model.AlertingFile
-		wantError string
+		active map[uint64]*Alert
+		want   []Fire
 	}{
 		{
-			"",
-			&model.AlertingFile{Alertings: []model.Alerting{{Name: "alertmanager", Type: model.AlertingTypeAlertmanager, URL: "http://localhost:9093"}}},
-			"",
+			map[uint64]*Alert{},
+			[]Fire{},
 		},
 		{
-			"asdfasdf",
-			&model.AlertingFile{Alertings: []model.Alerting(nil)},
-			"readFile err: open asdfasdf: no such file or directory",
+			map[uint64]*Alert{
+				1: {},
+				2: {},
+			},
+			[]Fire{},
 		},
 		{
-			"etc/alerting.yml",
-			&model.AlertingFile{Alertings: []model.Alerting{{Name: "alertmanager", Type: model.AlertingTypeAlertmanager, URL: "http://localhost:9093"}}},
-			"",
+			map[uint64]*Alert{
+				1: {State: StateFiring},
+				2: {State: StateFiring},
+			},
+			[]Fire{
+				{Labels: map[string]string(nil), Annotations: map[string]string(nil)},
+				{Labels: map[string]string(nil), Annotations: map[string]string(nil)},
+			},
 		},
 		{
-			"etc/alerting.yaml",
-			&model.AlertingFile{Alertings: []model.Alerting(nil)},
-			"readFile err: open etc/alerting.yaml: no such file or directory",
+			map[uint64]*Alert{
+				1: {Labels: map[string]string{"hello": "world"}, State: StateFiring},
+				2: {Labels: map[string]string{"hello": "world"}, State: StateFiring},
+			},
+			[]Fire{
+				{Labels: map[string]string{"hello": "world"}, Annotations: map[string]string(nil)},
+				{Labels: map[string]string{"hello": "world"}, Annotations: map[string]string(nil)},
+			},
 		},
 	}
-	for i, tc := range testCases {
-		t.Run(fmt.Sprintf("#%d", i), func(t *testing.T) {
-			got, err := loadAlertingFile(tc.file)
-			fmt.Println("tc.wantError=", tc.wantError)
+	for _, tc := range testCases {
+		t.Run("", func(t *testing.T) {
+			alertingRule := &AlertingRule{active: tc.active}
+			got := getFiresFromAlertingRule(alertingRule)
+			require.Equal(t, tc.want, got)
+		})
+	}
+}
+
+func TestRenderSummary(t *testing.T) {
+	testCases := []struct {
+		summary   string
+		sample    commonModel.Sample
+		want      string
+		wantError string
+	}{
+		// ok
+		{
+			"",
+			commonModel.Sample{Metric: commonModel.Metric{"hello": "world", "foo": "bar"}, Value: 100},
+			"",
+			"",
+		},
+		{
+			"hello",
+			commonModel.Sample{Metric: commonModel.Metric{"hello": "world", "foo": "bar"}, Value: 100},
+			"hello",
+			"",
+		},
+		{
+			"{{$value}}",
+			commonModel.Sample{Metric: commonModel.Metric{"hello": "world", "foo": "bar"}, Value: 100},
+			"100",
+			"",
+		},
+		{
+			"{{$labels}}",
+			commonModel.Sample{Metric: commonModel.Metric{"hello": "world", "foo": "bar"}, Value: 100},
+			"map[foo:bar hello:world]",
+			"",
+		},
+		{
+			"{{$labels.hello}}",
+			commonModel.Sample{Metric: commonModel.Metric{"hello": "world", "foo": "bar"}, Value: 100},
+			"world",
+			"",
+		},
+		{
+			"{{$labels.xxx}}",
+			commonModel.Sample{Metric: commonModel.Metric{"hello": "world", "foo": "bar"}, Value: 100},
+			"<no value>",
+			"",
+		},
+		{
+			"{{$}}",
+			commonModel.Sample{Metric: commonModel.Metric{"hello": "world", "foo": "bar"}, Value: 100},
+			"map[foo:bar hello:world]",
+			"",
+		},
+		{
+			"{{$.foo}}",
+			commonModel.Sample{Metric: commonModel.Metric{"hello": "world", "foo": "bar"}, Value: 100},
+			"bar",
+			"",
+		},
+		{
+			"{{.}}",
+			commonModel.Sample{Metric: commonModel.Metric{"hello": "world", "foo": "bar"}, Value: 100},
+			"map[foo:bar hello:world]",
+			"",
+		},
+		// error
+		{
+			"{{$xxx}}",
+			commonModel.Sample{Metric: commonModel.Metric{"hello": "world", "foo": "bar"}, Value: 100},
+			"{{$xxx}}",
+			`parse err: template: :1: undefined variable "$xxx"`,
+		},
+	}
+	for _, tc := range testCases {
+		t.Run("", func(t *testing.T) {
+			alert := &Alert{Annotations: map[string]string{"summary": tc.summary}}
+			err := renderSummary(alert, tc.sample)
 			if tc.wantError == "" {
 				require.NoError(t, err)
 			} else {
 				require.EqualError(t, err, tc.wantError)
+			}
+			require.Equal(t, tc.want, alert.Annotations["summary"])
+		})
+	}
+}
+
+func TestQueryRule(t *testing.T) {
+	testCases := []struct {
+		rule      model.Rule
+		ds        model.Datasource
+		want      []commonModel.Sample
+		wantError string
+	}{
+		{
+			model.Rule{},
+			model.Datasource{},
+			[]commonModel.Sample{},
+			`GET err: error on Do: Get "/api/v1/query?query=": unsupported protocol scheme ""`,
+		},
+		{
+			ruleFiles1[0].RuleGroups[0].Rules[0],
+			servers.GetDatasources()[3],
+			[]commonModel.Sample{
+				{Metric: commonModel.Metric{"__name__": "up", "instance": "localhost:9090", "job": "prometheus"}, Value: 1, Timestamp: 1435781451781},
+				{Metric: commonModel.Metric{"__name__": "up", "instance2": "localhost:9092", "job": "prometheus2"}, Value: 1, Timestamp: 1435781451781}},
+			``,
+		},
+		{
+			ruleFiles1[0].RuleGroups[0].Rules[0],
+			servers.GetDatasources()[1],
+			[]commonModel.Sample{
+				{Metric: commonModel.Metric{"__name__": "up", "instance": "localhost:6060", "job": "lethe"}, Value: 1, Timestamp: 1435781451781}},
+			``,
+		},
+		{
+			ruleFiles1[1].RuleGroups[0].Rules[0],
+			servers.GetDatasources()[1],
+			[]commonModel.Sample{{Value: 2}},
+			``,
+		},
+	}
+	for _, tc := range testCases {
+		t.Run("", func(t *testing.T) {
+			got, err := alertingService1.queryRule(tc.rule, tc.ds)
+			if tc.wantError == "" {
+				require.NoError(t, err)
+			} else {
+				require.EqualError(t, err, `GET err: error on Do: Get "/api/v1/query?query=": unsupported protocol scheme ""`)
 			}
 			require.Equal(t, tc.want, got)
 		})
 	}
 }
 
-func TestGetAlertmanagerURL(t *testing.T) {
+func TestGetDataFromLogs(t *testing.T) {
 	testCases := []struct {
-		file string
-		want string
+		body string
+		want []commonModel.Sample
 	}{
 		{
-			"",
-			"http://localhost:9093",
+			`{}`,
+			[]commonModel.Sample{{Value: 0}},
 		},
 		{
-			"asdf",
-			"",
-		},
-		{
-			"etc/alerting.yml",
-			"http://localhost:9093",
-		},
-		{
-			"etc/alerting.yaml",
-			"",
+			`{"status":"sucess","data":{"resultType":"logs", "result":[
+				{"time":"2009-11-10T22:59:00.000000Z","namespace":"namespace01","pod":"nginx-deployment-75675f5897-7ci7o","container":"nginx","log":"lerom ipsum"},
+				{"time":"2009-11-10T22:59:00.000000Z","namespace":"namespace01","pod":"nginx-deployment-75675f5897-7ci7o","container":"nginx","log":"hello world"}]}}`,
+			[]commonModel.Sample{{Value: 2}},
 		},
 	}
-	for i, tc := range testCases {
-		t.Run(fmt.Sprintf("#%d", i), func(t *testing.T) {
-			service := New(tc.file, ruleFiles, datasourceService)
-			require.Equal(t, tc.want, service.GetAlertmanagerURL())
+	for _, tc := range testCases {
+		t.Run("", func(t *testing.T) {
+			got, err := getDataFromLogs([]byte(tc.body))
+			require.NoError(t, err)
+			require.Equal(t, tc.want, got)
 		})
 	}
 }
 
-func TestSendTestAlert(t *testing.T) {
-	service := New("etc/alerting.yml", ruleFiles, datasourceService)
-	service.AlertingFile.Alertings[0].URL = alertmanagerMock.URL
-	err := service.SendTestAlert()
+func TestGetDataFromVector(t *testing.T) {
+	// ok
+	body := `{"status":"sucess","data":{"resultType":"vector","result":[
+		{"metric":{"__name__":"up","job":"prometheus","instance":"localhost:9090"},"value":[1435781451.781,"1"]},
+		{"metric":{"__name__":"up","job":"prometheus","instance":"localhost:9090"},"value":[1435781451.781,"1"]}]}}`
+	want := []commonModel.Sample{
+		{Metric: commonModel.Metric{"__name__": "up", "instance": "localhost:9090", "job": "prometheus"}, Value: 1, Timestamp: 1435781451781},
+		{Metric: commonModel.Metric{"__name__": "up", "instance": "localhost:9090", "job": "prometheus"}, Value: 1, Timestamp: 1435781451781}}
+	got, err := getDataFromVector([]byte(body))
 	require.NoError(t, err)
+	require.Equal(t, want, got)
+}
+
+func TestSendFires(t *testing.T) {
+	fires := []Fire{
+		{Labels: map[string]string{"test": "test", "severity": "info", "pizza": "🍕", "time": time.Now().String()}},
+	}
+	// ok
+	err := alertingService1.sendFires(fires)
+	require.NoError(t, err)
+	// error
+	temp := alertingService1.alertmanagerURL
+	alertingService1.alertmanagerURL = ""
+	err = alertingService1.sendFires(fires)
+	require.EqualError(t, err, `error on Post: Post "/api/v1/alerts": unsupported protocol scheme ""`)
+	alertingService1.alertmanagerURL = temp
+}
+
+func TestSendTestAlert(t *testing.T) {
+	t.Run("ok", func(t *testing.T) {
+		err := alertingService1.SendTestAlert()
+		require.NoError(t, err)
+	})
+	t.Run("error", func(t *testing.T) {
+		temp := alertingService1.alertmanagerURL
+		alertingService1.alertmanagerURL = ""
+		err := alertingService1.SendTestAlert()
+		require.EqualError(t, err, `sendFires err: error on Post: Post "/api/v1/alerts": unsupported protocol scheme ""`)
+		alertingService1.alertmanagerURL = temp
+	})
 }

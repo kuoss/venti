@@ -3,18 +3,20 @@ package handler
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/kuoss/venti/pkg/service/alerting"
+	"github.com/kuoss/venti/pkg/service/alertrule"
 )
 
 type alertHandler struct {
-	alertingService *alerting.AlertingService
+	alertRuleService *alertrule.AlertRuleService
+	alertingService  *alerting.AlertingService
 }
 
-func NewAlertHandler(s *alerting.AlertingService) *alertHandler {
-	return &alertHandler{s}
+func NewAlertHandler(alertRuleService *alertrule.AlertRuleService, alertingService *alerting.AlertingService) *alertHandler {
+	return &alertHandler{alertRuleService, alertingService}
 }
 
 func (h *alertHandler) AlertRuleFiles(c *gin.Context) {
-	c.JSON(200, h.alertingService.AlertFiles)
+	c.JSON(200, h.alertRuleService.GetAlertRuleFiles())
 }
 
 func (h *alertHandler) SendTestAlert(c *gin.Context) {

@@ -19,7 +19,7 @@ type Handlers struct {
 
 func loadHandlers(cfg *model.Config, services *service.Services) *Handlers {
 	return &Handlers{
-		NewAlertHandler(services.AlertingService),
+		NewAlertHandler(services.AlertRuleService, services.AlertingService),
 		NewAuthHandler(services.UserService),
 		NewConfigHandler(cfg),
 		NewDashboardHandler(services.DashboardService),
