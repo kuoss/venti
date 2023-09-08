@@ -1,6 +1,7 @@
 package alerting
 
 import (
+	"fmt"
 	"net/http"
 	"os"
 	"testing"
@@ -14,6 +15,16 @@ import (
 	commonModel "github.com/prometheus/common/model"
 	"github.com/stretchr/testify/require"
 )
+
+type mockDatasourceService struct{}
+
+func (m *mockDatasourceService) Reload() error {
+	return fmt.Errorf("mock reload err")
+}
+
+func (m *mockDatasourceService) GetDatasourcesWithSelector(selector model.DatasourceSelector) []model.Datasource {
+	return []model.Datasource{}
+}
 
 var (
 	servers          *ms.Servers
@@ -102,8 +113,35 @@ func TestNew(t *testing.T) {
 }
 
 func TestDoAlert(t *testing.T) {
-	err := alertingService1.DoAlert()
-	require.NoError(t, err)
+	t.Run("ok", func(t *testing.T) {
+		err := alertingService1.DoAlert()
+		require.NoError(t, err)
+	})
+
+	t.Run("no alertingRules", func(t *testing.T) {
+		temp := alertingService1.alertingRules
+		alertingService1.alertingRules = []AlertingRule{}
+		err := alertingService1.DoAlert()
+		require.EqualError(t, err, "no alertingRules")
+		alertingService1.alertingRules = temp
+	})
+
+	t.Run("reload err", func(t *testing.T) {
+		temp := alertingService1.datasourceService
+		alertingService1.datasourceService = &mockDatasourceService{}
+		alertingService1.datasourceReload = true
+		err := alertingService1.DoAlert()
+		require.EqualError(t, err, "reload err: mock reload err")
+		alertingService1.datasourceService = temp
+	})
+
+	t.Run("sendFire err", func(t *testing.T) {
+		temp := alertingService1.alertmanagerURL
+		alertingService1.alertmanagerURL = ""
+		err := alertingService1.DoAlert()
+		require.EqualError(t, err, `sendFires err: error on Post: Post "/api/v1/alerts": unsupported protocol scheme ""`)
+		alertingService1.alertmanagerURL = temp
+	})
 }
 
 func TestGetFiresFromAlertingRule(t *testing.T) {
@@ -338,6 +376,15 @@ func TestSendFires(t *testing.T) {
 }
 
 func TestSendTestAlert(t *testing.T) {
-	err := alertingService1.SendTestAlert()
-	require.NoError(t, err)
+	t.Run("ok", func(t *testing.T) {
+		err := alertingService1.SendTestAlert()
+		require.NoError(t, err)
+	})
+	t.Run("error", func(t *testing.T) {
+		temp := alertingService1.alertmanagerURL
+		alertingService1.alertmanagerURL = ""
+		err := alertingService1.SendTestAlert()
+		require.EqualError(t, err, `sendFires err: error on Post: Post "/api/v1/alerts": unsupported protocol scheme ""`)
+		alertingService1.alertmanagerURL = temp
+	})
 }

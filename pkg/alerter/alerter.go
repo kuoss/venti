@@ -10,13 +10,13 @@ import (
 )
 
 type alerter struct {
-	alertingService    *alerting.AlertingService
+	alertingService    alerting.IAlertingService
 	evaluationInterval time.Duration
 	isRunning          bool
 	quitCh             chan bool
 }
 
-func New(cfg *model.Config, alertingService *alerting.AlertingService) *alerter {
+func New(cfg *model.Config, alertingService alerting.IAlertingService) *alerter {
 	return &alerter{
 		alertingService:    alertingService,
 		evaluationInterval: cfg.GlobalConfig.EvaluationInterval,

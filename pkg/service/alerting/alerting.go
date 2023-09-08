@@ -13,22 +13,26 @@ import (
 
 	"github.com/kuoss/common/logger"
 	"github.com/kuoss/venti/pkg/model"
-	"github.com/kuoss/venti/pkg/service/datasource"
+	datasourceservice "github.com/kuoss/venti/pkg/service/datasource"
 	"github.com/kuoss/venti/pkg/service/remote"
 	commonModel "github.com/prometheus/common/model"
 	"github.com/valyala/fastjson"
 )
 
+type IAlertingService interface {
+	DoAlert() error
+}
+
 type AlertingService struct {
 	alertingRules     []AlertingRule
-	datasourceService *datasource.DatasourceService
+	datasourceService datasourceservice.IDatasourceService
 	datasourceReload  bool
 	remoteService     *remote.RemoteService
 	alertmanagerURL   string
 	client            http.Client
 }
 
-func New(cfg *model.Config, alertRuleFiles []model.RuleFile, datasourceService *datasource.DatasourceService, remoteService *remote.RemoteService) *AlertingService {
+func New(cfg *model.Config, alertRuleFiles []model.RuleFile, datasourceService datasourceservice.IDatasourceService, remoteService *remote.RemoteService) *AlertingService {
 	var alertmanagerURL string
 	if len(cfg.AlertingConfig.AlertmanagerConfigs) > 0 && len(cfg.AlertingConfig.AlertmanagerConfigs[0].StaticConfig) > 0 && len(cfg.AlertingConfig.AlertmanagerConfigs[0].StaticConfig[0].Targets) > 0 {
 		alertmanagerURL = cfg.AlertingConfig.AlertmanagerConfigs[0].StaticConfig[0].Targets[0]
@@ -250,7 +254,7 @@ func getDataFromVector(bodyBytes []byte) ([]commonModel.Sample, error) {
 func (s *AlertingService) sendFires(fires []Fire) error {
 	pbytes, err := json.Marshal(fires)
 	if err != nil {
-		// test not reachable: memory full?
+		// unreachable
 		return fmt.Errorf("error on Marshal: %w", err)
 	}
 	buff := bytes.NewBuffer(pbytes)

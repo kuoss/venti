@@ -7,6 +7,11 @@ import (
 	"github.com/kuoss/venti/pkg/service/discovery"
 )
 
+type IDatasourceService interface {
+	Reload() error
+	GetDatasourcesWithSelector(selector model.DatasourceSelector) []model.Datasource
+}
+
 // DatasourceService
 type DatasourceService struct {
 	loaded      bool
