@@ -16,6 +16,19 @@ jobs:
         gofmt-path: '.'
         gofmt-flags: '-l -d'
 
+  misspell:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - run: make misspell
+
+  gocyclo:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - uses: actions/setup-go@v4
+    - run: make gocyclo
+
   goimports:
     runs-on: ubuntu-latest
     steps:
@@ -60,7 +73,7 @@ jobs:
     - uses: actions/setup-go@v4
     - uses: actions/checkout@v3
     - run: cp docs/examples/datasources.test.yml etc/datasources.yml
-    - run: go test ./... -race -covermode=atomic -coverprofile=coverage.out
+    - run: go test ./... -race -coverprofile=coverage.out
     # https://about.codecov.io/blog/getting-started-with-code-coverage-for-golang/
     - uses: codecov/codecov-action@v3
     # https://github.com/mattn/goveralls#github-actions
@@ -83,22 +96,12 @@ jobs:
     permissions:
       contents: read
       packages: write
+      
     steps:
     - uses: actions/checkout@v3
-    - uses: docker/login-action@f054a8b539a109f9f41c372932f1ae047eff08c9
-      with:
-        registry: ghcr.io
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
-    - uses: docker/metadata-action@v4
-      id: meta
-      with:
-        images: ghcr.io/${{ github.repository }}
-        tags: |
-          type=ref,event=pr
-    - uses: docker/build-push-action@ad44023a93711e3deb337508980b4b5e9bcdc5dc
+    - uses: docker/build-push-action@v4
       with:
         context: .
-        push: true
-        tags: ${{ steps.meta.outputs.tags }}
-        labels: ${{ steps.meta.outputs.labels }}
+        push: false
+        build-args: |
+          VERSION=development
