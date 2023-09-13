@@ -29,6 +29,9 @@ func Load(version string) (*model.Config, error) {
 	if err != nil {
 		return nil, fmt.Errorf("loadAlertingConfigFile err: %w", err)
 	}
+	if alertingConfig.EvaluationInterval < 1*time.Second {
+		alertingConfig.EvaluationInterval = 5 * time.Second
+	}
 
 	return &model.Config{
 		Version:          version,

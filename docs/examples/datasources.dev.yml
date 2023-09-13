@@ -1,7 +1,7 @@
 datasources:
 - name: prometheus
   type: prometheus
-  url : http://prometheus.kuoss.org
+  url : http://vs-prometheus-server
 - name: lethe
   type: lethe
-  url: http://lethe.kuoss.org
+  url: http://vs-lethe

@@ -6,7 +6,8 @@
 # https://github.com/prometheus/prometheus/blob/v2.46.0/documentation/examples/prometheus.yml#L7-L12
 # Alertmanager configuration
 alerting:
+  evaluation_interval: 5s
   alertmanagers:
     - static_configs:
         - targets:
-          - localhost:9093
+          - http://vs-alertmanager:9093
