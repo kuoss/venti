@@ -132,6 +132,7 @@ func (s *AlertingService) updateAlertingRule(ar *AlertingRule, now time.Time) {
 			} else {
 				ar.active[signature].UpdatedAt = now
 			}
+			logger.Infof("ar.active: %v", ar.active)
 
 			// render summary
 			err := renderSummary(ar.active[signature], sample)
@@ -253,6 +254,7 @@ func getDataFromVector(bodyBytes []byte) ([]commonModel.Sample, error) {
 }
 
 func (s *AlertingService) sendFires(fires []Fire) error {
+	logger.Infof("sending %d fires...", len(fires))
 	pbytes, err := json.Marshal(fires)
 	if err != nil {
 		// unreachable
