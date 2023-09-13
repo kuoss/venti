@@ -211,6 +211,7 @@ func (s *AlertingService) queryRule(rule model.Rule, ds model.Datasource) ([]com
 		return samples, nil
 	}
 	samples, err := getDataFromVector(bodyBytes)
+	logger.Infof("queryRule(@%s): %s, %v", ds.Name, rule.Alert, samples)
 	if err != nil {
 		return []commonModel.Sample{}, fmt.Errorf("getDataFromVector err: %w", err)
 	}
