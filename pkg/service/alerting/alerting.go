@@ -25,6 +25,7 @@ type IAlertingService interface {
 
 type AlertingService struct {
 	alertingRules     []AlertingRule
+	globalLabels      map[string]string
 	datasourceService datasourceservice.IDatasourceService
 	datasourceReload  bool
 	remoteService     *remote.RemoteService
@@ -52,6 +53,7 @@ func New(cfg *model.Config, alertRuleFiles []model.RuleFile, datasourceService d
 	}
 	return &AlertingService{
 		alertingRules:     alertingRules,
+		globalLabels:      cfg.AlertingConfig.GlobalLabels,
 		datasourceService: datasourceService,
 		datasourceReload:  cfg.DatasourceConfig.Discovery.Enabled,
 		remoteService:     remoteService,
@@ -75,6 +77,9 @@ func (s *AlertingService) DoAlert() error {
 	for _, ar := range s.alertingRules {
 		s.updateAlertingRule(&ar, now)
 		fires = append(fires, getFiresFromAlertingRule(&ar)...)
+		for _, alert := range ar.active {
+			logger.Infof("[%s] labels:%v annotations:%v", alert.State.String(), alert.Labels, alert.Annotations)
+		}
 	}
 	err := s.sendFires(fires)
 	if err != nil {
@@ -106,18 +111,26 @@ func (s *AlertingService) updateAlertingRule(ar *AlertingRule, now time.Time) {
 		if err != nil {
 			continue
 		}
-		ruleLabels := ar.commonLabels
-		ruleLabels["datasource"] = datasource.Name
-		for k, v := range ar.rule.Labels {
-			ruleLabels[k] = v
+
+		labels := map[string]string{}
+		labels["alertname"] = ar.rule.Alert
+		labels["datasource"] = datasource.Name
+		for k, v := range s.globalLabels {
+			labels[k] = v
 		}
+		for k, v := range ar.commonLabels {
+			labels[k] = v
+		}
+		for k, v := range ar.rule.Labels {
+			labels[k] = v
+		}
+
 		for _, sample := range samples {
 			// signature
 			tempLabels := map[string]string{"fingerprint": sample.Metric.Fingerprint().String()}
-			for k, v := range ruleLabels {
+			for k, v := range labels {
 				tempLabels[k] = v
 			}
-			tempLabels["alertname"] = ar.rule.Alert
 			signature := commonModel.LabelsToSignature(tempLabels)
 
 			_, exists := ar.active[signature]
@@ -126,7 +139,7 @@ func (s *AlertingService) updateAlertingRule(ar *AlertingRule, now time.Time) {
 					State:       StatePending,
 					CreatedAt:   now,
 					UpdatedAt:   now,
-					Labels:      ruleLabels,
+					Labels:      labels,
 					Annotations: ar.rule.Annotations,
 				}
 			} else {
@@ -252,6 +265,7 @@ func getDataFromVector(bodyBytes []byte) ([]commonModel.Sample, error) {
 }
 
 func (s *AlertingService) sendFires(fires []Fire) error {
+	logger.Infof("sending %d fires...", len(fires))
 	pbytes, err := json.Marshal(fires)
 	if err != nil {
 		// unreachable
@@ -271,7 +285,7 @@ func (s *AlertingService) sendFires(fires []Fire) error {
 
 func (s *AlertingService) SendTestAlert() error {
 	fires := []Fire{
-		{Labels: map[string]string{"test": "test", "severity": "info", "pizza": "🍕", "time": time.Now().String()}},
+		{Labels: map[string]string{"alertname": "pizza", "severity": "info", "pizza": "🍕", "time": time.Now().String()}},
 	}
 	err := s.sendFires(fires)
 	if err != nil {

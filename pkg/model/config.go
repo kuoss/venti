@@ -9,14 +9,9 @@ import (
 
 type Config struct {
 	Version          string
-	GlobalConfig     GlobalConfig
 	DatasourceConfig DatasourceConfig
 	UserConfig       UserConfig
 	AlertingConfig   AlertingConfig
-}
-
-type GlobalConfig struct {
-	EvaluationInterval time.Duration `yaml:"evaluation_interval,omitempty"`
 }
 
 type UserConfig struct {
@@ -51,8 +46,10 @@ type AlertingConfigFile struct {
 }
 
 type AlertingConfig struct {
+	EvaluationInterval  time.Duration       `yaml:"evaluation_interval,omitempty"`
 	AlertRelabelConfigs []*relabel.Config   `yaml:"alert_relabel_configs,omitempty"`
 	AlertmanagerConfigs AlertmanagerConfigs `yaml:"alertmanagers,omitempty"`
+	GlobalLabels        map[string]string   `yaml:"globalLabels,omitempty"`
 }
 
 // AlertmanagerConfigs is a slice of *AlertmanagerConfig.

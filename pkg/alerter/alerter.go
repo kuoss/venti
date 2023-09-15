@@ -19,7 +19,7 @@ type alerter struct {
 func New(cfg *model.Config, alertingService alerting.IAlertingService) *alerter {
 	return &alerter{
 		alertingService:    alertingService,
-		evaluationInterval: cfg.GlobalConfig.EvaluationInterval,
+		evaluationInterval: cfg.AlertingConfig.EvaluationInterval,
 	}
 }
 

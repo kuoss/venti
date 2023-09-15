@@ -53,3 +53,8 @@ cover:
 checks:
 	hack/checks.sh
 
+misspell:
+	hack/misspell.sh
+
+gocyclo:
+	hack/gocyclo.sh

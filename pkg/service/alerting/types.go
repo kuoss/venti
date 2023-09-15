@@ -1,6 +1,7 @@
 package alerting
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/kuoss/venti/pkg/model"
@@ -15,6 +16,18 @@ const (
 	StatePending
 	StateFiring
 )
+
+func (s AlertState) String() string {
+	switch s {
+	case StateInactive:
+		return "inactive"
+	case StatePending:
+		return "pending"
+	case StateFiring:
+		return "firing"
+	}
+	panic(fmt.Errorf("unknown alert state: %d", s))
+}
 
 type Alert struct {
 	State     AlertState
