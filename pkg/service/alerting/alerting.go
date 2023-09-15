@@ -77,9 +77,6 @@ func (s *AlertingService) DoAlert() error {
 	for _, ar := range s.alertingRules {
 		s.updateAlertingRule(&ar, now)
 		fires = append(fires, getFiresFromAlertingRule(&ar)...)
-		for _, alert := range ar.active {
-			logger.Infof("[%s] labels:%v annotations:%v", alert.State.String(), alert.Labels, alert.Annotations)
-		}
 	}
 	err := s.sendFires(fires)
 	if err != nil {
@@ -104,7 +101,6 @@ func getFiresFromAlertingRule(ar *AlertingRule) []Fire {
 
 func (s *AlertingService) updateAlertingRule(ar *AlertingRule, now time.Time) {
 	datasources := s.datasourceService.GetDatasourcesWithSelector(ar.datasourceSelector)
-	maxState := StateInactive
 	// catch new alerts via query
 	for _, datasource := range datasources {
 		samples, err := s.queryRule(ar.rule, datasource)
@@ -124,7 +120,6 @@ func (s *AlertingService) updateAlertingRule(ar *AlertingRule, now time.Time) {
 		for k, v := range ar.rule.Labels {
 			labels[k] = v
 		}
-
 		for _, sample := range samples {
 			// signature
 			tempLabels := map[string]string{"fingerprint": sample.Metric.Fingerprint().String()}
@@ -133,35 +128,37 @@ func (s *AlertingService) updateAlertingRule(ar *AlertingRule, now time.Time) {
 			}
 			signature := commonModel.LabelsToSignature(tempLabels)
 
-			_, exists := ar.active[signature]
-			if !exists {
-				ar.active[signature] = &Alert{
-					State:       StatePending,
-					CreatedAt:   now,
-					UpdatedAt:   now,
-					Labels:      labels,
-					Annotations: ar.rule.Annotations,
-				}
-			} else {
-				ar.active[signature].UpdatedAt = now
+			createdAt := now
+			state := StatePending
+			annotations := map[string]string{}
+			for k, v := range ar.rule.Annotations {
+				annotations[k] = v
 			}
-
 			// render summary
-			err := renderSummary(ar.active[signature], sample)
+			summary, err := renderSummary(annotations["summary"], sample)
 			if err != nil {
 				logger.Warnf("renderSummary err: %s", err)
 			}
 
-			// update state
-			maxState = StatePending
-			// if ( created + for >= now ) firing
-			if !ar.active[signature].CreatedAt.Add(time.Duration(ar.rule.For)).After(now) {
-				ar.active[signature].State = StateFiring
-				maxState = StateFiring
+			temp, exists := ar.active[signature]
+			if exists {
+				createdAt = temp.CreatedAt
 			}
+			if !now.Before(createdAt.Add(time.Duration(ar.rule.For))) {
+				state = StateFiring
+			}
+			annotations["summary"] = summary
+			alert := &Alert{
+				State:       state,
+				CreatedAt:   createdAt,
+				UpdatedAt:   now,
+				Labels:      labels,
+				Annotations: annotations,
+			}
+			ar.active[signature] = alert
+			logger.Infof("[%s] labels:%v annotations:%v", alert.State.String(), alert.Labels, alert.Annotations)
 		}
 	}
-	ar.state = maxState
 	// remove old alerts
 	for key, alert := range ar.active {
 		if alert.UpdatedAt != now {
@@ -170,11 +167,7 @@ func (s *AlertingService) updateAlertingRule(ar *AlertingRule, now time.Time) {
 	}
 }
 
-func renderSummary(alert *Alert, sample commonModel.Sample) error {
-	input, exists := alert.Annotations["summary"]
-	if !exists {
-		input = "placeholder summary"
-	}
+func renderSummary(input string, sample commonModel.Sample) (string, error) {
 	// pre-render
 	text := input
 	text = strings.ReplaceAll(text, "$value", sample.Value.String())
@@ -184,7 +177,7 @@ func renderSummary(alert *Alert, sample commonModel.Sample) error {
 	// render
 	tmpl, err := template.New("").Parse(text)
 	if err != nil {
-		return fmt.Errorf("parse err: %w", err)
+		return input, fmt.Errorf("parse err: %w", err)
 	}
 	labels := map[string]string{}
 	for k, v := range sample.Metric {
@@ -193,10 +186,9 @@ func renderSummary(alert *Alert, sample commonModel.Sample) error {
 	var buf bytes.Buffer
 	err = tmpl.Execute(&buf, labels)
 	if err != nil {
-		return fmt.Errorf("tmpl.execute err: %w", err)
+		return input, fmt.Errorf("tmpl.execute err: %w", err)
 	}
-	alert.Annotations["summary"] = buf.String()
-	return nil
+	return buf.String(), nil
 }
 
 func (s *AlertingService) queryRule(rule model.Rule, ds model.Datasource) ([]commonModel.Sample, error) {
