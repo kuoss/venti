@@ -111,12 +111,14 @@ func TestLoadAlertingConfigFile(t *testing.T) {
 		{
 			"etc/alerting.yml",
 			model.AlertingConfig{
+				EvaluationInterval:  5000000000,
 				AlertRelabelConfigs: nil,
 				AlertmanagerConfigs: model.AlertmanagerConfigs{
 					{StaticConfig: []*model.TargetGroup{
-						{Targets: []string{"localhost:9093"}},
+						{Targets: []string{"http://vs-alertmanager:9093"}},
 					}},
 				},
+				GlobalLabels: map[string]string{"venti": "development"},
 			},
 			"",
 		},
