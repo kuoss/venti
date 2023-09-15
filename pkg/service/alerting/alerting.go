@@ -108,25 +108,29 @@ func (s *AlertingService) updateAlertingRule(ar *AlertingRule, now time.Time) {
 			continue
 		}
 
-		labels := map[string]string{}
-		labels["alertname"] = ar.rule.Alert
-		labels["datasource"] = datasource.Name
+		commonlabels := map[string]string{
+			"alertname":  ar.rule.Alert,
+			"datasource": datasource.Name,
+		}
 		for k, v := range s.globalLabels {
-			labels[k] = v
+			commonlabels[k] = v
 		}
 		for k, v := range ar.commonLabels {
-			labels[k] = v
+			commonlabels[k] = v
 		}
 		for k, v := range ar.rule.Labels {
-			labels[k] = v
+			commonlabels[k] = v
 		}
+
 		for _, sample := range samples {
-			// signature
-			tempLabels := map[string]string{"fingerprint": sample.Metric.Fingerprint().String()}
-			for k, v := range labels {
-				tempLabels[k] = v
+			labels := map[string]string{}
+			for k, v := range sample.Metric {
+				labels[string(k)] = string(v)
 			}
-			signature := commonModel.LabelsToSignature(tempLabels)
+			for k, v := range commonlabels {
+				labels[k] = v
+			}
+			signature := commonModel.LabelsToSignature(labels)
 
 			createdAt := now
 			state := StatePending
