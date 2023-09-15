@@ -49,6 +49,7 @@ type AlertingConfig struct {
 	EvaluationInterval  time.Duration       `yaml:"evaluation_interval,omitempty"`
 	AlertRelabelConfigs []*relabel.Config   `yaml:"alert_relabel_configs,omitempty"`
 	AlertmanagerConfigs AlertmanagerConfigs `yaml:"alertmanagers,omitempty"`
+	GlobalLabels        map[string]string   `yaml:"globalLabels,omitempty"`
 }
 
 // AlertmanagerConfigs is a slice of *AlertmanagerConfig.

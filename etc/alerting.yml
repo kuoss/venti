@@ -8,6 +8,8 @@
 alerting:
   evaluation_interval: 5s
   alertmanagers:
-    - static_configs:
-        - targets:
-          - http://vs-alertmanager:9093
+  - static_configs:
+    - targets:
+      - http://vs-alertmanager:9093
+  globalLabels:
+    venti: development
