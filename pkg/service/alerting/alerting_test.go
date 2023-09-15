@@ -332,7 +332,7 @@ func TestGetDataFromLogs(t *testing.T) {
 			[]commonModel.Sample{{Value: 0}},
 		},
 		{
-			`{"status":"sucess","data":{"resultType":"logs", "result":[
+			`{"status":"success","data":{"resultType":"logs", "result":[
 				{"time":"2009-11-10T22:59:00.000000Z","namespace":"namespace01","pod":"nginx-deployment-75675f5897-7ci7o","container":"nginx","log":"lerom ipsum"},
 				{"time":"2009-11-10T22:59:00.000000Z","namespace":"namespace01","pod":"nginx-deployment-75675f5897-7ci7o","container":"nginx","log":"hello world"}]}}`,
 			[]commonModel.Sample{{Value: 2}},
@@ -349,7 +349,7 @@ func TestGetDataFromLogs(t *testing.T) {
 
 func TestGetDataFromVector(t *testing.T) {
 	// ok
-	body := `{"status":"sucess","data":{"resultType":"vector","result":[
+	body := `{"status":"success","data":{"resultType":"vector","result":[
 		{"metric":{"__name__":"up","job":"prometheus","instance":"localhost:9090"},"value":[1435781451.781,"1"]},
 		{"metric":{"__name__":"up","job":"prometheus","instance":"localhost:9090"},"value":[1435781451.781,"1"]}]}}`
 	want := []commonModel.Sample{

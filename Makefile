@@ -53,3 +53,5 @@ cover:
 checks:
 	hack/checks.sh
 
+misspell:
+	hack/misspell.sh

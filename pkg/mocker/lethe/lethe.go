@@ -83,7 +83,7 @@ func handleQueryRange(c *mocker.Context) {
 	}
 	// 200
 	if query == `pod{namespace="namespace01"}` {
-		c.JSONString(200, `{"status":"sucess","data":{"resultType":"logs", "result":[
+		c.JSONString(200, `{"status":"success","data":{"resultType":"logs", "result":[
 			{"time":"2009-11-10T22:59:00.000000Z","namespace":"namespace01","pod":"nginx-deployment-75675f5897-7ci7o","container":"nginx","log":"lerom ipsum"},
 			{"time":"2009-11-10T22:59:00.000000Z","namespace":"namespace01","pod":"nginx-deployment-75675f5897-7ci7o","container":"nginx","log":"hello world"}]}}`)
 		return
