@@ -55,3 +55,6 @@ checks:
 
 misspell:
 	hack/misspell.sh
+
+gocyclo:
+	hack/gocyclo.sh
