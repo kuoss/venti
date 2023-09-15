@@ -43,7 +43,16 @@ type AlertingRule struct {
 	commonLabels       map[string]string
 	rule               model.Rule
 	active             map[uint64]*Alert
-	state              AlertState
+}
+
+func (r AlertingRule) State() AlertState {
+	maxState := StateInactive
+	for _, alert := range r.active {
+		if alert.State > maxState {
+			maxState = alert.State
+		}
+	}
+	return maxState
 }
 
 type Fire struct {

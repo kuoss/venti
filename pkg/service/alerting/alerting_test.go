@@ -262,14 +262,14 @@ func TestRenderSummary(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		t.Run("", func(t *testing.T) {
-			alert := &Alert{Annotations: map[string]string{"summary": tc.summary}}
-			err := renderSummary(alert, tc.sample)
+			// alert := &Alert{Annotations: map[string]string{"summary": tc.summary}}
+			got, err := renderSummary(tc.summary, tc.sample)
 			if tc.wantError == "" {
 				require.NoError(t, err)
 			} else {
 				require.EqualError(t, err, tc.wantError)
 			}
-			require.Equal(t, tc.want, alert.Annotations["summary"])
+			require.Equal(t, tc.want, got)
 		})
 	}
 }
