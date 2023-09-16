@@ -148,7 +148,8 @@ func (s *AlertingService) updateAlertingRule(ar *AlertingRule, now time.Time) {
 			if exists {
 				createdAt = temp.CreatedAt
 			}
-			if !now.Before(createdAt.Add(time.Duration(ar.rule.For))) {
+			elapsed := now.Sub(createdAt.Add(ar.rule.For))
+			if elapsed >= 0 {
 				state = StateFiring
 			}
 			annotations["summary"] = summary
@@ -160,7 +161,7 @@ func (s *AlertingService) updateAlertingRule(ar *AlertingRule, now time.Time) {
 				Annotations: annotations,
 			}
 			ar.active[signature] = alert
-			logger.Infof("[%s] labels:%v annotations:%v", alert.State.String(), alert.Labels, alert.Annotations)
+			logger.Infof("[%s(%s)] labels:%v annotations:%v", alert.State.String(), elapsed.Round(time.Second), alert.Labels, alert.Annotations)
 		}
 	}
 	// remove old alerts
