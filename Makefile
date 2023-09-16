@@ -18,9 +18,6 @@ install-dev:
 	which air   || go install github.com/cosmtrek/air@latest
 	which godef || go install github.com/rogpeppe/godef@latest
 
-mock-prometheus:
-	docker rm -f prometheus; docker run -d -p9090:9090 --name prometheus prom/prometheus
-
 # dev server (port 5173)
 dev:
 	hack/dev.sh

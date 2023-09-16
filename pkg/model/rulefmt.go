@@ -1,7 +1,7 @@
 package model
 
 import (
-	commonModel "github.com/prometheus/common/model"
+	"time"
 )
 
 /*
@@ -31,18 +31,18 @@ type RuleFile struct {
 
 // https://github.com/prometheus/prometheus/blob/v2.43.0/model/rulefmt/rulefmt.go#L137
 type RuleGroup struct {
-	Name     string               `json:"name" yaml:"name"`
-	Interval commonModel.Duration `json:"interval,omitempty" yaml:"interval,omitempty"`
-	Limit    int                  `json:"limit,omitempty" yaml:"limit,omitempty"`
-	Rules    []Rule               `json:"rules" yaml:"rules"`
+	Name     string        `json:"name" yaml:"name"`
+	Interval time.Duration `json:"interval,omitempty" yaml:"interval,omitempty"`
+	Limit    int           `json:"limit,omitempty" yaml:"limit,omitempty"`
+	Rules    []Rule        `json:"rules" yaml:"rules"`
 }
 
 type Rule struct {
-	Record        string               `json:"record,omitempty" yaml:"record,omitempty"`
-	Alert         string               `json:"alert,omitempty" yaml:"alert,omitempty"`
-	Expr          string               `json:"expr" yaml:"expr"`
-	For           commonModel.Duration `json:"for" yaml:"for,omitempty"`
-	KeepFiringFor commonModel.Duration `json:"keep_firing_for,omitempty" yaml:"keep_firing_for,omitempty"`
-	Labels        map[string]string    `json:"labels,omitempty" yaml:"labels,omitempty"`
-	Annotations   map[string]string    `json:"annotations,omitempty" yaml:"annotations,omitempty"`
+	Record        string            `json:"record,omitempty" yaml:"record,omitempty"`
+	Alert         string            `json:"alert,omitempty" yaml:"alert,omitempty"`
+	Expr          string            `json:"expr" yaml:"expr"`
+	For           time.Duration     `json:"for" yaml:"for,omitempty"`
+	KeepFiringFor time.Duration     `json:"keep_firing_for,omitempty" yaml:"keep_firing_for,omitempty"`
+	Labels        map[string]string `json:"labels,omitempty" yaml:"labels,omitempty"`
+	Annotations   map[string]string `json:"annotations,omitempty" yaml:"annotations,omitempty"`
 }
