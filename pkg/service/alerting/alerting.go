@@ -161,7 +161,7 @@ func (s *AlertingService) updateAlertingRule(ar *AlertingRule, now time.Time) {
 				Annotations: annotations,
 			}
 			ar.active[signature] = alert
-			logger.Infof("[%s(%s)] labels:%v annotations:%v", alert.State.String(), elapsed.Round(time.Second), alert.Labels, alert.Annotations)
+			logger.Infof("%s(%s): %s: %s", alert.State.String(), elapsed.Round(time.Second), labels["alertname"], annotations["summary"])
 		}
 	}
 	// remove old alerts
