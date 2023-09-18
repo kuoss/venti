@@ -193,69 +193,70 @@ func TestGetFiresFromAlertingRule(t *testing.T) {
 func TestRenderSummary(t *testing.T) {
 	testCases := []struct {
 		summary   string
-		sample    commonModel.Sample
+		value     string
+		labels    map[string]string
 		want      string
 		wantError string
 	}{
 		// ok
 		{
 			"",
-			commonModel.Sample{Metric: commonModel.Metric{"hello": "world", "foo": "bar"}, Value: 100},
+			"100", map[string]string{"datasource": "datasource1", "hello": "world", "foo": "bar"},
 			"",
 			"",
 		},
 		{
 			"hello",
-			commonModel.Sample{Metric: commonModel.Metric{"hello": "world", "foo": "bar"}, Value: 100},
+			"100", map[string]string{"datasource": "datasource1", "hello": "world", "foo": "bar"},
 			"hello",
 			"",
 		},
 		{
 			"{{$value}}",
-			commonModel.Sample{Metric: commonModel.Metric{"hello": "world", "foo": "bar"}, Value: 100},
+			"100", map[string]string{"datasource": "datasource1", "hello": "world", "foo": "bar"},
 			"100",
 			"",
 		},
 		{
 			"{{$labels}}",
-			commonModel.Sample{Metric: commonModel.Metric{"hello": "world", "foo": "bar"}, Value: 100},
-			"map[foo:bar hello:world]",
+			"100", map[string]string{"datasource": "datasource1", "hello": "world", "foo": "bar"},
+			"map[datasource:datasource1 foo:bar hello:world]",
 			"",
 		},
 		{
 			"{{$labels.hello}}",
-			commonModel.Sample{Metric: commonModel.Metric{"hello": "world", "foo": "bar"}, Value: 100},
+			"100", map[string]string{"datasource": "datasource1", "hello": "world", "foo": "bar"},
 			"world",
 			"",
 		},
 		{
 			"{{$labels.xxx}}",
-			commonModel.Sample{Metric: commonModel.Metric{"hello": "world", "foo": "bar"}, Value: 100},
+			"100", map[string]string{"datasource": "datasource1", "hello": "world", "foo": "bar"},
 			"<no value>",
 			"",
 		},
 		{
 			"{{$}}",
-			commonModel.Sample{Metric: commonModel.Metric{"hello": "world", "foo": "bar"}, Value: 100},
-			"map[foo:bar hello:world]",
+			"100", map[string]string{"datasource": "datasource1", "hello": "world", "foo": "bar"},
+			"map[datasource:datasource1 foo:bar hello:world]",
 			"",
 		},
 		{
 			"{{$.foo}}",
-			commonModel.Sample{Metric: commonModel.Metric{"hello": "world", "foo": "bar"}, Value: 100},
+			"100", map[string]string{"datasource": "datasource1", "hello": "world", "foo": "bar"},
 			"bar",
 			"",
 		},
 		{
 			"{{.}}",
-			commonModel.Sample{Metric: commonModel.Metric{"hello": "world", "foo": "bar"}, Value: 100},
-			"map[foo:bar hello:world]",
+			"100", map[string]string{"datasource": "datasource1", "hello": "world", "foo": "bar"},
+			"map[datasource:datasource1 foo:bar hello:world]",
 			"",
 		},
 		// error
 		{
 			"{{$xxx}}",
-			commonModel.Sample{Metric: commonModel.Metric{"hello": "world", "foo": "bar"}, Value: 100},
+			"100", map[string]string{"datasource": "datasource1", "hello": "world", "foo": "bar"},
 			"{{$xxx}}",
 			`parse err: template: :1: undefined variable "$xxx"`,
 		},
@@ -263,7 +264,7 @@ func TestRenderSummary(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run("", func(t *testing.T) {
 			// alert := &Alert{Annotations: map[string]string{"summary": tc.summary}}
-			got, err := renderSummary(tc.summary, tc.sample)
+			got, err := renderSummary(tc.summary, tc.labels, tc.value)
 			if tc.wantError == "" {
 				require.NoError(t, err)
 			} else {
