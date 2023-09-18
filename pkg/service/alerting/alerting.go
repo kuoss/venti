@@ -139,7 +139,7 @@ func (s *AlertingService) updateAlertingRule(ar *AlertingRule, now time.Time) {
 				annotations[k] = v
 			}
 			// render summary
-			summary, err := renderSummary(annotations["summary"], sample)
+			summary, err := renderSummary(annotations["summary"], labels, sample.Value.String())
 			if err != nil {
 				logger.Warnf("renderSummary err: %s", err)
 			}
@@ -172,10 +172,10 @@ func (s *AlertingService) updateAlertingRule(ar *AlertingRule, now time.Time) {
 	}
 }
 
-func renderSummary(input string, sample commonModel.Sample) (string, error) {
+func renderSummary(input string, labels map[string]string, value string) (string, error) {
 	// pre-render
 	text := input
-	text = strings.ReplaceAll(text, "$value", sample.Value.String())
+	text = strings.ReplaceAll(text, "$value", value)
 	text = strings.ReplaceAll(text, "$labels.", ".")
 	text = strings.ReplaceAll(text, "$labels", ".")
 
@@ -183,10 +183,6 @@ func renderSummary(input string, sample commonModel.Sample) (string, error) {
 	tmpl, err := template.New("").Parse(text)
 	if err != nil {
 		return input, fmt.Errorf("parse err: %w", err)
-	}
-	labels := map[string]string{}
-	for k, v := range sample.Metric {
-		labels[string(k)] = string(v)
 	}
 	var buf bytes.Buffer
 	err = tmpl.Execute(&buf, labels)
