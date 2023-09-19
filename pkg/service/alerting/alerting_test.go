@@ -88,6 +88,9 @@ func setup() {
 	})
 	cfg := &model.Config{
 		AlertingConfig: model.AlertingConfig{
+			GlobalLabels: map[string]string{
+				"global1": "label1",
+			},
 			AlertmanagerConfigs: model.AlertmanagerConfigs{
 				&model.AlertmanagerConfig{
 					StaticConfig: []*model.TargetGroup{
@@ -118,12 +121,12 @@ func TestDoAlert(t *testing.T) {
 		require.NoError(t, err)
 	})
 
-	t.Run("no alertingRules", func(t *testing.T) {
-		temp := alertingService1.alertingRules
-		alertingService1.alertingRules = []AlertingRule{}
+	t.Run("no_alertingRules", func(t *testing.T) {
+		temp := alertingService1.alertingRuleGroups
+		alertingService1.alertingRuleGroups = []AlertingRuleGroup{}
 		err := alertingService1.DoAlert()
-		require.EqualError(t, err, "no alertingRules")
-		alertingService1.alertingRules = temp
+		require.NoError(t, err)
+		alertingService1.alertingRuleGroups = temp
 	})
 
 	t.Run("reload err", func(t *testing.T) {
@@ -144,13 +147,40 @@ func TestDoAlert(t *testing.T) {
 	})
 }
 
-func TestGetFiresFromAlertingRule(t *testing.T) {
+func TestEvalAlertingRuleGroups(t *testing.T) {
+	fires := []Fire{}
+	alertingService1.evalAlertingRuleGroups(&fires)
+	want := []Fire{
+		{Labels: map[string]string{"__name__": "up", "alertname": "Up", "datasource": "prometheus1", "global1": "label1", "hello": "world", "instance": "localhost:9090", "job": "prometheus", "rulefile": "sample-v3", "severity": "silence"}, Annotations: map[string]string{"summary": "Up value=1"}},
+		{Labels: map[string]string{"__name__": "up", "alertname": "Up", "datasource": "prometheus1", "global1": "label1", "hello": "world", "instance2": "localhost:9092", "job": "prometheus2", "rulefile": "sample-v3", "severity": "silence"}, Annotations: map[string]string{"summary": "Up value=1"}},
+		{Labels: map[string]string{"__name__": "up", "alertname": "Up", "datasource": "prometheus2", "global1": "label1", "hello": "world", "instance": "localhost:9090", "job": "prometheus", "rulefile": "sample-v3", "severity": "silence"}, Annotations: map[string]string{"summary": "Up value=1"}},
+		{Labels: map[string]string{"__name__": "up", "alertname": "Up", "datasource": "prometheus2", "global1": "label1", "hello": "world", "instance2": "localhost:9092", "job": "prometheus2", "rulefile": "sample-v3", "severity": "silence"}, Annotations: map[string]string{"summary": "Up value=1"}},
+		{Labels: map[string]string{"__name__": "up", "alertname": "Up", "datasource": "prometheus3", "global1": "label1", "hello": "world", "instance": "localhost:9090", "job": "prometheus", "rulefile": "sample-v3", "severity": "silence"}, Annotations: map[string]string{"summary": "Up value=1"}},
+		{Labels: map[string]string{"__name__": "up", "alertname": "Up", "datasource": "prometheus3", "global1": "label1", "hello": "world", "instance2": "localhost:9092", "job": "prometheus2", "rulefile": "sample-v3", "severity": "silence"}, Annotations: map[string]string{"summary": "Up value=1"}},
+		{Labels: map[string]string{"alertname": "Pod", "datasource": "lethe1", "global1": "label1", "hello": "world", "rulefile": "sample-v3", "severity": "silence"}, Annotations: map[string]string{"summary": "PodLogs value=2"}},
+		{Labels: map[string]string{"alertname": "Pod", "datasource": "lethe2", "global1": "label1", "hello": "world", "rulefile": "sample-v3", "severity": "silence"}, Annotations: map[string]string{"summary": "PodLogs value=2"}}}
+	require.ElementsMatch(t, fires, want)
+}
+
+func TestEvalAlertingRuleGroup(t *testing.T) {
+	group := AlertingRuleGroup{}
+	evalTime := time.Now()
+	fires := []Fire{}
+	alertingService1.evalAlertingRuleGroup(&group, evalTime, &fires)
+	want := []Fire{}
+	require.Equal(t, want, fires)
+}
+
+func TestEvalAlertingRule(t *testing.T) {
+	evalTime := time.Now()
 	testCases := []struct {
-		active map[uint64]*Alert
-		want   []Fire
+		active       map[uint64]*Alert
+		commonLabels map[string]string
+		want         []Fire
 	}{
 		{
 			map[uint64]*Alert{},
+			map[string]string{},
 			[]Fire{},
 		},
 		{
@@ -158,13 +188,15 @@ func TestGetFiresFromAlertingRule(t *testing.T) {
 				1: {},
 				2: {},
 			},
+			map[string]string{},
 			[]Fire{},
 		},
 		{
 			map[uint64]*Alert{
-				1: {State: StateFiring},
-				2: {State: StateFiring},
+				1: {UpdatedAt: evalTime, State: StateFiring},
+				2: {UpdatedAt: evalTime, State: StateFiring},
 			},
+			map[string]string{},
 			[]Fire{
 				{Labels: map[string]string(nil), Annotations: map[string]string(nil)},
 				{Labels: map[string]string(nil), Annotations: map[string]string(nil)},
@@ -172,9 +204,10 @@ func TestGetFiresFromAlertingRule(t *testing.T) {
 		},
 		{
 			map[uint64]*Alert{
-				1: {Labels: map[string]string{"hello": "world"}, State: StateFiring},
-				2: {Labels: map[string]string{"hello": "world"}, State: StateFiring},
+				1: {UpdatedAt: evalTime, Labels: map[string]string{"hello": "world"}, State: StateFiring},
+				2: {UpdatedAt: evalTime, Labels: map[string]string{"hello": "world"}, State: StateFiring},
 			},
+			map[string]string{},
 			[]Fire{
 				{Labels: map[string]string{"hello": "world"}, Annotations: map[string]string(nil)},
 				{Labels: map[string]string{"hello": "world"}, Annotations: map[string]string(nil)},
@@ -183,94 +216,120 @@ func TestGetFiresFromAlertingRule(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		t.Run("", func(t *testing.T) {
-			alertingRule := &AlertingRule{active: tc.active}
-			got := getFiresFromAlertingRule(alertingRule)
-			require.Equal(t, tc.want, got)
+			ar := &AlertingRule{active: tc.active}
+			fires := []Fire{}
+			alertingService1.evalAlertingRule(ar, servers.GetDatasources(), tc.commonLabels, evalTime, &fires)
+			require.Equal(t, tc.want, fires)
 		})
 	}
 }
 
-func TestRenderSummary(t *testing.T) {
+func TestEvalAlertingRuleSample(t *testing.T) {
+	active := map[uint64]*Alert{}
+	ar := AlertingRule{
+		active: active,
+	}
+	sample := commonModel.Sample{}
+	labels := map[string]string{}
+	evalTime := time.Now()
+	alertingService1.evalAlertingRuleSample(&ar, sample, labels, evalTime)
+	want := AlertingRule{
+		rule: model.Rule{
+			Labels:      map[string]string(nil),
+			Annotations: map[string]string(nil),
+		},
+		active: active,
+	}
+	require.Equal(t, want, ar)
+}
+
+func TestRenderSummaryAnnotation(t *testing.T) {
 	testCases := []struct {
-		summary   string
-		value     string
-		labels    map[string]string
-		want      string
-		wantError string
+		annotations map[string]string
+		value       string
+		labels      map[string]string
+		want        map[string]string
+		wantError   string
 	}{
-		// ok
-		{
-			"",
-			"100", map[string]string{"datasource": "datasource1", "hello": "world", "foo": "bar"},
-			"",
-			"",
-		},
-		{
-			"hello",
-			"100", map[string]string{"datasource": "datasource1", "hello": "world", "foo": "bar"},
-			"hello",
-			"",
-		},
-		{
-			"{{$value}}",
-			"100", map[string]string{"datasource": "datasource1", "hello": "world", "foo": "bar"},
-			"100",
-			"",
-		},
-		{
-			"{{$labels}}",
-			"100", map[string]string{"datasource": "datasource1", "hello": "world", "foo": "bar"},
-			"map[datasource:datasource1 foo:bar hello:world]",
-			"",
-		},
-		{
-			"{{$labels.hello}}",
-			"100", map[string]string{"datasource": "datasource1", "hello": "world", "foo": "bar"},
-			"world",
-			"",
-		},
-		{
-			"{{$labels.xxx}}",
-			"100", map[string]string{"datasource": "datasource1", "hello": "world", "foo": "bar"},
-			"<no value>",
-			"",
-		},
-		{
-			"{{$}}",
-			"100", map[string]string{"datasource": "datasource1", "hello": "world", "foo": "bar"},
-			"map[datasource:datasource1 foo:bar hello:world]",
-			"",
-		},
-		{
-			"{{$.foo}}",
-			"100", map[string]string{"datasource": "datasource1", "hello": "world", "foo": "bar"},
-			"bar",
-			"",
-		},
-		{
-			"{{.}}",
-			"100", map[string]string{"datasource": "datasource1", "hello": "world", "foo": "bar"},
-			"map[datasource:datasource1 foo:bar hello:world]",
-			"",
-		},
 		// error
 		{
-			"{{$xxx}}",
+			map[string]string{},
 			"100", map[string]string{"datasource": "datasource1", "hello": "world", "foo": "bar"},
-			"{{$xxx}}",
+			map[string]string{"summary": "placeholder summary"},
+			`no summary annotation`,
+		},
+		{
+			map[string]string{"summary": "{{$xxx}}"},
+			"100", map[string]string{"datasource": "datasource1", "hello": "world", "foo": "bar"},
+			map[string]string{"summary": "{{$xxx}}"},
 			`parse err: template: :1: undefined variable "$xxx"`,
+		},
+		// ok
+		{
+			map[string]string{"summary": ""},
+			"100", map[string]string{"datasource": "datasource1", "hello": "world", "foo": "bar"},
+			map[string]string{"summary": ""},
+			"",
+		},
+		{
+			map[string]string{"summary": "hello"},
+			"100", map[string]string{"datasource": "datasource1", "hello": "world", "foo": "bar"},
+			map[string]string{"summary": "hello"},
+			"",
+		},
+		{
+			map[string]string{"summary": "{{$value}}"},
+			"100", map[string]string{"datasource": "datasource1", "hello": "world", "foo": "bar"},
+			map[string]string{"summary": "100"},
+			"",
+		},
+		{
+			map[string]string{"summary": "{{$labels}}"},
+			"100", map[string]string{"datasource": "datasource1", "hello": "world", "foo": "bar"},
+			map[string]string{"summary": "map[datasource:datasource1 foo:bar hello:world]"},
+			"",
+		},
+		{
+			map[string]string{"summary": "{{$labels.hello}}"},
+			"100", map[string]string{"datasource": "datasource1", "hello": "world", "foo": "bar"},
+			map[string]string{"summary": "world"},
+			"",
+		},
+		{
+			map[string]string{"summary": "{{$labels.xxx}}"},
+			"100", map[string]string{"datasource": "datasource1", "hello": "world", "foo": "bar"},
+			map[string]string{"summary": "<no value>"},
+			"",
+		},
+		{
+			map[string]string{"summary": "{{$}}"},
+			"100", map[string]string{"datasource": "datasource1", "hello": "world", "foo": "bar"},
+			map[string]string{"summary": "map[datasource:datasource1 foo:bar hello:world]"},
+			"",
+		},
+		{
+			map[string]string{"summary": "{{$.foo}}"},
+			"100", map[string]string{"datasource": "datasource1", "hello": "world", "foo": "bar"},
+			map[string]string{"summary": "bar"},
+			"",
+		},
+		{
+			map[string]string{"summary": "{{.}}"},
+			"100", map[string]string{"datasource": "datasource1", "hello": "world", "foo": "bar"},
+			map[string]string{"summary": "map[datasource:datasource1 foo:bar hello:world]"},
+			"",
 		},
 	}
 	for _, tc := range testCases {
 		t.Run("", func(t *testing.T) {
-			// alert := &Alert{Annotations: map[string]string{"summary": tc.summary}}
-			got, err := renderSummary(tc.summary, tc.labels, tc.value)
+			annotations := tc.annotations
+			err := renderSummaryAnnotaion(annotations, tc.labels, tc.value)
 			if tc.wantError == "" {
 				require.NoError(t, err)
 			} else {
 				require.EqualError(t, err, tc.wantError)
 			}
-			require.Equal(t, tc.want, got)
+			require.Equal(t, tc.want, annotations)
 		})
 	}
 }

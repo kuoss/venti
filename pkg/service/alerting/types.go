@@ -38,11 +38,15 @@ type Alert struct {
 	Annotations map[string]string
 }
 
-type AlertingRule struct {
+type AlertingRuleGroup struct {
 	datasourceSelector model.DatasourceSelector
-	commonLabels       map[string]string
-	rule               model.Rule
-	active             map[uint64]*Alert
+	groupLabels        map[string]string
+	alertingRules      []AlertingRule
+}
+
+type AlertingRule struct {
+	rule   model.Rule
+	active map[uint64]*Alert
 }
 
 func (r AlertingRule) State() AlertState {
