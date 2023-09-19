@@ -9,9 +9,15 @@ import (
 
 type Config struct {
 	Version          string
+	GlobalConfig     GlobalConfig
 	DatasourceConfig DatasourceConfig
 	UserConfig       UserConfig
 	AlertingConfig   AlertingConfig
+}
+
+type GlobalConfig struct {
+	GinMode  string `yaml:"ginMode,omitempty"`
+	LogLevel string `yaml:"logLevel,omitempty"`
 }
 
 type UserConfig struct {

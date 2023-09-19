@@ -28,6 +28,42 @@ func TestLoad(t *testing.T) {
 	}}, cfg.UserConfig)
 }
 
+func TestLoadGlobalConfigFile(t *testing.T) {
+	testCases := []struct {
+		file      string
+		want      model.GlobalConfig
+		wantError string
+	}{
+		{
+			"",
+			model.GlobalConfig{LogLevel: ""},
+			"error on ReadFile: open : no such file or directory",
+		},
+		{
+			"etc/datasources.yml",
+			model.GlobalConfig{LogLevel: ""},
+			"error on UnmarshalStrict: yaml: unmarshal errors:\n  line 1: field datasources not found in type model.GlobalConfig",
+		},
+		{
+			"etc/venti.yml",
+			model.GlobalConfig{GinMode: "release", LogLevel: "info"},
+			"",
+		},
+	}
+	for _, tc := range testCases {
+		t.Run("", func(t *testing.T) {
+			got, err := loadGlobalConfigFile(tc.file)
+			if tc.wantError == "" {
+				assert.NoError(t, err)
+			} else {
+				assert.EqualError(t, err, tc.wantError)
+			}
+			assert.Equal(t, tc.want, got)
+		})
+	}
+
+}
+
 func TestLoadDatasourceConfigFile(t *testing.T) {
 	testCases := []struct {
 		file      string
