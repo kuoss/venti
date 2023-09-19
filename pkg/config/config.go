@@ -5,6 +5,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/kuoss/common/logger"
 	"github.com/kuoss/venti/pkg/model"
 	"gopkg.in/yaml.v2"
@@ -14,6 +15,11 @@ import (
 // TODO: each Config filepath could be parameter.
 func Load(version string) (*model.Config, error) {
 	logger.Infof("loading configurations...")
+
+	globalConfig, err := loadGlobalConfigFile("etc/venti.yml")
+	if err != nil {
+		return nil, fmt.Errorf("loadGlobalConfigFile err: %w", err)
+	}
 
 	datasourceConfig, err := loadDatasourceConfigFile("etc/datasources.yml")
 	if err != nil {
@@ -29,16 +35,47 @@ func Load(version string) (*model.Config, error) {
 	if err != nil {
 		return nil, fmt.Errorf("loadAlertingConfigFile err: %w", err)
 	}
-	if alertingConfig.EvaluationInterval < 1*time.Second {
-		alertingConfig.EvaluationInterval = 5 * time.Second
-	}
 
 	return &model.Config{
 		Version:          version,
+		GlobalConfig:     globalConfig,
 		DatasourceConfig: *datasourceConfig,
 		UserConfig:       *userConfig,
 		AlertingConfig:   alertingConfig,
 	}, nil
+}
+
+func loadGlobalConfigFile(file string) (model.GlobalConfig, error) {
+	var globalConfig model.GlobalConfig
+	logger.Infof("loading global config file: %s", file)
+	yamlBytes, err := os.ReadFile(file)
+	if err != nil {
+		return globalConfig, fmt.Errorf("error on ReadFile: %w", err)
+	}
+	if err := yaml.UnmarshalStrict(yamlBytes, &globalConfig); err != nil {
+		return globalConfig, fmt.Errorf("error on UnmarshalStrict: %w", err)
+	}
+
+	// ginMode
+	ginMode := globalConfig.GinMode
+	switch ginMode {
+	case gin.DebugMode:
+	case gin.ReleaseMode:
+	case gin.TestMode:
+	default:
+		logger.Warnf("gin mode unknown: %s (available mode: debug release test)", globalConfig.GinMode)
+		ginMode = gin.ReleaseMode
+	}
+	gin.SetMode(ginMode)
+
+	// logLevel
+	logLevel, err := logger.ParseLevel(globalConfig.LogLevel)
+	if err != nil {
+		logger.Warnf("ParseLevel err: %s", err)
+		logLevel = logger.InfoLevel
+	}
+	logger.SetLevel(logLevel)
+	return globalConfig, nil
 }
 
 func loadDatasourceConfigFile(file string) (*model.DatasourceConfig, error) {
@@ -85,5 +122,11 @@ func loadAlertingConfigFile(file string) (model.AlertingConfig, error) {
 	if err := yaml.UnmarshalStrict(yamlBytes, &alertingConfigFile); err != nil {
 		return model.AlertingConfig{}, fmt.Errorf("error on UnmarshalStrict: %w", err)
 	}
-	return alertingConfigFile.AlertingConfig, nil
+
+	// default
+	alertingConfig := alertingConfigFile.AlertingConfig
+	if alertingConfig.EvaluationInterval == 0 {
+		alertingConfig.EvaluationInterval = 5 * time.Second
+	}
+	return alertingConfig, nil
 }

@@ -1,13 +1,12 @@
 package mocker
 
 import (
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/gin-gonic/gin/render"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestJSON(t *testing.T) {
@@ -34,14 +33,14 @@ func TestJSON(t *testing.T) {
 			200, `{"hello":"world","lorem":"ipsum"}`,
 		},
 	}
-	for i, tc := range testCases {
-		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
+	for _, tc := range testCases {
+		t.Run("", func(t *testing.T) {
 			w := httptest.NewRecorder()
 			context := &Context{Writer: w, Request: &http.Request{}}
 			context.JSON(tc.code, tc.obj)
 
-			assert.Equal(t, tc.wantCode, w.Code)
-			assert.Equal(t, tc.wantBody, w.Body.String())
+			require.Equal(t, tc.wantCode, w.Code)
+			require.Equal(t, tc.wantBody, w.Body.String())
 		})
 	}
 }
@@ -70,14 +69,14 @@ func TestJSONString(t *testing.T) {
 			200, `{"hello":"world","lorem":"ipsum"}`,
 		},
 	}
-	for i, tc := range testCases {
-		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
+	for _, tc := range testCases {
+		t.Run("", func(t *testing.T) {
 			w := httptest.NewRecorder()
 			context := &Context{Writer: w, Request: &http.Request{}}
 			context.JSONString(tc.code, tc.str)
 
-			assert.Equal(t, tc.wantCode, w.Code)
-			assert.Equal(t, tc.wantBody, w.Body.String())
+			require.Equal(t, tc.wantCode, w.Code)
+			require.Equal(t, tc.wantBody, w.Body.String())
 		})
 	}
 }
@@ -89,6 +88,7 @@ func TestRender(t *testing.T) {
 		wantCode int
 		wantBody string
 	}{
+		// valid data
 		{
 			200, render.JSON{Data: "hello"},
 			200, `"hello"`,
@@ -105,28 +105,20 @@ func TestRender(t *testing.T) {
 			200, render.Data{ContentType: "application/json", Data: []byte(`{"hello":"world","lorem":"ipsum"}`)},
 			200, `{"hello":"world","lorem":"ipsum"}`,
 		},
+		// invalid data
+		{
+			200, render.JSON{Data: make(chan int)},
+			200, ``,
+		},
 	}
-	for i, tc := range testCases {
-		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
+	for _, tc := range testCases {
+		t.Run("", func(t *testing.T) {
 			w := httptest.NewRecorder()
 			context := &Context{Writer: w, Request: &http.Request{}}
 			context.render(tc.code, tc.render)
 
-			assert.Equal(t, tc.wantCode, w.Code)
-			assert.Equal(t, tc.wantBody, w.Body.String())
+			require.Equal(t, tc.wantCode, w.Code)
+			require.Equal(t, tc.wantBody, w.Body.String())
 		})
 	}
-}
-
-// Currently, the library gin panics, so instead of testing for error, we test for panic. (package coverage: 97.1%)
-// TODO: bump up & error test https://github.com/gin-gonic/gin/commit/0c96a20209ca035964be126a745c167196fb6db3
-func TestRenderError(t *testing.T) {
-	defer func() {
-		if r := recover(); r == nil {
-			t.Errorf("The code did not panic")
-		}
-	}()
-	w := httptest.NewRecorder()
-	data := make(chan int)
-	assert.Error(t, (render.JSON{Data: data}).Render(w))
 }

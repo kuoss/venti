@@ -68,6 +68,7 @@ func (s *AlertingService) DoAlert() error {
 	}
 	if s.datasourceReload {
 		err := s.datasourceService.Reload()
+		logger.Debugf("datasourceService.Reload") // 2023-09-19
 		if err != nil {
 			return fmt.Errorf("reload err: %w", err)
 		}
@@ -101,6 +102,8 @@ func getFiresFromAlertingRule(ar *AlertingRule) []Fire {
 
 func (s *AlertingService) updateAlertingRule(ar *AlertingRule, now time.Time) {
 	datasources := s.datasourceService.GetDatasourcesWithSelector(ar.datasourceSelector)
+	logger.Debugf("datasources(%d): %v", len(datasources), datasources) // 2023-09-19
+
 	// catch new alerts via query
 	for _, datasource := range datasources {
 		samples, err := s.queryRule(ar.rule, datasource)
