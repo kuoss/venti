@@ -1,5 +1,6 @@
 .vscode
 .theia
 tmp/
+bin/
 /**/node_modules
 /data/*.sqlite3
