@@ -23,7 +23,7 @@ func Test_main(t *testing.T) {
 
 	assert.Equal(t, "", stdout)
 
-	assert.Contains(t, stderr, `level=info msg="loading configurations..."`)
-	assert.Contains(t, stderr, `level=info msg="loading datasource config file: etc/datasources.yml"`)
-	assert.Contains(t, stderr, `level=fatal msg="config.Load err: loadDatasourceConfigFile err: error on ReadFile: open etc/datasources.yml: no such file or directory"`)
+	assert.Contains(t, stderr, `level=info msg="loading configurations..." file="main.go:`)
+	assert.Contains(t, stderr, `level=info msg="loading global config file: etc/venti.yml" file="config.go:`)
+	assert.Contains(t, stderr, `level=fatal msg="config.Load err: loadGlobalConfigFile err: error on ReadFile: open etc/venti.yml: no such file or directory" file="main_test.go:`)
 }
