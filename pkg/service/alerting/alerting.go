@@ -117,7 +117,9 @@ func (s *AlertingService) evalAlertingRule(ar *AlertingRule, datasources []model
 
 	for _, datasource := range datasources {
 		err := s.evalAlertingRuleDatasource(ar, datasource, labels, evalTime)
-		logger.Warnf("evalAlertingRuleDatasource err: %s", err)
+		if err != nil {
+			logger.Warnf("evalAlertingRuleDatasource err: %s", err)
+		}
 	}
 	for key, alert := range ar.active {
 		// remove old alerts
