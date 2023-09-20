@@ -24,13 +24,13 @@ type IAlertingService interface {
 }
 
 type AlertingService struct {
-	alertingRules     []AlertingRule
-	globalLabels      map[string]string
-	datasourceService datasourceservice.IDatasourceService
-	datasourceReload  bool
-	remoteService     *remote.RemoteService
-	alertmanagerURL   string
-	client            http.Client
+	alertingRuleGroups []AlertingRuleGroup
+	globalLabels       map[string]string
+	datasourceService  datasourceservice.IDatasourceService
+	datasourceReload   bool
+	remoteService      *remote.RemoteService
+	alertmanagerURL    string
+	client             http.Client
 }
 
 func New(cfg *model.Config, alertRuleFiles []model.RuleFile, datasourceService datasourceservice.IDatasourceService, remoteService *remote.RemoteService) *AlertingService {
@@ -38,34 +38,35 @@ func New(cfg *model.Config, alertRuleFiles []model.RuleFile, datasourceService d
 	if len(cfg.AlertingConfig.AlertmanagerConfigs) > 0 && len(cfg.AlertingConfig.AlertmanagerConfigs[0].StaticConfig) > 0 && len(cfg.AlertingConfig.AlertmanagerConfigs[0].StaticConfig[0].Targets) > 0 {
 		alertmanagerURL = cfg.AlertingConfig.AlertmanagerConfigs[0].StaticConfig[0].Targets[0]
 	}
-	var alertingRules = []AlertingRule{}
+	var alertingRuleGroups = []AlertingRuleGroup{}
 	for _, alertRuleFile := range alertRuleFiles {
+		var alertingRules = []AlertingRule{}
 		for _, group := range alertRuleFile.RuleGroups {
 			for _, rule := range group.Rules {
 				alertingRules = append(alertingRules, AlertingRule{
-					datasourceSelector: alertRuleFile.DatasourceSelector,
-					commonLabels:       alertRuleFile.CommonLabels,
-					rule:               rule,
-					active:             map[uint64]*Alert{},
+					rule:   rule,
+					active: map[uint64]*Alert{},
 				})
 			}
 		}
+		alertingRuleGroups = append(alertingRuleGroups, AlertingRuleGroup{
+			datasourceSelector: alertRuleFile.DatasourceSelector,
+			groupLabels:        alertRuleFile.CommonLabels,
+			alertingRules:      alertingRules,
+		})
 	}
 	return &AlertingService{
-		alertingRules:     alertingRules,
-		globalLabels:      cfg.AlertingConfig.GlobalLabels,
-		datasourceService: datasourceService,
-		datasourceReload:  cfg.DatasourceConfig.Discovery.Enabled,
-		remoteService:     remoteService,
-		alertmanagerURL:   alertmanagerURL,
-		client:            http.Client{Timeout: 5 * time.Second},
+		alertingRuleGroups: alertingRuleGroups,
+		globalLabels:       cfg.AlertingConfig.GlobalLabels,
+		datasourceService:  datasourceService,
+		datasourceReload:   cfg.DatasourceConfig.Discovery.Enabled,
+		remoteService:      remoteService,
+		alertmanagerURL:    alertmanagerURL,
+		client:             http.Client{Timeout: 5 * time.Second},
 	}
 }
 
 func (s *AlertingService) DoAlert() error {
-	if s.alertingRules == nil || len(s.alertingRules) < 1 {
-		return fmt.Errorf("no alertingRules")
-	}
 	if s.datasourceReload {
 		err := s.datasourceService.Reload()
 		logger.Debugf("datasourceService.Reload") // 2023-09-19
@@ -73,12 +74,8 @@ func (s *AlertingService) DoAlert() error {
 			return fmt.Errorf("reload err: %w", err)
 		}
 	}
-	now := time.Now()
 	fires := []Fire{}
-	for _, ar := range s.alertingRules {
-		s.updateAlertingRule(&ar, now)
-		fires = append(fires, getFiresFromAlertingRule(&ar)...)
-	}
+	s.evalAlertingRuleGroups(&fires)
 	err := s.sendFires(fires)
 	if err != nil {
 		return fmt.Errorf("sendFires err: %w", err)
@@ -86,120 +83,153 @@ func (s *AlertingService) DoAlert() error {
 	return nil
 }
 
-func getFiresFromAlertingRule(ar *AlertingRule) []Fire {
-	fires := []Fire{}
-	for _, alert := range ar.active {
-		if alert.State == StateFiring {
-			fire := Fire{
-				Annotations: alert.Annotations,
-				Labels:      alert.Labels,
-			}
-			fires = append(fires, fire)
-		}
+func (s *AlertingService) evalAlertingRuleGroups(fires *[]Fire) {
+	evalTime := time.Now()
+	for _, group := range s.alertingRuleGroups {
+		s.evalAlertingRuleGroup(&group, evalTime, fires)
 	}
-	return fires
 }
 
-func (s *AlertingService) updateAlertingRule(ar *AlertingRule, now time.Time) {
-	datasources := s.datasourceService.GetDatasourcesWithSelector(ar.datasourceSelector)
+func (s *AlertingService) evalAlertingRuleGroup(group *AlertingRuleGroup, evalTime time.Time, fires *[]Fire) {
+	datasources := s.datasourceService.GetDatasourcesWithSelector(group.datasourceSelector)
 	logger.Debugf("datasources(%d): %v", len(datasources), datasources) // 2023-09-19
+	labels := map[string]string{}
+	for k, v := range s.globalLabels {
+		labels[k] = v
+	}
+	for k, v := range group.groupLabels {
+		labels[k] = v
+	}
+	for _, ar := range group.alertingRules {
+		s.evalAlertingRule(&ar, datasources, labels, evalTime, fires)
+	}
+}
 
-	// catch new alerts via query
+func (s *AlertingService) evalAlertingRule(ar *AlertingRule, datasources []model.Datasource, commonLabels map[string]string, evalTime time.Time, fires *[]Fire) {
+	labels := map[string]string{}
+	for k, v := range commonLabels {
+		labels[k] = v
+	}
+	for k, v := range ar.rule.Labels {
+		labels[k] = v
+	}
+	labels["alertname"] = ar.rule.Alert
+
 	for _, datasource := range datasources {
-		samples, err := s.queryRule(ar.rule, datasource)
-		if err != nil {
+		err := s.evalAlertingRuleDatasource(ar, datasource, labels, evalTime)
+		logger.Warnf("evalAlertingRuleDatasource err: %s", err)
+	}
+	for key, alert := range ar.active {
+		// remove old alerts
+		if alert.UpdatedAt != evalTime {
+			delete(ar.active, key)
 			continue
 		}
-
-		commonlabels := map[string]string{
-			"alertname":  ar.rule.Alert,
-			"datasource": datasource.Name,
-		}
-		for k, v := range s.globalLabels {
-			commonlabels[k] = v
-		}
-		for k, v := range ar.commonLabels {
-			commonlabels[k] = v
-		}
-		for k, v := range ar.rule.Labels {
-			commonlabels[k] = v
-		}
-
-		for _, sample := range samples {
-			labels := map[string]string{}
-			for k, v := range sample.Metric {
-				labels[string(k)] = string(v)
-			}
-			for k, v := range commonlabels {
-				labels[k] = v
-			}
-			signature := commonModel.LabelsToSignature(labels)
-
-			createdAt := now
-			state := StatePending
-			annotations := map[string]string{}
-			for k, v := range ar.rule.Annotations {
-				annotations[k] = v
-			}
-			// render summary
-			summary, err := renderSummary(annotations["summary"], labels, sample.Value.String())
-			if err != nil {
-				logger.Warnf("renderSummary err: %s", err)
-			}
-
-			temp, exists := ar.active[signature]
-			if exists {
-				createdAt = temp.CreatedAt
-			}
-			elapsed := now.Sub(createdAt.Add(ar.rule.For))
-			if elapsed >= 0 {
-				state = StateFiring
-			}
-			annotations["summary"] = summary
-			alert := &Alert{
-				State:       state,
-				CreatedAt:   createdAt,
-				UpdatedAt:   now,
-				Labels:      labels,
-				Annotations: annotations,
-			}
-			ar.active[signature] = alert
-			logger.Infof("%s(%s): %s: %s", alert.State.String(), elapsed.Round(time.Second), labels["alertname"], annotations["summary"])
-		}
-	}
-	// remove old alerts
-	for key, alert := range ar.active {
-		if alert.UpdatedAt != now {
-			delete(ar.active, key)
+		// add to fires
+		if alert.State == StateFiring {
+			*fires = append(*fires, Fire{
+				Annotations: alert.Annotations,
+				Labels:      alert.Labels,
+			})
 		}
 	}
 }
 
-func renderSummary(input string, labels map[string]string, value string) (string, error) {
+func (s *AlertingService) evalAlertingRuleDatasource(ar *AlertingRule, datasource model.Datasource, commonLabels map[string]string, evalTime time.Time) error {
+	labels := map[string]string{}
+	for k, v := range commonLabels {
+		labels[k] = v
+	}
+	for k, v := range ar.rule.Labels {
+		labels[k] = v
+	}
+	labels["datasource"] = datasource.Name
+
+	samples, err := s.queryRule(ar.rule, datasource)
+	if err != nil {
+		return fmt.Errorf("queryRule err: %w", err)
+	}
+	for _, sample := range samples {
+		s.evalAlertingRuleSample(ar, sample, labels, evalTime)
+	}
+	return nil
+}
+
+func (s *AlertingService) evalAlertingRuleSample(ar *AlertingRule, sample commonModel.Sample, commonLabels map[string]string, evalTime time.Time) {
+	// labels & signature
+	labels := map[string]string{}
+	for k, v := range commonLabels {
+		labels[k] = v
+	}
+	for k, v := range sample.Metric {
+		labels[string(k)] = string(v)
+	}
+	signature := commonModel.LabelsToSignature(labels)
+
+	// annotations & summary
+	annotations := map[string]string{}
+	for k, v := range ar.rule.Annotations {
+		annotations[k] = v
+	}
+	err := renderSummaryAnnotaion(annotations, labels, sample.Value.String())
+	if err != nil {
+		logger.Warnf("renderSummaryAnnotaion err: %s", err)
+	}
+
+	// others
+	createdAt := evalTime
+	state := StatePending
+
+	temp, exists := ar.active[signature]
+	if exists {
+		createdAt = temp.CreatedAt
+	}
+	elapsed := evalTime.Sub(createdAt.Add(ar.rule.For))
+	if elapsed >= 0 {
+		state = StateFiring
+	}
+	alert := &Alert{
+		State:       state,
+		CreatedAt:   createdAt,
+		UpdatedAt:   evalTime,
+		Labels:      labels,
+		Annotations: annotations,
+	}
+	ar.active[signature] = alert
+	logger.Infof("%s(%s): %s: %s", alert.State.String(), elapsed.Round(time.Second), labels["alertname"], annotations["summary"])
+}
+
+func renderSummaryAnnotaion(annotations map[string]string, labels map[string]string, value string) error {
+	summary, exists := annotations["summary"]
+	if !exists {
+		annotations["summary"] = "placeholder summary"
+		return fmt.Errorf("no summary annotation")
+	}
+
 	// pre-render
-	text := input
-	text = strings.ReplaceAll(text, "$value", value)
-	text = strings.ReplaceAll(text, "$labels.", ".")
-	text = strings.ReplaceAll(text, "$labels", ".")
+	summary = strings.ReplaceAll(summary, "$value", value)
+	summary = strings.ReplaceAll(summary, "$labels.", ".")
+	summary = strings.ReplaceAll(summary, "$labels", ".")
 
 	// render
-	tmpl, err := template.New("").Parse(text)
+	tmpl, err := template.New("").Parse(summary)
 	if err != nil {
-		return input, fmt.Errorf("parse err: %w", err)
+		return fmt.Errorf("parse err: %w", err)
 	}
 	var buf bytes.Buffer
 	err = tmpl.Execute(&buf, labels)
 	if err != nil {
-		return input, fmt.Errorf("tmpl.execute err: %w", err)
+		return fmt.Errorf("tmpl.Execute err: %w", err)
 	}
-	return buf.String(), nil
+	annotations["summary"] = buf.String()
+	return nil
 }
 
-func (s *AlertingService) queryRule(rule model.Rule, ds model.Datasource) ([]commonModel.Sample, error) {
+func (s *AlertingService) queryRule(rule model.Rule, datasource model.Datasource) ([]commonModel.Sample, error) {
 	ctx, cancel := context.WithTimeout(context.TODO(), 10*time.Second)
 	defer cancel()
 
-	code, body, err := s.remoteService.GET(ctx, &ds, remote.ActionQuery, "query="+url.QueryEscape(rule.Expr))
+	code, body, err := s.remoteService.GET(ctx, &datasource, remote.ActionQuery, "query="+url.QueryEscape(rule.Expr))
 	if err != nil {
 		return []commonModel.Sample{}, fmt.Errorf("GET err: %w", err)
 	}
