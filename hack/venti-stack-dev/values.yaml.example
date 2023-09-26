@@ -28,10 +28,36 @@ venti-stack:
         hosts: ["venti.example.com"]
 
 code-server-go:
+  password: a01987ce-5c17-11ee-b99b-0242ac110004
+  service:
+    extraPorts:
+    - name: vite
+      port: 5173
   ingress:
     enabled: true
     hosts: ["code-server-go.example.com"]
     tls:
     - secretName: example-com-tls
       hosts: ["code-server-go.example.com"]
-  password: a01987ce-5c17-11ee-b99b-0242ac110004
+  extraManifests:
+  - |
+    apiVersion: networking.k8s.io/v1
+    kind: Ingress
+    metadata:
+      name: vs-code-server-go-vite
+    spec:
+      rules:
+      - host: vite.example.com
+        http:
+          paths:
+          - backend:
+              service:
+                name: vs-code-server-go
+                port:
+                  number: 5173
+            path: /
+            pathType: Prefix
+      tls:
+      - hosts:
+        - vite.example.com
+        secretName: example-com-tls
