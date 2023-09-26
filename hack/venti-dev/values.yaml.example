@@ -1,0 +1,37 @@
+venti-stack:
+  prometheus:
+    alertmanager:
+      ingress:
+        enabled: true
+        hosts:
+        - host: alertmanager.example.com
+          paths:
+          - path: /
+            pathType: ImplementationSpecific
+        tls:
+        - secretName: example-com-tls
+          hosts: ["alertmanager.example.com"]
+    server:
+      ingress:
+        enabled: true
+        hosts: ["prometheus.example.com"]
+        tls:
+        - secretName: example-com-tls
+          hosts: ["prometheus.example.com"]
+
+  venti:
+    ingress:
+      enabled: true
+      hosts: ["venti.example.com"]
+      tls:
+      - secretName: example-com-tls
+        hosts: ["venti.example.com"]
+
+code-server-go:
+  ingress:
+    enabled: true
+    hosts: ["code-server-go.example.com"]
+    tls:
+    - secretName: example-com-tls
+      hosts: ["code-server-go.example.com"]
+  password: a01987ce-5c17-11ee-b99b-0242ac110004
