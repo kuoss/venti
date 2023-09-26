@@ -4,6 +4,6 @@ dependencies:
   version: 0.1.27
 - name: code-server-go
   repository: https://kuoss.github.io/helm-charts
-  version: 0.0.6
-digest: sha256:7b6bca3aee2a08631450b319e7282ca93e4a8e6225a869a46ecb373940c69dca
-generated: "2023-09-26T06:30:59.494069115Z"
+  version: 0.0.7
+digest: sha256:2d9f77dbad8b6cc4352fca471c553d51e853e31793ccfc1aadedad36857a8d5b
+generated: "2023-09-26T06:53:23.147302984Z"
