@@ -1,0 +1,16 @@
+apiVersion: v2
+name: venti-dev
+appVersion: v0.0.0
+version: "0.0.0"
+kubeVersion: ">=1.16.0-0"
+description: venti-dev
+type: application
+dependencies:
+  - name: venti-stack
+    version: "0.1.27"
+    repository: https://kuoss.github.io/helm-charts
+    condition: venti-stack.enabled
+  - name: code-server-go
+    version: "0.0.4"
+    repository: https://kuoss.github.io/helm-charts
+    condition: code-server-go.enabled
