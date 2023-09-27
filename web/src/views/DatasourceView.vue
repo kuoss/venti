@@ -1,28 +1,19 @@
-<script lang="ts" setup>
+<script setup lang="ts">
+import { ref, onMounted } from 'vue';
 import Util from '@/lib/util';
-</script>
-<script lang="ts">
 import LetterAvatar from '@/components/LetterAvatar.vue';
 import { useDatasourceStore } from '@/stores/datasource';
-export default {
-  components: {
-    LetterAvatar,
-  },
-  data() {
-    return {
-      datasources: [],
-    };
-  },
-  mounted() {
-    this.fetchData();
-  },
-  methods: {
-    async fetchData() {
-      this.datasources = await useDatasourceStore().getDatasources();
-      // console.log(this.datasources);
-    },
-  },
-};
+import type { Datasource } from '@/types/datasource';
+
+const datasources = ref([] as Datasource[])
+
+async function fetchData() {
+  datasources.value = await useDatasourceStore().getDatasources();
+}
+
+onMounted(() => {
+  fetchData()
+})
 </script>
 
 <template>
@@ -31,10 +22,8 @@ export default {
       <div><i class="mdi mdi-18px mdi-database-outline"></i> Datasource</div>
       <div class="flex ml-auto">
         <div class="inline-flex">
-          <button
-            @click="fetchData()"
-            class="h-rounded-group py-2 px-4 text-gray-900 bg-white border border-common hover:bg-gray-100 hover:text-blue-500 focus:text-blue-500"
-          >
+          <button @click="fetchData()"
+            class="h-rounded-group py-2 px-4 text-gray-900 bg-white border border-common hover:bg-gray-100 hover:text-blue-500 focus:text-blue-500">
             <i class="mdi mdi-refresh"></i>
           </button>
         </div>

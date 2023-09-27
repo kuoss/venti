@@ -2,7 +2,7 @@ export interface Datasource {
   name: string;
   type: string;
   url: string;
-  isDefault: boolean;
+  isMain: boolean;
   isDiscovered: boolean;
   health: number;
   targets: Target[];
