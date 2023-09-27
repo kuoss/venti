@@ -71,22 +71,22 @@ export default {
       <h1 class="py-2 font-bold">Alert Rule Files ({{ alertFiles.length }} files)</h1>
       <table class="w-full bg-white border">
         <tr class="border-b bg-slate-50">
-          <th>State</th>
-          <th>Severity</th>
-          <th>Name</th>
-          <th>Summary</th>
-          <th>Expr</th>
-          <th>For</th>
+          <th class="text-left px-2">State</th>
+          <th class="text-left px-2">Severity</th>
+          <th class="text-left px-2">Name</th>
+          <th class="text-left px-2">Summary</th>
+          <th class="text-left px-2">Expr</th>
+          <th class="text-left px-2">For</th>
         </tr>
         <tbody v-for="f in alertFiles">
           <tr class="border-b">
-            <th class="bg-slate-300 p-1 pl-3" colspan="6">
+            <th class="text-left px-2 bg-slate-300 p-1 pl-3" colspan="6">
               {{ f.datasourceSelector.type == 'prometheus' ? '🔥' : '💧' }} file ({{ f.groups.length }} groups)
             </th>
           </tr>
           <template v-for="g in f.groups">
             <tr class="border-b">
-              <th class="bg-slate-200 p-1 pl-6" colspan="6">group: {{ g.name }} ({{ g.ruleAlerts.length }} rules)</th>
+              <th class="text-left px-2 bg-slate-200 p-1 pl-6" colspan="6">group: {{ g.name }} ({{ g.ruleAlerts.length }} rules)</th>
             </tr>
             <tr v-for="ra in g.ruleAlerts" class="border-b">
               <td class="p-1 pl-9">
@@ -124,9 +124,3 @@ export default {
     </main>
   </div>
 </template>
-
-<style>
-th {
-  @apply text-left px-2;
-}
-</style>
