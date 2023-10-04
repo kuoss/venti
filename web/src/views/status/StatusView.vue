@@ -1,12 +1,10 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import type { Datasource } from '@/types/datasource';
 import type { BuildInfo, RuntimeInfo, Alertmanagers } from './types';
 
 const runtimeInfo = ref({} as RuntimeInfo)
 const buildInfo = ref({} as BuildInfo)
 const alertmanagers = ref({} as Alertmanagers)
-const datasources = ref([] as Datasource[])
 
 async function fetchRuntimeInfo() {
   const response = await fetch('/api/v1/status/runtimeinfo');

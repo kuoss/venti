@@ -7,7 +7,7 @@ import type { Dashboard } from '@/types/dashboard'
 const dashboards = ref([] as Dashboard[])
 const version = ref('')
 
-async function init() {
+async function fetchData() {
   dashboards.value = await useDashboardStore().getDashboards();
   try {
     const response = await fetch('/api/v1/status/buildinfo');
@@ -18,7 +18,7 @@ async function init() {
   }
 }
 
-init();
+fetchData();
 </script>
 
 <template>
