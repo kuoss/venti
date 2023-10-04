@@ -8,17 +8,17 @@ const dashboards = ref([] as Dashboard[])
 const version = ref('')
 
 async function fetchData() {
-  dashboards.value = await useDashboardStore().getDashboards();
+  dashboards.value = await useDashboardStore().getDashboards()
   try {
-    const response = await fetch('/api/v1/status/buildinfo');
-    const data = await response.json();
-    version.value = data.version;
+    const response = await fetch('/api/v1/status/buildinfo')
+    const data = await response.json()
+    version.value = data.version
   } catch (error) {
-    console.error(error);
+    console.error(error)
   }
 }
 
-fetchData();
+fetchData()
 </script>
 
 <template>
