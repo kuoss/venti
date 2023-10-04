@@ -4,6 +4,7 @@ import (
 	"runtime"
 
 	"github.com/kuoss/venti/pkg/model"
+	apiV1 "github.com/prometheus/prometheus/web/api/v1"
 )
 
 type StatusService struct {
@@ -21,4 +22,8 @@ func New(cfg *model.Config) *StatusService {
 
 func (s *StatusService) BuildInfo() model.VentiVersion {
 	return s.ventiVersion
+}
+
+func (s *StatusService) RuntimeInfo() apiV1.RuntimeInfo {
+	return apiV1.RuntimeInfo{}
 }

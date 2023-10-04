@@ -17,6 +17,8 @@ func NewRouter(cfg *model.Config, services *service.Services) *gin.Engine {
 	{
 		api.GET("/alerts", handlers.alertHandler.AlertRuleFiles)
 		api.GET("/alerts/test", handlers.alertHandler.SendTestAlert)
+		api.GET("/alertmanagers", handlers.alertHandler.Alertmanagers)
+
 		api.GET("/config/version", handlers.configHandler.Version)
 		api.GET("/dashboards", handlers.dashboardHandler.Dashboards)
 
@@ -28,6 +30,8 @@ func NewRouter(cfg *model.Config, services *service.Services) *gin.Engine {
 		api.GET("/remote/query_range", handlers.remoteHandler.QueryRange)
 
 		api.GET("/status/buildinfo", handlers.statusHandler.BuildInfo)
+		api.GET("/status/runtimeinfo", handlers.statusHandler.RuntimeInfo)
+
 	}
 
 	router.POST("/auth/login", handlers.authHandler.Login)

@@ -45,6 +45,12 @@ const router = createRouter({
           component: () => import('@/views/DatasourceView.vue'),
           meta: { requireAuth: true },
         },
+        {
+          path: 'status',
+          name: 'status',
+          component: () => import('@/views/status/StatusView.vue'),
+          meta: { requireAuth: true },
+        },
       ],
     },
     {

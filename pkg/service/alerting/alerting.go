@@ -16,6 +16,7 @@ import (
 	datasourceservice "github.com/kuoss/venti/pkg/service/datasource"
 	"github.com/kuoss/venti/pkg/service/remote"
 	commonModel "github.com/prometheus/common/model"
+	promWebAPI "github.com/prometheus/prometheus/web/api/v1"
 	"github.com/valyala/fastjson"
 )
 
@@ -24,19 +25,24 @@ type IAlertingService interface {
 }
 
 type AlertingService struct {
-	alertingRuleGroups []AlertingRuleGroup
-	globalLabels       map[string]string
-	datasourceService  datasourceservice.IDatasourceService
-	datasourceReload   bool
-	remoteService      *remote.RemoteService
-	alertmanagerURL    string
-	client             http.Client
+	alertingRuleGroups  []AlertingRuleGroup
+	globalLabels        map[string]string
+	datasourceService   datasourceservice.IDatasourceService
+	datasourceReload    bool
+	remoteService       *remote.RemoteService
+	alertmanagerConfigs model.AlertmanagerConfigs
+	alertmanagerURL     string
+	client              http.Client
 }
 
 func New(cfg *model.Config, alertRuleFiles []model.RuleFile, datasourceService datasourceservice.IDatasourceService, remoteService *remote.RemoteService) *AlertingService {
+	var alertmanagerConfigs model.AlertmanagerConfigs
 	var alertmanagerURL string
-	if len(cfg.AlertingConfig.AlertmanagerConfigs) > 0 && len(cfg.AlertingConfig.AlertmanagerConfigs[0].StaticConfig) > 0 && len(cfg.AlertingConfig.AlertmanagerConfigs[0].StaticConfig[0].Targets) > 0 {
-		alertmanagerURL = cfg.AlertingConfig.AlertmanagerConfigs[0].StaticConfig[0].Targets[0]
+	if len(cfg.AlertingConfig.AlertmanagerConfigs) > 0 {
+		alertmanagerConfigs = cfg.AlertingConfig.AlertmanagerConfigs
+		if len(cfg.AlertingConfig.AlertmanagerConfigs[0].StaticConfig) > 0 && len(cfg.AlertingConfig.AlertmanagerConfigs[0].StaticConfig[0].Targets) > 0 {
+			alertmanagerURL = cfg.AlertingConfig.AlertmanagerConfigs[0].StaticConfig[0].Targets[0]
+		}
 	}
 	var alertingRuleGroups = []AlertingRuleGroup{}
 	for _, alertRuleFile := range alertRuleFiles {
@@ -56,13 +62,29 @@ func New(cfg *model.Config, alertRuleFiles []model.RuleFile, datasourceService d
 		})
 	}
 	return &AlertingService{
-		alertingRuleGroups: alertingRuleGroups,
-		globalLabels:       cfg.AlertingConfig.GlobalLabels,
-		datasourceService:  datasourceService,
-		datasourceReload:   cfg.DatasourceConfig.Discovery.Enabled,
-		remoteService:      remoteService,
-		alertmanagerURL:    alertmanagerURL,
-		client:             http.Client{Timeout: 5 * time.Second},
+		alertingRuleGroups:  alertingRuleGroups,
+		globalLabels:        cfg.AlertingConfig.GlobalLabels,
+		datasourceService:   datasourceService,
+		datasourceReload:    cfg.DatasourceConfig.Discovery.Enabled,
+		remoteService:       remoteService,
+		alertmanagerConfigs: alertmanagerConfigs,
+		alertmanagerURL:     alertmanagerURL,
+		client:              http.Client{Timeout: 5 * time.Second},
+	}
+}
+
+func (s *AlertingService) GetAlertmanagerDiscovery() promWebAPI.AlertmanagerDiscovery {
+	var alertmanagers []*promWebAPI.AlertmanagerTarget
+	for _, alertmanagerConfig := range s.alertmanagerConfigs {
+		for _, staticConfig := range alertmanagerConfig.StaticConfig {
+			for _, target := range staticConfig.Targets {
+				alertmanagers = append(alertmanagers, &promWebAPI.AlertmanagerTarget{URL: target})
+			}
+		}
+	}
+	return promWebAPI.AlertmanagerDiscovery{
+		ActiveAlertmanagers:  alertmanagers,
+		DroppedAlertmanagers: []*promWebAPI.AlertmanagerTarget{},
 	}
 }
 

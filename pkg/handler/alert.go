@@ -26,3 +26,10 @@ func (h *alertHandler) SendTestAlert(c *gin.Context) {
 	}
 	c.JSON(200, gin.H{"status": "success"})
 }
+
+func (h *alertHandler) Alertmanagers(c *gin.Context) {
+	c.JSON(200, gin.H{
+		"status": "success",
+		"data":   h.alertingService.GetAlertmanagerDiscovery(),
+	})
+}
