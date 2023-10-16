@@ -48,7 +48,7 @@ const router = createRouter({
         {
           path: 'status',
           name: 'status',
-          component: () => import('@/views/status/StatusView.vue'),
+          component: () => import('@/views/StatusView.vue'),
           meta: { requireAuth: true },
         },
       ],

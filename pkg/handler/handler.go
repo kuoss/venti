@@ -9,7 +9,6 @@ import (
 type Handlers struct {
 	alertHandler      *alertHandler
 	authHandler       *authHandler
-	configHandler     *configHandler
 	dashboardHandler  *dashboardHandler
 	datasourceHandler *datasourceHandler
 	probeHandler      *probeHandler
@@ -21,7 +20,6 @@ func loadHandlers(cfg *model.Config, services *service.Services) *Handlers {
 	return &Handlers{
 		NewAlertHandler(services.AlertRuleService, services.AlertingService),
 		NewAuthHandler(services.UserService),
-		NewConfigHandler(cfg),
 		NewDashboardHandler(services.DashboardService),
 		NewDatasourceHandler(services.DatasourceService, services.RemoteService),
 		NewProbeHandler(),

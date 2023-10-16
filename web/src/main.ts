@@ -10,7 +10,7 @@ import clickOutsidePlugin from './plugins/clickOutsidePlugin';
 
 import { useThemeStore } from './stores/theme';
 
-import '@/assets/base.css';
+import '@/assets/base.scss';
 import '@mdi/font/css/materialdesignicons.css';
 
 const app = createApp(App)

@@ -8,11 +8,15 @@ import (
 )
 
 type Config struct {
-	Version          string
+	AppInfo          AppInfo
 	GlobalConfig     GlobalConfig
 	DatasourceConfig DatasourceConfig
 	UserConfig       UserConfig
 	AlertingConfig   AlertingConfig
+}
+
+type AppInfo struct {
+	Version string
 }
 
 type GlobalConfig struct {

@@ -18,10 +18,10 @@ export const useTimeStore = defineStore('time', {
   actions: {
     async toTimeRangeForQuery(r, updateNow = true) {
       const now = await this.getNow(updateNow);
-      return [await this.toAbsoluteTime(r[0], now), await this.toAbsoluteTime(r[1], now)];
+      return [await this.toAbsoluteTime(r._value[0], now), await this.toAbsoluteTime(r._value[1], now)];
     },
     async toAbsoluteTime(t, now) {
-      if (!t.startsWith('now')) {
+      if (!('' + t).startsWith('now')) {
         return Date.parse(t) / 1000;
       }
       if (t == 'now') return now;
@@ -46,7 +46,7 @@ export const useTimeStore = defineStore('time', {
     },
     async updateNow() {
       try {
-        const response = await fetch('/api/v1/remote/query?query=time()&dstype=prometheus');
+        const response = await fetch('/api/v1/remote/query?query=time()&dsType=prometheus');
         const data = await response.json();
         this.now = data.data.result[0];
       } catch (error) {

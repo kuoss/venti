@@ -1,29 +1,41 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref } from 'vue';
 import Util from '@/lib/util';
+import { formatTimeAgo } from '@vueuse/core'
 import LetterAvatar from '@/components/LetterAvatar.vue';
 import { useDatasourceStore } from '@/stores/datasource';
-import type { Datasource } from '@/types/datasource';
+import type { Datasource, Target } from '@/types/datasource';
+
+const dsStore = useDatasourceStore()
 
 const datasources = ref([] as Datasource[])
+const datasource = ref({} as Datasource)
+const targets = ref([] as Target[])
+const healthClasses = ref(['text-gray-400', 'text-green-400', 'text-red-400'])
 
 async function fetchData() {
-  datasources.value = await useDatasourceStore().getDatasources();
+  const dss = await dsStore.getDatasources()
+  datasources.value = dss
+  for (const i in dss) {
+    dss[i].health = await dsStore.getDatasourceHealthy(dss[i])
+  }
 }
 
-onMounted(() => {
-  fetchData()
-})
+async function showTargets(ds: Datasource) {
+  datasource.value = ds
+  targets.value = await dsStore.getTargets(ds)
+}
+fetchData();
 </script>
 
 <template>
-  <header class="fixed right-0 w-full bg-white border-b shadow z-30 p-2 pl-52">
+  <header class="fixed right-0 w-full border-b shadow z-30 p-2 pl-52 bg-white dark:bg-black">
     <div class="flex items-center flex-row">
       <div><i class="mdi mdi-18px mdi-database-outline"></i> Datasource</div>
       <div class="flex ml-auto">
         <div class="inline-flex">
           <button @click="fetchData()"
-            class="h-rounded-group py-2 px-4 text-gray-900 bg-white border border-common hover:bg-gray-100 hover:text-blue-500 focus:text-blue-500">
+            class="h-rounded-group py-2 px-4 border border-common text-gray-900 dark:text-gray-100 bg-white dark:bg-black hover:bg-gray-100 dark:hover:bg-gray-900 hover:text-blue-500 focus:text-blue-500">
             <i class="mdi mdi-refresh"></i>
           </button>
         </div>
@@ -31,56 +43,77 @@ onMounted(() => {
     </div>
   </header>
 
-  <div class="mt-12 w-full p-8">
-    <h1 class="mt-4">Datasources</h1>
-    <table class="w-full bg-white border" v-if="datasources">
-      <tr class="border-b bg-slate-50">
-        <th>Name</th>
-        <th>Type</th>
-        <th>URL</th>
-        <th>Main</th>
-        <th>Discovered</th>
-        <th>Up</th>
-      </tr>
-      <tr class="border-b" v-for="d in datasources">
-        <td class="px-2">
-          <letterAvatar :bgcolor="Util.string2color(d.name)" />
-          {{ d.name }}
-        </td>
-        <td>{{ d.type == 'prometheus' ? '🔥' : '💧' }} {{ d.type }}</td>
-        <td>{{ d.url }}</td>
-        <td class="text-center">{{ d.isMain ? '✔️' : '-' }}</td>
-        <td class="text-center">{{ d.isDiscovered ? '✔️' : '-' }}</td>
-        <td class="text-center">
-          <span :class="[d.health ? 'text-green-400' : 'text-red-400']">●</span>
-        </td>
-      </tr>
-    </table>
-    <h1 class="mt-4">Targets</h1>
-    <table class="w-full bg-white border">
-      <tr class="border-b bg-slate-50">
-        <th>Datasource</th>
-        <th>Job</th>
-        <th>Address</th>
-        <th>Name</th>
-        <th>Last scrape</th>
-        <th>Up</th>
-      </tr>
-      <template v-for="d of datasources">
-        <tr class="border-b" v-for="t in d.targets">
-          <td class="px-2" v-if="d.name">
-            <LetterAvatar :bgcolor="Util.string2color(d.name)" />
+  <div class="mt-12 w-full">
+    <div class="p-8">
+      <h2 class="text-lg font-bold">Datasources</h2>
+      <table class="w-full border bg-white dark:bg-black" v-if="datasources">
+        <tr class="border-b bg-slate-50">
+          <th>Name</th>
+          <th>Type</th>
+          <th>URL</th>
+          <th>Main</th>
+          <th>Discovered</th>
+          <th>Up</th>
+          <th>Actions</th>
+        </tr>
+        <tr class="border-b" v-for="d in datasources" :class="{ 'bg-blue-50': d.name == datasource.name }">
+          <td class="px-2">
+            <LetterAvatar :letters="d.name.charAt(0)" :bgcolor="Util.string2color(d.name)" />
             {{ d.name }}
           </td>
-          <td>{{ t.discoveredLabels.job }}</td>
-          <td>{{ t.discoveredLabels.__address__ }}</td>
-          <td>{{ t.icon }} {{ t.name }}</td>
-          <td class="text-right pr-10">{{ t.age }}s</td>
+          <td>{{ d.type == 'prometheus' ? '🔥' : '💧' }} {{ d.type }}</td>
+          <td>{{ d.url }}</td>
+          <td class="text-center">{{ d.isMain ? '✔️' : '-' }}</td>
+          <td class="text-center">{{ d.isDiscovered ? '✔️' : '-' }}</td>
           <td class="text-center">
+            <span :class="d.health ? healthClasses[d.health] : 'text-gray-400'">●</span>
+          </td>
+          <td class="text-center">
+            <button class="btn" @click="showTargets(d)">Show Targets</button>
+          </td>
+        </tr>
+      </table>
+    </div>
+    <div class="p-8" v-if="Object.keys(datasource).length">
+      <div class="overflow-auto">
+        <span class="float-left text-lg font-bold">Targets</span>
+        <span class="float-left p-1 px-2">
+          <LetterAvatar :letters="datasource.name.charAt(0)" :bgcolor="Util.string2color(datasource.name)" />
+          {{ datasource.name }}
+        </span>
+      </div>
+      <table class="w-full bg-white border">
+        <tr class="border-b bg-slate-50">
+          <th>Job</th>
+          <th>Address</th>
+          <th>Info</th>
+          <th>Last scrape</th>
+          <th>Up</th>
+        </tr>
+        <tr class="border-b" v-for="t in targets">
+          <td class="px-2">{{ t.discoveredLabels.job }}</td>
+          <td>{{ t.discoveredLabels.__address__ }}</td>
+          <td v-if="t.discoveredLabels.__meta_kubernetes_namespace">
+            🖼️ {{ t.discoveredLabels.__meta_kubernetes_namespace }}
+            <span v-if="t.discoveredLabels.__meta_kubernetes_service_name">
+              / 🐕‍🦺 {{ t.discoveredLabels.__meta_kubernetes_service_name }}
+            </span>
+            <span v-if="t.discoveredLabels.__meta_kubernetes_pod_name">
+              / 🐱 {{ t.discoveredLabels.__meta_kubernetes_pod_name }}
+            </span>
+          </td>
+          <td v-else-if="t.discoveredLabels.__meta_kubernetes_node_name">
+            🏝 {{ t.discoveredLabels.__meta_kubernetes_node_name }}
+          </td>
+          <td v-else>
+            🔥
+          </td>
+          <td class="text-right pr-10">{{ formatTimeAgo(new Date(t.lastScrape)) }}</td>
+          <td class="text-center px-2">
             <span :class="[t.health == 'up' ? 'text-green-400' : 'text-red-400']">●</span>
           </td>
         </tr>
-      </template>
-    </table>
+      </table>
+    </div>
   </div>
 </template>

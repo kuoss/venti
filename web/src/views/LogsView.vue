@@ -304,9 +304,7 @@ export default {
         </div>
         <div class="overflow-y-auto border-l border-2 w-full bg-slate-200 border-b" style="height: calc(100vh - 90px)">
           <div class="bg-gray-100 text-center cursor-pointer">event</div>
-          <div class="cursor-pointer" @click="selectEvent">
-            event
-          </div>
+          <div class="cursor-pointer" @click="selectEvent">event</div>
           <div class="bg-gray-100 text-center cursor-pointer">node</div>
           <div v-for="node in nodes" class="cursor-pointer" @click="selectNode(node.name)">
             {{ node.name }}

@@ -39,12 +39,12 @@ export default {
       try {
         const response = await fetch('/api/v1/alerts/test');
         const jsonData = await response.json();
-        console.log(jsonData)
+        console.log(jsonData);
       } catch (error) {
         console.error(error);
       }
       this.testAlertSent = true;
-    }
+    },
   },
 };
 </script>
@@ -56,7 +56,11 @@ export default {
         <div><i class="mdi mdi-18px mdi-database-outline" /> Alert</div>
         <div class="flex ml-auto">
           <div class="inline-flex">
-            <button class="h-rounded-group py-2 px-4 text-gray-900 bg-white border border-common" v-if="!testAlertSent" @click="sendTestAlert">
+            <button
+              class="h-rounded-group py-2 px-4 text-gray-900 bg-white border border-common"
+              v-if="!testAlertSent"
+              @click="sendTestAlert"
+            >
               <i class="mdi mdi-cube-send" /> Send Test Alert
             </button>
             <button class="h-rounded-group py-2 px-4 text-gray-900 bg-white border border-common">
@@ -86,7 +90,9 @@ export default {
           </tr>
           <template v-for="g in f.groups">
             <tr class="border-b">
-              <th class="text-left px-2 bg-slate-200 p-1 pl-6" colspan="6">group: {{ g.name }} ({{ g.ruleAlerts.length }} rules)</th>
+              <th class="text-left px-2 bg-slate-200 p-1 pl-6" colspan="6">
+                group: {{ g.name }} ({{ g.ruleAlerts.length }} rules)
+              </th>
             </tr>
             <tr v-for="ra in g.ruleAlerts" class="border-b">
               <td class="p-1 pl-9">

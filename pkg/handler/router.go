@@ -19,12 +19,13 @@ func NewRouter(cfg *model.Config, services *service.Services) *gin.Engine {
 		api.GET("/alerts/test", handlers.alertHandler.SendTestAlert)
 		api.GET("/alertmanagers", handlers.alertHandler.Alertmanagers)
 
-		api.GET("/config/version", handlers.configHandler.Version)
 		api.GET("/dashboards", handlers.dashboardHandler.Dashboards)
 
 		api.GET("/datasources", handlers.datasourceHandler.Datasources)
 		api.GET("/datasources/targets", handlers.datasourceHandler.Targets)
+		api.GET("/datasources/targets/:name", handlers.datasourceHandler.TargetByName)
 
+		api.GET("/remote/healthy", handlers.remoteHandler.Healthy)
 		api.GET("/remote/metadata", handlers.remoteHandler.Metadata)
 		api.GET("/remote/query", handlers.remoteHandler.Query)
 		api.GET("/remote/query_range", handlers.remoteHandler.QueryRange)
