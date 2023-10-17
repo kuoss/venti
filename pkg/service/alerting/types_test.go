@@ -56,7 +56,7 @@ func TestAlertingRuleState(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		t.Run("", func(t *testing.T) {
-			alertingRule := AlertingRule{active: tc.alerts}
+			alertingRule := AlertingRule{Active: tc.alerts}
 			got := alertingRule.State()
 			require.Equal(t, tc.want, got)
 		})

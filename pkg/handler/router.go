@@ -15,7 +15,7 @@ func NewRouter(cfg *model.Config, services *service.Services) *gin.Engine {
 	api := router.Group("/api/v1")
 	// fixme: api.Use(tokenRequired())
 	{
-		api.GET("/alerts", handlers.alertHandler.AlertRuleFiles)
+		api.GET("/alerts", handlers.alertHandler.Alerts)
 		api.GET("/alerts/test", handlers.alertHandler.SendTestAlert)
 		api.GET("/alertmanagers", handlers.alertHandler.Alertmanagers)
 

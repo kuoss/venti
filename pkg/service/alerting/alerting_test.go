@@ -216,7 +216,7 @@ func TestEvalAlertingRule(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		t.Run("", func(t *testing.T) {
-			ar := &AlertingRule{active: tc.active}
+			ar := &AlertingRule{Active: tc.active}
 			fires := []Fire{}
 			alertingService1.evalAlertingRule(ar, servers.GetDatasources(), tc.commonLabels, evalTime, &fires)
 			require.Equal(t, tc.want, fires)
@@ -227,18 +227,18 @@ func TestEvalAlertingRule(t *testing.T) {
 func TestEvalAlertingRuleSample(t *testing.T) {
 	active := map[uint64]*Alert{}
 	ar := AlertingRule{
-		active: active,
+		Active: active,
 	}
 	sample := commonModel.Sample{}
 	labels := map[string]string{}
 	evalTime := time.Now()
 	alertingService1.evalAlertingRuleSample(&ar, sample, labels, evalTime)
 	want := AlertingRule{
-		rule: model.Rule{
+		Rule: model.Rule{
 			Labels:      map[string]string(nil),
 			Annotations: map[string]string(nil),
 		},
-		active: active,
+		Active: active,
 	}
 	require.Equal(t, want, ar)
 }

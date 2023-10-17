@@ -56,7 +56,6 @@ export const useDatasourceStore = defineStore('datasource', {
         const jsonString = await resp.json()
         const obj = JSON.parse(jsonString)
         const targets = obj.data.activeTargets as Target[]
-        console.log('targets', targets)
         return targets
       } catch (error) {
         console.error(error)

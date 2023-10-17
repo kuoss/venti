@@ -15,7 +15,7 @@ func TestNewAlertHandler(t *testing.T) {
 func TestAlertRuleFiles(t *testing.T) {
 	alertHandler1 := handlers.alertHandler
 	r := gin.Default()
-	r.GET("/", alertHandler1.AlertRuleFiles)
+	r.GET("/", alertHandler1.Alerts)
 	w := httptest.NewRecorder()
 	req := httptest.NewRequest("GET", "/", nil)
 	r.ServeHTTP(w, req)

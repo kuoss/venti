@@ -1,52 +1,79 @@
-<script setup>
-import Util from '@/lib/util';
-</script>
+<script setup lang="ts">
+import { ref, onMounted, onUnmounted } from 'vue'
+import Util from '@/lib/util'
 
-<script>
-export default {
-  data() {
-    return {
-      alertFiles: [],
-      isLoading: false,
-      repeat: true,
-      testAlertSent: false,
-    };
-  },
-  mounted() {
-    this.fetchData();
-  },
-  beforeUnmount() {
-    this.repeat = false;
-  },
-  methods: {
-    async fetchData() {
-      this.isLoading = true;
-      try {
-        const response = await fetch('/api/v1/alerts');
-        const jsonData = await response.json();
-        this.alertFiles = jsonData;
-        setTimeout(() => {
-          if (!this.repeat) return;
-          this.fetchData();
-        }, 3000);
-      } catch (error) {
-        this.repeat = false;
-        console.error(error);
-      }
-      this.isLoading = false;
-    },
-    async sendTestAlert() {
-      try {
-        const response = await fetch('/api/v1/alerts/test');
-        const jsonData = await response.json();
-        console.log(jsonData);
-      } catch (error) {
-        console.error(error);
-      }
-      this.testAlertSent = true;
-    },
-  },
-};
+interface Alert {
+  annotations: Record<string, string>
+  labels: Record<string, string>
+  state: number
+  createdAt: string
+  updatedAt: string
+}
+
+interface Rule {
+  alert: string
+  annotations: Record<string, string>
+  labels: Record<string, string>
+  expr: string
+  for: number
+}
+
+interface AlertingRule {
+  active: Record<string, Alert>
+  rule: Rule
+}
+
+interface DatasourceSelector {
+  system: string
+  type: string
+}
+
+interface AlertingFile {
+  datasourceSelector: DatasourceSelector
+  alertingRules: AlertingRule[]
+  groupLabels: Record<string, string>
+}
+
+const alertingFiles = ref([] as AlertingFile[])
+const isLoading = ref(false)
+const repeat = ref(true)
+const testAlertSent = ref(false)
+
+async function fetchData() {
+  isLoading.value = true
+  try {
+    const resp = await fetch('/api/v1/alerts')
+    const json = await resp.json()
+    alertingFiles.value = json.data
+    setTimeout(() => {
+      if (!repeat.value) return
+      fetchData()
+    }, 3000);
+  } catch (err) {
+    repeat.value = false
+    console.error(err)
+  }
+  isLoading.value = false
+}
+async function sendTestAlert() {
+  try {
+    const resp = await fetch('/api/v1/alerts/test')
+    const json = await resp.json()
+    console.log(json)
+  } catch (err) {
+    console.error(err)
+  }
+  testAlertSent.value = true
+}
+
+onMounted(() => {
+  fetchData()
+})
+
+onUnmounted(() => {
+  repeat.value = false
+})
+
 </script>
 
 <template>
@@ -56,11 +83,8 @@ export default {
         <div><i class="mdi mdi-18px mdi-database-outline" /> Alert</div>
         <div class="flex ml-auto">
           <div class="inline-flex">
-            <button
-              class="h-rounded-group py-2 px-4 text-gray-900 bg-white border border-common"
-              v-if="!testAlertSent"
-              @click="sendTestAlert"
-            >
+            <button class="h-rounded-group py-2 px-4 text-gray-900 bg-white border border-common" v-if="!testAlertSent"
+              @click="sendTestAlert">
               <i class="mdi mdi-cube-send" /> Send Test Alert
             </button>
             <button class="h-rounded-group py-2 px-4 text-gray-900 bg-white border border-common">
@@ -72,7 +96,7 @@ export default {
     </header>
 
     <main class="mt-12 w-full p-8 pb-16">
-      <h1 class="py-2 font-bold">Alert Rule Files ({{ alertFiles.length }} files)</h1>
+      <h1 class="py-2 font-bold">Alerting Files ({{ alertingFiles.length }} files)</h1>
       <table class="w-full bg-white border">
         <tr class="border-b bg-slate-50">
           <th class="text-left px-2">State</th>
@@ -82,46 +106,37 @@ export default {
           <th class="text-left px-2">Expr</th>
           <th class="text-left px-2">For</th>
         </tr>
-        <tbody v-for="f in alertFiles">
+
+        <tbody v-for="f in alertingFiles">
           <tr class="border-b">
-            <th class="text-left px-2 bg-slate-300 p-1 pl-3" colspan="6">
-              {{ f.datasourceSelector.type == 'prometheus' ? '🔥' : '💧' }} file ({{ f.groups.length }} groups)
+            <th class="text-left px-2 bg-slate-300 p-1 pl-3" colspan="9">
+              {{ f.datasourceSelector.type == 'prometheus' ? '🔥' : '💧' }} file ({{ f.alertingRules.length }} rules)
             </th>
           </tr>
-          <template v-for="g in f.groups">
+          <template v-for="r in f.alertingRules">
             <tr class="border-b">
-              <th class="text-left px-2 bg-slate-200 p-1 pl-6" colspan="6">
-                group: {{ g.name }} ({{ g.ruleAlerts.length }} rules)
-              </th>
-            </tr>
-            <tr v-for="ra in g.ruleAlerts" class="border-b">
-              <td class="p-1 pl-9">
-                <span v-for="a in ra.alerts">
-                  <div v-if="a.state == 'firing'" class="rounded w-24 text-center bg-red-300">firing</div>
-                  <div v-else-if="a.state == 'pending'" class="rounded w-24 text-center bg-yellow-300">pending</div>
-                  <div v-else class="rounded w-24 text-center bg-green-300">normal</div>
+              <td class="text-center">
+                <span v-if="r.active" class="px-2 rounded-full bg-red-400">
+                  {{ Object.keys(r.active).length }}
+                </span>
+                <span v-else>
+                  ·
                 </span>
               </td>
               <td class="px-2">
-                {{ f.commonLabels?.severity }}
+                {{ f.groupLabels.severity }}
               </td>
               <td class="px-2">
-                {{ ra.rule.alert }}
-              </td>
-              <td class="px-2 max-w-[30vw] truncate hover:whitespace-normal">
-                {{ ra.rule.annotations?.summary }}
-              </td>
-              <td class="px-2 max-w-[20vw] truncate hover:whitespace-normal text-cyan-500">
-                <a
-                  class="hover:underline"
-                  :href="`/${f.datasourceSelector.type == 'prometheus' ? 'metrics' : 'logs'}?query=${encodeURIComponent(
-                    ra.rule.expr,
-                  )}`"
-                  >{{ ra.rule.expr }}</a
-                >
+                {{ r.rule.alert }}
               </td>
               <td class="px-2">
-                {{ Util.nanoseconds2human(ra.rule.for) }}
+                {{ r.rule.annotations.summary }}
+              </td>
+              <td class="px-2">
+                {{ r.rule.expr }}
+              </td>
+              <td class="px-2">
+                {{ r.rule.for/100000000 }}s
               </td>
             </tr>
           </template>

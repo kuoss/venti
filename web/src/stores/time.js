@@ -2,14 +2,16 @@ import { defineStore } from 'pinia';
 // import axios from "axios";
 
 export const useTimeStore = defineStore('time', {
-  state: () => ({
-    now: null,
-    range: 1800,
-    offset: new Date().getTimezoneOffset(),
-    status: { ready: false, loading: false, retries: 0 },
-    timerIDs: [],
-    timerManager: '',
-  }),
+  state: () => {
+    return {
+      now: null,
+      range: 1800,
+      offset: new Date().getTimezoneOffset(),
+      status: { ready: false, loading: false, retries: 0 },
+      timerIDs: [],
+      timerManager: '',
+    }
+  },
   computed: {
     nowUnix() {
       return Date.parse(this.nowDate);
