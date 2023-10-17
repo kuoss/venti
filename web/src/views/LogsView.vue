@@ -121,7 +121,7 @@ export default {
           '/api/v1/remote/query_range?' +
             new URLSearchParams({
               logFormat: 'json',
-              dstype: 'lethe',
+              dsType: 'lethe',
               query: this.expr,
               start: timeRange[0],
               end: timeRange[1],
@@ -165,7 +165,7 @@ export default {
     async fetchQuery(query) {
       const now = await useTimeStore().getNow();
       const response = await fetch(
-        '/api/v1/remote/query?' + new URLSearchParams({ dstype: 'prometheus', query: query, time: now }),
+        '/api/v1/remote/query?' + new URLSearchParams({ dsType: 'prometheus', query: query, time: now }),
       );
       return await response.json();
     },

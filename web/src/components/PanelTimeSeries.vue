@@ -73,7 +73,7 @@ export default {
       this.$emit('setIsLoading', true);
       try {
         const response = await fetch(
-          '/api/v1/remote/query_range?dstype=prometheus&' +
+          '/api/v1/remote/query_range?dsType=prometheus&' +
             new URLSearchParams({
               query: useFilterStore().renderExpr(this.expr),
               start: this.timeRange[0],

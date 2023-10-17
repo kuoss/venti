@@ -18,9 +18,9 @@ export const useTimeStore = defineStore('time', {
   actions: {
     async toTimeRangeForQuery(r, updateNow = true) {
       const now = await this.getNow(updateNow);
-      return [await this.toAbsoluteTime(r._value[0], now), await this.toAbsoluteTime(r._value[1], now)];
+      return [this.toAbsoluteTime(r[0], now), this.toAbsoluteTime(r[1], now)];
     },
-    async toAbsoluteTime(t, now) {
+    toAbsoluteTime(t, now) {
       if (!('' + t).startsWith('now')) {
         return Date.parse(t) / 1000;
       }

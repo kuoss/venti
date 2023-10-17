@@ -62,7 +62,7 @@ export default {
           const query = useFilterStore().renderExpr(target.expr);
           const response = await fetch(
             '/api/v1/remote/query?' +
-              new URLSearchParams({ dstype: 'prometheus', query: query, time: this.timeRange[1] }),
+              new URLSearchParams({ dsType: 'prometheus', query: query, time: this.timeRange[1] }),
           );
           const jsonData = await response.json();
           dds = [

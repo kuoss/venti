@@ -53,7 +53,7 @@ export default {
           '/api/v1/remote/query_range?' +
             new URLSearchParams({
               logFormat: 'json',
-              dstype: 'lethe',
+              dsType: 'lethe',
               query: query,
               start: this.timeRange[0],
               end: this.timeRange[1],

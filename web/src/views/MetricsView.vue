@@ -1,41 +1,38 @@
-<script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
-import Util from '@/lib/util'
+<script setup>
+import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { useRoute } from 'vue-router';
+import Util from '@/lib/util';
+import { useTimeStore } from '@/stores/time';
+import { useDatasourceStore } from '@/stores/datasource';
 
-import { useTimeStore } from '@/stores/time'
-import { useDatasourceStore } from '@/stores/datasource'
+import TimeRangePicker from '@/components/TimeRangePicker.vue';
+import RunButton from '@/components/RunButton.vue';
+import UplotVue from 'uplot-vue';
+import 'uplot/dist/uPlot.min.css';
 
-import TimeRangePicker from '@/components/TimeRangePicker.vue'
-import RunButton from '@/components/RunButton.vue'
-import UplotVue from 'uplot-vue'
-import 'uplot/dist/uPlot.min.css'
-import { useRoute } from 'vue-router'
-
-const timeStore = useTimeStore()
-const datasourceStore = useDatasourceStore()
 const route = useRoute()
+const timeStore = useTimeStore()
+// const datasourceStore = useDatasourceStore()
 
 const tableWidth = ref(0)
 const searchMode = ref(false)
 const cursorIdx = ref(null)
 const cursorTime = ref(null)
-const errorResponse = ref(null)
 const busy = ref(false)
 const loading = ref(false)
-const intervalSeconds = ref(0)
-const range = ref([])
-const lastExecuted = ref({})
-const metadata = ref({} as any)
-const metaDict = ref({} as any)
-const metricInfo = ref(null as any)
-const queryType = ref('raw')
-const expr = ref('container_memory_working_set_bytes{namespace="kube-system"}')
-const keys = ref([] as string[])
-const keyDict = ref({} as any)
-const result = ref([] as any[])
+
+const metadata = ref({})
+const metaDict = ref({})
+const metricInfo = ref(null)
+
+const expr = ref(`container_memory_working_set_bytes{namespace="kube-system"}`)
+const keys = ref([])
+const keyDict = ref({})
+const result = ref([])
 const tab = ref(0)
-const time = ref(null)
-const chartData = ref([] as any[])
+// const time = ref(null)
+
+const chartData = ref([])
 const chartOptions = ref({
   axes: [
     {
@@ -55,11 +52,11 @@ const chartOptions = ref({
       stroke: '#888',
       grid: { stroke: '#8885', width: 1 },
       ticks: { stroke: '#8885', width: 1 },
-      size(self: any, values: any, axisIdx: any, cycleNum: any) {
+      size(self, values, axisIdx, cycleNum) {
         const axis = self.axes[axisIdx];
         if (cycleNum > 1) return axis._size;
         let axisSize = axis.ticks.size + axis.gap;
-        let longestVal = (values ?? []).reduce((acc: any, val: any) => (val.length > acc.length ? val : acc), '');
+        let longestVal = (values ?? []).reduce((acc, val) => (val.length > acc.length ? val : acc), '');
         if (longestVal != '') {
           self.ctx.font = axis.font[0];
           axisSize += self.ctx.measureText(longestVal).width / devicePixelRatio;
@@ -74,17 +71,22 @@ const chartOptions = ref({
   cursor: { points: false },
   scales: { x: { time: true }, y: { auto: true } },
   select: { show: false },
-  series: [] as any[],
+  series: [],
   plugins: [tooltipPlugin()],
 })
 
-const items = computed((): any => {
-  const keyword = expr.value;
-  if (!keyword || keyword.length < 1) return [];
+let errorResponse
+let intervalSeconds = 0
+let range = []
+let lastExecuted = null
+
+const items = computed(() => {
+  const keyword = expr.value
+  if (!keyword || keyword.length < 1) return []
   return Object.entries(metadata.value)
     .filter(x => x[0].indexOf(keyword) >= 0)
     .map(x => {
-      x.push(x[0].replace(keyword, `<span class="text-blue-600 font-bold">${keyword}</span>`))
+      x.push(x[0].replaceAll(keyword, `<span class="text-blue-600 font-bold">${keyword}</span>`))
       return x
     })
 })
@@ -92,9 +94,9 @@ const items = computed((): any => {
 onMounted(() => {
   timeStore.timerManager = 'MetricsView'
   fetchMetadata()
-  if (route.query.query) {
-    expr.value = '' + route.query.query
-    setTimeout(execute, 500);
+  if (route.query?.query) {
+    expr = '' + route.query.query
+    setTimeout(execute, 500)
   }
   window.addEventListener('resize', chartResize)
 })
@@ -103,191 +105,182 @@ onUnmounted(() => {
   window.removeEventListener('resize', chartResize)
 })
 
-function searchKeyUp(e: any) {
+function searchKeyUp(e) {
   if (e.keyCode == 13) {
-    searchMode.value = false
-    execute()
-    return
+    searchMode.value = false;
+    execute();
+    return;
   }
-  searchMode.value = true
+  searchMode.value = true;
 }
 
-function addLabel(not: string, key: any, value: string) {
-  const where = `${key}${not}="${value}"`
-  const idx = expr.value.indexOf('}')
+function addLabel(not, key, value) {
+  const where = `${key}${not}="${value}"`;
+  const idx = expr.value.indexOf('}');
   if (idx < 0) {
-    expr.value += `{${where}}`
-    return
+    expr.value += `{${where}}`;
+    return;
   }
-  expr.value = expr.value.slice(0, -1) + `,${where}` + expr.value.slice(-1)
+  expr.value = expr.value.slice(0, -1) + `,${where}` + expr.value.slice(-1);
 }
 
-function changeInterval(i: number) {
-  intervalSeconds.value = i
-  execute()
+function changeInterval(i) {
+  intervalSeconds = i;
+  execute();
 }
 
-function updateTimeRange(r: any) {
-  range.value = r
+function updateTimeRange(r) {
+  range = r;
 }
 
 async function execute() {
   if (expr.value.length < 1) {
-    console.error('emtpy expr')
-    return
+    console.error('emtpy expr');
+    return;
   }
   const timeRange = await timeStore.toTimeRangeForQuery(range);
-  console.log('timeRange=', timeRange)
-  console.log('execute')
-
-  let lastRange = timeRange.map((x: any) => timeStore.timestamp2ymdhis(x))
-  if (lastRange[0].slice(0, 10) == lastRange[1].slice(0, 10)) lastRange[1] = lastRange[1].slice(11)
-  lastExecuted.value = { expr: expr.value, range: lastRange }
-  loading.value = true
+  let lastRange = timeRange.map(x => timeStore.timestamp2ymdhis(x));
+  if (lastRange[0].slice(0, 10) == lastRange[1].slice(0, 10)) lastRange[1] = lastRange[1].slice(11);
+  lastExecuted = { expr: expr.value, range: lastRange };
+  loading.value = true;
   try {
-    const response = await fetch('/api/v1/remote/query_range?' + new URLSearchParams({
-      dsType: 'prometheus',
-      query: expr.value,
-      start: timeRange[0],
-      end: timeRange[1],
-      step: `${(timeRange[1] - timeRange[0]) / 120}`,
-    }).toString())
-    const jsonData = await response.json()
+    const response = await fetch(
+      '/api/v1/remote/query_range?dsType=prometheus&' +
+      new URLSearchParams({
+        query: expr.value,
+        start: timeRange[0],
+        end: timeRange[1],
+        step: (timeRange[1] - timeRange[0]) / 120,
+      }),
+    );
+    const jsonData = await response.json();
 
     loading.value = false;
-    result.value = jsonData.data.result
+    result.value = jsonData.data.result;
     keys.value = result.value
-      .map((x: any) => Object.keys(x.metric))
+      .map(x => Object.keys(x.metric))
       .flat()
       .filter((v, i, s) => s.indexOf(v) === i)
       .sort()
-      .slice(1, 99)
-    renderChart()
-    if (intervalSeconds.value > 0) {
-      busy.value = true
-      setTimeout(() => timerHandler(), intervalSeconds.value * 1000)
+      .slice(1, 99);
+    renderChart();
+    if (intervalSeconds > 0) {
+      busy.value = true;
+      setTimeout(() => timerHandler(), intervalSeconds * 1000);
     } else {
-      busy.value = false
+      busy.value = false;
     }
-    errorResponse.value = null
-  } catch (err: any) {
-    loading.value = false
-    errorResponse.value = err.response
+    errorResponse = null;
+  } catch (error) {
+    loading.value = false;
+    errorResponse = error.response;
   }
 }
 
 function timerHandler() {
-  if (timeStore.timerManager != 'MetricsView' || intervalSeconds.value == 0) {
-    return
-  }
-  execute()
+  if (timeStore.timerManager != 'MetricsView' || intervalSeconds == 0) return;
+  execute();
 }
 
 function renderChart() {
-  const temp = result.value.map((x: any) => x.values)
-  const timestamps = Array.from(new Set(temp.map(a => a.map((b: any) => b[0])).flat())).sort()
+  const temp = result.value.map(x => x.values)
+  const timestamps = Array.from(new Set(temp.map(a => a.map(b => b[0])).flat())).sort()
   let seriesData = temp.map(a => {
-    let newA = [] as any[];
+    let newA = []
     timestamps.forEach(t => {
-      const newPoint = a.filter((b: any) => t == b[0])
+      const newPoint = a.filter(b => t == b[0]);
       if (newPoint.length != 1 || isNaN(parseFloat(newPoint[0][1]))) {
         newA.push(null)
         return
       }
       newA.push(parseFloat(newPoint[0][1]))
-    });
-    return newA;
-  });
-  const metrics = result.value.map((x: any) => x.metric)
+    })
+    return newA
+  })
+  const metrics = result.value.map(x => x.metric)
   let newSeries = []
   newSeries.push({})
   keyDict.value = {}
-  metrics.forEach((x: any) => {
-    delete x.__name__
-    const entries = Object.entries(x)
+
+  metrics.forEach(x => {
+    delete x.__name__;
+    const entries = Object.entries(x);
 
     entries.forEach(a => {
       keyDict.value[a[0]] = keyDict.value[a[0]] || {
         show: false,
         values: [],
-      }
+      };
       keyDict.value[a[0]].values.push(a[1]);
-      keyDict.value[a[0]].values = keyDict.value[a[0]].values.filter((v: any, i: any, s: any) => s.indexOf(v) === i)
+      keyDict.value[a[0]].values = keyDict.value[a[0]].values.filter((v, i, s) => s.indexOf(v) === i);
     })
     x = '{' + entries.map(v => `${v[0]}="${v[1]}"`).join(',') + '}'
-
     newSeries.push({
       label: x,
       stroke: Util.string2color(x),
       points: { size: 1 },
-    });
-  });
+    })
+  })
+  // this.chartOptions.axes[1].values = (self, ticks) => ticks.map(rawValue => rawValue / Math.pow(1000, c) + ['', 'k', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y'][c])
   chartOptions.value = {
     ...chartOptions.value,
     series: newSeries,
     scales: timeStore.scales,
-  };
+  }
   chartData.value = [timestamps, ...seriesData]
   chartResize()
 }
 
-function selectMetric(m: any) {
-  metricInfo.value = m
+function selectMetric(m) {
+  metricInfo.value = m;
 }
 
-function applyMetric(m: any) {
-  metricInfo.value.selected = null
-  expr.value = m.name
+function applyMetric(m) {
+  metricInfo.value.selected = null;
+  expr.value = m.name;
 }
 
 function clickOutside() {
-  selectMetric(null)
+  selectMetric(null);
 }
-
 async function fetchMetadata() {
   try {
     const resp = await fetch('/api/v1/remote/metadata?dsType=prometheus')
-    const data = await resp.json()
-    metadata.value = data.data
-    metaDict.value = Object.keys(metadata.value).reduce((a: any, k: any) => {
+    const jsonData = await resp.json()
+    metadata.value = jsonData.data
+    metaDict.value = Object.keys(metadata.value).reduce((a, k) => {
       const p = k.slice(0, k.indexOf('_'))
       a[p] = a[p] || { showMetrics: false }
       a[p].metrics = a[p].metrics || []
       a[p].metrics.push({ name: k, data: metadata.value[k] })
       return a
-    }, {});
-  } catch (error) {
-    console.error(error);
+    }, {})
+  } catch (err) {
+    console.error(err)
   }
 }
 
-function chartResize() {
-  const width = document.body.clientWidth - 545;
+const chartResize = () => {
+  const width = document.body.clientWidth - 545
   chartOptions.value = { ...chartOptions.value, width: width }
-  tableWidth.value = width;
+  tableWidth.value = width
 }
 
 function tooltipPlugin() {
   return {
     hooks: {
-      setCursor: (u: any) => {
-        if (!u.cursor.idx) {
-          return
-        }
-        cursorIdx.value = u.cursor.idx
-        cursorTime.value = u.data[0][u.cursor.idx]
+      setCursor: u => {
+        if (!u.cursor.idx) return;
+        cursorIdx.value = u.cursor.idx;
+        cursorTime.value = u.data[0][u.cursor.idx];
       },
     },
-  }
+  };
 }
 
-function onMouseOver(row: any, key: any) {
-  row.hover = row.hover || {}
-  row.hover[key] = true
-}
-
-function onMouseLeave(row: any, key: any) {
-  row.hover[key] = false
+function clickItem(item) {
+  expr.value = item[0];
+  searchMode.value = false;
 }
 </script>
 
@@ -314,8 +307,7 @@ function onMouseLeave(row: any, key: any) {
             class="flex-1 relative flex-auto min-w-0 block w-full px-3 py-1.5 text-base font-normal text-gray-700 bg-white bg-clip-padding border border-solid border-gray-300 rounded transition ease-in-out m-0 focus:text-gray-700 focus:bg-white focus:border-blue-600 focus:outline-none"
             placeholder="Expression" aria-label="Expression" aria-describedby="button-addon3" @keyup="searchKeyUp" />
           <ul v-if="searchMode && expr" class="absolute bg-white border max-h-[70vh] overflow-y-auto z-20">
-            <li v-for="item in items" class="flex gap-3 hover:bg-gray-200 cursor-pointer"
-              @click="expr = item[0]; searchMode = false">
+            <li v-for="item in items" class="flex gap-3 hover:bg-gray-200 cursor-pointer" @click="clickItem(item)">
               <div class="text-gray-600" v-html="item[2]" />
               <div class="flex-auto text-right text-gray-500">
                 {{ item[1][0].type }}
@@ -352,7 +344,10 @@ function onMouseLeave(row: any, key: any) {
                 <tr v-for="row in result" class="border-b hover:bg-gray-200">
                   <td v-for="key in keys"
                     class="max-w-[250px] px-2 border border-r-0 text-ellipsis overflow-hidden hover:whitespace-normal hover:min-w-[200px]"
-                    @mouseover="onMouseOver(row, key)" @mouseleave="onMouseLeave(row, key)">
+                    @mouseover="
+                      row.hover = row.hover || {};
+                    row.hover[key] = true;
+                    " @mouseleave="row.hover[key] = false">
                     {{ row.metric[key] }}
                     <span v-if="row.hover && row.hover[key]" class="inline-flex">
                       <button class="rounded px-1 border bg-slate-50 ml-1" @click="addLabel('', key, row.metric[key])">

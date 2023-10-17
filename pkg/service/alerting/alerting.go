@@ -197,7 +197,7 @@ func (s *AlertingService) evalAlertingRuleSample(ar *AlertingRule, sample common
 	}
 	err := renderSummaryAnnotaion(annotations, labels, sample.Value.String())
 	if err != nil {
-		logger.Warnf("renderSummaryAnnotaion err: %s", err)
+		logger.Warnf("renderSummaryAnnotaion(%s) err: %s", ar.rule.Alert, err)
 	}
 
 	// others

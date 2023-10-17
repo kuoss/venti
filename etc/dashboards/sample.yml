@@ -162,7 +162,3 @@ rows:
     type: logs
     targets:
     - expr: pod{namespace=~"kube-system|logmon",container="no_data"}
-  - title: no data II
-    type: logs
-    targets:
-    - expr: no_data
