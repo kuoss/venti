@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
-import Util from '@/lib/util'
+import { useDateFormat, useTimeAgo } from '@vueuse/core'
 
 interface Alert {
   annotations: Record<string, string>
@@ -66,6 +66,25 @@ async function sendTestAlert() {
   testAlertSent.value = true
 }
 
+function filterRecord(record: Record<string, string>, unwantedKeys: string[]) {
+  let out = {} as Record<string, string>
+  for (const k in record) {
+    if (unwantedKeys.includes(k)) {
+      continue
+    }
+    out[k] = record[k]
+  }
+  return out
+}
+
+function filterGroupLabels(labels: Record<string, string>) {
+  return filterRecord(labels, ['rulefile'])
+}
+
+function filterLabels(labels: Record<string, string>) {
+  return filterRecord(labels, ['alertname','datasource','rulefile','severity','venti'])
+}
+
 onMounted(() => {
   fetchData()
 })
@@ -97,46 +116,69 @@ onUnmounted(() => {
 
     <main class="mt-12 w-full p-8 pb-16">
       <h1 class="py-2 font-bold">Alerting Files ({{ alertingFiles.length }} files)</h1>
-      <table class="w-full bg-white border">
+      <table class="table1 w-full bg-slate-200 border">
         <tr class="border-b bg-slate-50">
-          <th class="text-left px-2">State</th>
-          <th class="text-left px-2">Severity</th>
-          <th class="text-left px-2">Name</th>
-          <th class="text-left px-2">Summary</th>
-          <th class="text-left px-2">Expr</th>
-          <th class="text-left px-2">For</th>
+          <th class="text-left">State</th>
+          <th class="text-left">Severity</th>
+          <th class="text-left">Name</th>
+          <th class="text-left">Summary</th>
+          <th class="text-left">Expr</th>
+          <th class="text-left">For</th>
         </tr>
 
         <tbody v-for="f in alertingFiles">
-          <tr class="border-b">
+          <tr class="border-t">
             <th class="text-left px-2 bg-slate-300 p-1 pl-3" colspan="9">
-              {{ f.datasourceSelector.type == 'prometheus' ? '🔥' : '💧' }} file ({{ f.alertingRules.length }} rules)
+              {{ f.groupLabels["rulefile"] }}
+              ({{ f.datasourceSelector.type == 'prometheus' ? '🔥' : '💧' }}{{ f.datasourceSelector.system }} {{
+                f.alertingRules.length }} rules)
+              <span class="bg-slate-200 text-xs px-2 rounded-full" v-for="(v, k) in filterGroupLabels(f.groupLabels)">
+                {{ k }}: {{ v }}
+              </span>
             </th>
           </tr>
-          <template v-for="r in f.alertingRules">
-            <tr class="border-b">
-              <td class="text-center">
-                <span v-if="r.active" class="px-2 rounded-full bg-red-400">
-                  {{ Object.keys(r.active).length }}
-                </span>
-                <span v-else>
-                  ·
-                </span>
+          <template v-for="(r, idx) in f.alertingRules">
+            <tr class="border-t">
+              <td class="text-center bg-red-400" v-if="r.active">
+                {{ Object.keys(r.active).length }}
               </td>
-              <td class="px-2">
+              <td class="text-center bg-green-400" v-else>
+                0
+              </td>
+              <td>
                 {{ f.groupLabels.severity }}
               </td>
-              <td class="px-2">
+              <td>
                 {{ r.rule.alert }}
               </td>
-              <td class="px-2">
+              <td>
                 {{ r.rule.annotations.summary }}
               </td>
-              <td class="px-2">
+              <td>
                 {{ r.rule.expr }}
               </td>
-              <td class="px-2">
-                {{ r.rule.for/100000000 }}s
+              <td>
+                {{ r.rule.for / 100000000 }}s
+              </td>
+            </tr>
+            <tr class="bg-gray-100" v-for="(alert, k) in r.active">
+              <td colspan="2">
+                &nbsp;
+              </td>
+              <td>
+                {{ alert.labels["datasource"] }}
+              </td>
+              <td>
+                {{ alert.annotations["summary"] }}
+              </td>
+              <td>
+                <span class="bg-slate-200 text-xs mr-2 px-2 rounded-full" v-for="(v, k) in filterLabels(alert.labels)">
+                  {{ k }}: {{ v }}
+                </span>
+              </td>
+              <td>
+                {{ useTimeAgo(alert.createdAt).value }}
+                ({{ useDateFormat(alert.createdAt, 'YYYY-MM-DD HH:mm:ss', { locales: 'ko-KR' }).value }} KST)
               </td>
             </tr>
           </template>
@@ -145,3 +187,10 @@ onUnmounted(() => {
     </main>
   </div>
 </template>
+
+<style scoped>
+.table1 th,
+.table1 td {
+  @apply px-2;
+}
+</style>

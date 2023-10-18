@@ -35,6 +35,11 @@ type AlertingService struct {
 	client              http.Client
 }
 
+var (
+	fakeErr1 bool = false
+	fakeErr2 bool = false
+)
+
 func New(cfg *model.Config, alertRuleFiles []model.RuleFile, datasourceService datasourceservice.IDatasourceService, remoteService *remote.RemoteService) *AlertingService {
 	var alertmanagerConfigs model.AlertmanagerConfigs
 	var alertmanagerURL string
@@ -224,7 +229,12 @@ func (s *AlertingService) evalAlertingRuleSample(ar *AlertingRule, sample common
 		Annotations: annotations,
 	}
 	ar.Active[signature] = alert
-	logger.Infof("%s(%s): %s: %s", alert.State.String(), elapsed.Round(time.Second), labels["alertname"], annotations["summary"])
+
+	// show log if severity exists and not silence
+	severity, ok := alert.Annotations["severity"]
+	if ok && severity != "silence" {
+		logger.Infof("%s(%s): %s: %s", alert.State.String(), elapsed.Round(time.Second), labels["alertname"], annotations["summary"])
+	}
 }
 
 func renderSummaryAnnotaion(annotations map[string]string, labels map[string]string, value string) error {
@@ -246,7 +256,7 @@ func renderSummaryAnnotaion(annotations map[string]string, labels map[string]str
 	}
 	var buf bytes.Buffer
 	err = tmpl.Execute(&buf, labels)
-	if err != nil {
+	if err != nil || fakeErr1 {
 		return fmt.Errorf("tmpl.Execute err: %w", err)
 	}
 	annotations["summary"] = buf.String()
@@ -312,7 +322,7 @@ func getDataFromVector(bodyBytes []byte) ([]commonModel.Sample, error) {
 	}
 	var body Body
 	err := json.Unmarshal(bodyBytes, &body)
-	if err != nil {
+	if err != nil || fakeErr1 {
 		return []commonModel.Sample{}, fmt.Errorf("unmarshal err: %w", err)
 	}
 	return body.Data.Result, nil
@@ -321,17 +331,16 @@ func getDataFromVector(bodyBytes []byte) ([]commonModel.Sample, error) {
 func (s *AlertingService) sendFires(fires []Fire) error {
 	logger.Infof("sending %d fires...", len(fires))
 	pbytes, err := json.Marshal(fires)
-	if err != nil {
-		// unreachable
-		return fmt.Errorf("error on Marshal: %w", err)
+	if err != nil || fakeErr1 {
+		return fmt.Errorf("marshal err: %w", err)
 	}
 	buff := bytes.NewBuffer(pbytes)
 	resp, err := s.client.Post(s.alertmanagerURL+"/api/v1/alerts", "application/json", buff)
 	if err != nil {
-		return fmt.Errorf("error on Post: %w", err)
+		return fmt.Errorf("post err: %w", err)
 	}
 	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
+	if resp.StatusCode != http.StatusOK || fakeErr2 {
 		return fmt.Errorf("statusCode is not ok(200)")
 	}
 	return nil
