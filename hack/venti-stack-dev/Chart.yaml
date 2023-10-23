@@ -11,6 +11,6 @@ dependencies:
     repository: https://kuoss.github.io/helm-charts
     condition: venti-stack.enabled
   - name: code-server-go
-    version: "0.0.9"
+    version: "0.0.12"
     repository: https://kuoss.github.io/helm-charts
     condition: code-server-go.enabled
