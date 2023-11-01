@@ -31,14 +31,14 @@ func NewServices(cfg *model.Config) (*Services, error) {
 	// alertrule
 	alertRuleService, err := alertrule.New("")
 	if err != nil {
-		return nil, fmt.Errorf("alertrule.New err: %w", err)
+		return nil, fmt.Errorf("new alertRuleService err: %w", err)
 	}
 
 	// dashboard
 	logger.Debugf("new dashboard Service...")
 	dashboardService, err := dashboard.New("etc/dashboards")
 	if err != nil {
-		return nil, fmt.Errorf("NewDashboardService err: %w", err)
+		return nil, fmt.Errorf("new dashboardService err: %w", err)
 	}
 
 	// datasource
@@ -46,19 +46,22 @@ func NewServices(cfg *model.Config) (*Services, error) {
 	if cfg.DatasourceConfig.Discovery.Enabled {
 		discoverer, err = kubernetes.NewK8sService()
 		if err != nil {
-			return nil, fmt.Errorf("NewK8sService err: %w", err)
+			return nil, fmt.Errorf("new k8sService err: %w", err)
 		}
 	}
 	datasourceService, err := datasource.New(&cfg.DatasourceConfig, discoverer)
 	if err != nil {
-		return nil, fmt.Errorf("NewDatasourceService err: %w", err)
+		return nil, fmt.Errorf("new datasourceService err: %w", err)
 	}
 
 	// remote
 	remoteService := remote.New(&http.Client{}, cfg.DatasourceConfig.QueryTimeout)
 
 	// status
-	ServiceService := status.New(cfg)
+	statusService, err := status.New(cfg)
+	if err != nil {
+		return nil, fmt.Errorf("new statusService err: %w", err)
+	}
 
 	// user
 	userService, err := user.New("./data/venti.sqlite3", cfg.UserConfig)
@@ -74,7 +77,7 @@ func NewServices(cfg *model.Config) (*Services, error) {
 		dashboardService,
 		datasourceService,
 		remoteService,
-		ServiceService,
+		statusService,
 		userService,
 		alertingService,
 	}, nil

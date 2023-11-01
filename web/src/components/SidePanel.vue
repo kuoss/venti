@@ -4,122 +4,117 @@ import { XIcon } from '@heroicons/vue/solid';
 import ButtonClipboard from '@/components/ButtonClipboard.vue';
 import yaml from 'js-yaml';
 import Util from '@/lib/util';
-</script>
+import { computed, ref, onMounted, watch } from 'vue';
 
-<script>
-export default {
-  data() {
-    return {
-      show: false,
-      type: '',
-      dataTable: {},
-      panelInfo: {},
-      dashboardInfo: {},
-      currentPosition: null,
-    };
-  },
-  computed: {
-    width() {
-      switch (this.type) {
-        case 'DataTable':
-          return '300px';
-      }
-      return '600px';
-    },
-    title() {
-      switch (this.type) {
-        case 'DataTable':
-          return this.dataTable.title;
-        case 'DashboardInfo':
-          return this.dashboardInfo.dashboardConfig.title;
-      }
-      // case 'PanelInfo':
-      return this.panelInfo.panelConfig.title;
-    },
-  },
-  mounted() {
-    useSidePanelStore().$subscribe((mutation, state) => {
-      const needResize = this.show != state.show || this.type != state.type;
-      this.show = state.show;
-      this.type = state.type;
-      this.dataTable = state.dataTable;
-      this.panelInfo = state.panelInfo;
-      this.dashboardInfo = state.dashboardInfo;
-      if (state.currentPosition && this.currentPosition != state.currentPosition) {
-        // console.log('SidePanel.vue: mounted: $subscribe: state=', state)
-        this.goToPanelConfig(state.currentPosition);
-      }
-      this.currentPosition = state.currentPosition;
-      if (needResize) this.$emit('resize');
-    });
-  },
-  methods: {
-    dumpYAML(j, flowLevel) {
-      return yaml.dump(j, { noArrayIndent: true, flowLevel: flowLevel }).replaceAll('>-', '|').replaceAll('>', '|');
-    },
-    yamlDashboard(j) {
-      return this.dumpYAML(j, 5);
-    },
-    yamlPanel(j) {
-      return this.indentText(this.dumpYAML([j], 4), 2);
-    },
-    yamlTarget(j, type) {
-      let x = this.cloneObject(j);
-      const expr = x.expr;
-      const path = type == 'logs' ? 'logs' : 'metrics';
-      x.expr = 'DuMmYeXpR';
-      x = this.dumpYAML([x], 3);
-      x = x.replace(
-        'DuMmYeXpR',
-        `<span class="text-cyan-500"><a class="hover:underline" href="/#/${path}?query=${encodeURIComponent(
-          expr,
-        )}">${yaml
-          .dump(expr)
-          .replaceAll('>-', '|')
-          .replaceAll('>', '|')
-          .replaceAll('\n', '\n  ')
-          .trimRight()}</a></span>`,
-      );
-      return this.indentText(x, 4)
-        .replaceAll('$node', '<span class="text-yellow-500 font-bold">$node</span>')
-        .replaceAll('$namespace', '<span class="text-green-500 font-bold">$namespace</span>');
-    },
-    yamlChartOptions(j) {
-      return '  chartOptions:\n' + this.indentText(this.dumpYAML(j), 4);
-    },
-    indentText(t, level) {
-      return t
-        .split('\n')
-        .map(x => ' '.repeat(level) + x)
-        .join('\n')
-        .trimRight();
-    },
-    cloneObject(o) {
-      return JSON.parse(JSON.stringify(o));
-    },
-    goToPanelConfig(position) {
-      if (this.type != 'DashboardInfo') {
-        console.log('this.type=', this.type);
-        return;
-      }
-      const el = this.$refs[`ref${position}`];
-      if (!el || !el[0] || !el[0]?.classList) return;
-      el[0].scrollIntoView();
-      el[0].classList.add('highlight');
-      setTimeout(() => {
-        if (!el || !el[0] || !el[0]?.classList) return;
-        el[0].classList.remove('highlight');
-      }, 5000);
-    },
-  },
-};
+const sidePanelStore = useSidePanelStore()
+
+const show = ref(false)
+const type = ref('')
+const dataTable = ref({})
+const panelInfo = ref({})
+const dashboardInfo = ref({})
+const currentPosition = ref('')
+
+const panelRefs = ref([])
+
+const width = computed(() => {
+  switch (type.value) {
+    case 'DataTable':
+      return '300px';
+  }
+  return '600px';
+})
+
+const title = computed(() => {
+  switch (type.value) {
+    case 'DataTable':
+      return dataTable.value.title;
+    case 'DashboardInfo':
+      return dashboardInfo.value.dashboardConfig.title;
+  }
+  return panelInfo.value.panelConfig.title;
+})
+
+const emit = defineEmits(['resize'])
+
+function dumpYAML(j, flowLevel) {
+  return yaml.dump(j, { noArrayIndent: true, flowLevel: flowLevel }).replaceAll('>-', '|').replaceAll('>', '|');
+}
+
+function yamlDashboard(j) {
+  return dumpYAML(j, 5);
+}
+
+function yamlPanel(j) {
+  return indentText(dumpYAML([j], 4), 2);
+}
+
+function yamlTarget(j, type) {
+  let x = cloneObject(j);
+  const expr = x.expr;
+  const path = type == 'logs' ? 'logs' : 'metrics';
+  x.expr = 'DUMMY_EXPR';
+  x = dumpYAML([x], 3);
+  x = x.replace(
+    'DUMMY_EXPR',
+    `<span class="text-cyan-500"><a class="hover:underline" href="/#/${path}?query=${encodeURIComponent(
+      expr,
+    )}">${yaml
+      .dump(expr)
+      .replaceAll('>-', '|')
+      .replaceAll('>', '|')
+      .replaceAll('\n', '\n  ')
+      .trimRight()}</a></span>`,
+  );
+  return indentText(x, 4)
+    .replaceAll('$node', '<span class="text-yellow-500 font-bold">$node</span>')
+    .replaceAll('$namespace', '<span class="text-green-500 font-bold">$namespace</span>');
+}
+
+function yamlChartOptions(j) {
+  return '  chartOptions:\n' + indentText(dumpYAML(j), 4);
+}
+
+function indentText(t, level) {
+  return t
+    .split('\n')
+    .map(x => ' '.repeat(level) + x)
+    .join('\n')
+    .trimRight();
+}
+
+function cloneObject(o) {
+  return JSON.parse(JSON.stringify(o));
+}
+
+function goToPanelConfig() {
+  const el = panelRefs.value[Number(currentPosition.value)];
+  el.scrollIntoView();
+  el.classList.add('highlight');
+  setTimeout(() => {
+    el.classList.remove('highlight');
+  }, 5000);
+}
+
+sidePanelStore.$subscribe((_, state) => {
+  const needResize = show.value != state.show || type.value != state.type;
+  const positionChanged = currentPosition.value != state.currentPosition;
+  show.value = state.show;
+  type.value = state.type;
+  dataTable.value = state.dataTable;
+  panelInfo.value = state.panelInfo;
+  dashboardInfo.value = state.dashboardInfo;
+  currentPosition.value = state.currentPosition;
+  if (needResize) emit('resize');
+  if (positionChanged) goToPanelConfig();
+})
 </script>
 
 <template>
   <div v-if="show" :style="{ width: width }">
     <div style="height: calc(100vh - 56px)" :style="{ width: width }" class="fixed right-0 bottom-0 bg-slate-300">
       <div class="h-[44px]">
-        <button class="float-right px-2 py-1 cursor-pointer hover:bg-slate-400" @click="useSidePanelStore().close()">
+        <button class="float-right px-2 py-1 cursor-pointer hover:bg-slate-400" @click="sidePanelStore.close()">
           <XIcon class="w-5 h-4" />
         </button>
         <div class="flex-1 h-full">
@@ -135,20 +130,16 @@ export default {
           <div v-else class="flex justify-center py-2">
             <span class="font-bold text-center p-1">{{ dashboardInfo.dashboardConfig.title }}</span>
             <span class="ml-2">
-              <ButtonClipboard
-                text="Dashboard"
-                tooltip-direction="right"
+              <ButtonClipboard text="Dashboard" tooltip-direction="right"
                 :value="yamlDashboard(dashboardInfo.dashboardConfig)"
-                button-class="inline border-slate-400 hover:bg-slate-400"
-              />
+                button-class="inline border-slate-400 hover:bg-slate-400" />
             </span>
           </div>
         </div>
       </div>
       <div
         class="overflow-y-auto border-l border-2 w-full bg-slate-300 border-b scrollbar-thin scrollbar-track-transparnt scrollbar-thumb-slate-400 dark:scrollbar-thumb-slate-500"
-        style="height: calc(100vh - 100px)"
-      >
+        style="height: calc(100vh - 100px)">
         <div class="bg-slate-200 pb-8">
           <div v-if="type == 'DataTable'">
             <table v-if="dataTable.time" class="w-full">
@@ -170,8 +161,8 @@ export default {
             <table class="w-full font-mono">
               <tr class="align-top">
                 <td class="w-6 text-center" />
-                <td class="bg-slate-100 whitespace-pre-wrap">
-                  title: {{ dashboardInfo.dashboardConfig.title + '\nrows:' }}
+                <td class="bg-slate-100 whitespace-pre-wrap">title:
+                  {{ dashboardInfo.dashboardConfig.title + '\nrows:' }}
                 </td>
               </tr>
               <template v-for="(row, i) in dashboardInfo.dashboardConfig.rows">
@@ -183,10 +174,8 @@ export default {
                   <td class="text-center">
                     <div class="p-1 bg-cyan-100" style="user-select: none">{{ i + 1 }}{{ j + 1 }}</div>
                   </td>
-                  <td
-                    :ref="`ref${i + 1}${j + 1}`"
-                    class="bg-slate-100 highlight-base transition-colors duration-[5000ms]"
-                  >
+                  <td class="bg-slate-100 highlight-base transition-colors duration-[5000ms]"
+                    :ref="(el) => { panelRefs[10 * (i + 1) + (j + 1)] = el }">
                     <div class="float-right my-1 mr-3">
                       <ButtonClipboard :value="yamlPanel(panel)" button-class="hover:bg-slate-300" />
                     </div>
@@ -198,11 +187,8 @@ export default {
                         <pre class="whitespace-pre-wrap" v-html="yamlTarget(target, panel.type)" />
                       </template>
                     </template>
-                    <pre
-                      v-if="panel.chartOptions"
-                      class="whitespace-pre-wrap"
-                      v-html="yamlChartOptions(panel.chartOptions)"
-                    />
+                    <pre v-if="panel.chartOptions" class="whitespace-pre-wrap"
+                      v-html="yamlChartOptions(panel.chartOptions)" />
                   </td>
                 </tr>
               </template>
@@ -213,3 +199,22 @@ export default {
     </div>
   </div>
 </template>
+
+<style scoped>
+.highlight-base {
+  @apply relative z-[1];
+}
+
+.highlight-base::before {
+  content: '';
+  @apply bg-gradient-to-r from-slate-100 to-yellow-100 absolute top-0 left-0 w-full h-full opacity-0 z-[-1] transition-opacity duration-500;
+}
+
+.dark .highlight-base::before {
+  @apply bg-gradient-to-r from-slate-800 to-teal-800;
+}
+
+.highlight::before {
+  @apply opacity-100;
+}
+</style>

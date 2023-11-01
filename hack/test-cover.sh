@@ -6,7 +6,7 @@ export PS4='[$(basename $0):$LINENO] '
 set -x
 cp docs/examples/datasources.test.yml etc/datasources.yml
 
-go test ./... -v -failfast -race -covermode=atomic -coverprofile /tmp/cover.out
+go test ./... -v -failfast -coverprofile /tmp/cover.out
 if [[ $? != 0 ]]; then
     echo "❌ FAIL - test failed"
     exit 1

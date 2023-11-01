@@ -11,13 +11,11 @@ import (
 func TestLoadHandlers(t *testing.T) {
 
 	cfg := &model.Config{
-		Version:    "Unknown",
-		UserConfig: model.UserConfig{},
-		DatasourceConfig: model.DatasourceConfig{
-			Datasources: []model.Datasource{
-				{Type: model.DatasourceTypePrometheus, Name: "prometheus", IsMain: true},
-			},
-		},
+		AppInfo:          model.AppInfo{Version: "Unknown"},
+		GlobalConfig:     model.GlobalConfig{},
+		DatasourceConfig: model.DatasourceConfig{Datasources: []model.Datasource{{Type: model.DatasourceTypePrometheus, Name: "prometheus", IsMain: true}}},
+		UserConfig:       model.UserConfig{},
+		AlertingConfig:   model.AlertingConfig{},
 	}
 	services, err := service.NewServices(cfg)
 	assert.NoError(t, err)
@@ -27,7 +25,6 @@ func TestLoadHandlers(t *testing.T) {
 	assert.NotEmpty(t, handlers)
 	assert.NotEmpty(t, handlers.alertHandler)
 	assert.NotEmpty(t, handlers.authHandler)
-	assert.NotEmpty(t, handlers.configHandler)
 	assert.NotEmpty(t, handlers.dashboardHandler)
 	assert.NotEmpty(t, handlers.datasourceHandler)
 	assert.NotEmpty(t, handlers.remoteHandler)

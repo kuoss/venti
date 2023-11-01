@@ -126,6 +126,15 @@ func (s *DatasourceService) GetDatasourceByIndex(index int) (model.Datasource, e
 	return datasources[index], nil
 }
 
+func (s *DatasourceService) GetDatasourceByName(name string) (model.Datasource, error) {
+	for _, ds := range s.getDatasources() {
+		if ds.Name == name {
+			return ds, nil
+		}
+	}
+	return model.Datasource{}, fmt.Errorf("datasource of name %s not found", name)
+}
+
 // return multiple datasources
 func (s *DatasourceService) GetDatasources() []model.Datasource {
 	return s.getDatasources()

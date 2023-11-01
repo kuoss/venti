@@ -16,7 +16,7 @@ var (
 	handlers         *Handlers
 	alertmanagerMock *mocker.Server
 	cfg              = &model.Config{
-		Version:    "Unknown",
+		AppInfo:    model.AppInfo{Version: "Unknown"},
 		UserConfig: model.UserConfig{},
 		DatasourceConfig: model.DatasourceConfig{
 			Datasources: []model.Datasource{

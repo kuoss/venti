@@ -36,13 +36,19 @@ const router = createRouter({
         {
           path: 'alert',
           name: 'alert',
-          component: () => import('@/views/AlertView.vue'),
+          component: () => import('@/views/alert/AlertView.vue'),
           meta: { requireAuth: true },
         },
         {
           path: 'datasource',
           name: 'datasource',
           component: () => import('@/views/DatasourceView.vue'),
+          meta: { requireAuth: true },
+        },
+        {
+          path: 'status',
+          name: 'status',
+          component: () => import('@/views/StatusView.vue'),
           meta: { requireAuth: true },
         },
       ],

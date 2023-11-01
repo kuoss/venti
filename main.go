@@ -13,6 +13,7 @@ var (
 )
 
 func main() {
+	logger.Infof("Starting Venti 💨 version=%s", Version)
 
 	// load configuration
 	cfg, err := config.Load(Version)
@@ -25,9 +26,6 @@ func main() {
 	if err != nil {
 		logger.Fatalf("NewServices err: %s", err)
 	}
-
-	// show starting & version
-	logger.Infof("💨 venti starting.... version %s", Version)
 
 	// alerter start
 	alerter := alerter.New(cfg, services.AlertingService)

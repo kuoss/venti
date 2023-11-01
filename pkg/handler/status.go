@@ -15,7 +15,18 @@ func NewStatusHandler(statusService *status.StatusService) *statusHandler {
 	return &statusHandler{statusService}
 }
 
-// GET /api/status/buildinfo
+// GET /api/v1/status/buildinfo
 func (h *statusHandler) BuildInfo(c *gin.Context) {
-	c.JSON(http.StatusOK, h.statusService.BuildInfo())
+	c.JSON(http.StatusOK, gin.H{
+		"status": "success",
+		"data":   h.statusService.BuildInfo(),
+	})
+}
+
+// GET /api/v1/status/runtimeinfo
+func (h *statusHandler) RuntimeInfo(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{
+		"status": "success",
+		"data":   h.statusService.RuntimeInfo(),
+	})
 }

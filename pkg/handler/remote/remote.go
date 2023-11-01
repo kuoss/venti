@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/kuoss/venti/pkg/handler/api"
@@ -23,6 +22,11 @@ func New(datasourceService *dsService.DatasourceService, remoteService *remote.R
 		datasourceService,
 		remoteService,
 	}
+}
+
+// GET /api/remote/healthy
+func (h *RemoteHandler) Healthy(c *gin.Context) {
+	h.remoteAction(c, remote.ActionHealthy, "")
 }
 
 // GET /api/remote/metadata
@@ -53,46 +57,42 @@ func (h *RemoteHandler) QueryRange(c *gin.Context) {
 }
 
 func (h *RemoteHandler) remoteAction(c *gin.Context, action remote.Action, rawQuery string) {
-	datasource, err := h.getDatasourceWithParams(c.Query("dsid"), c.Query("dstype"))
+	datasource, err := h.getDatasourceWithParams(c.Query("dsName"), c.Query("dsType"))
 	if err != nil {
-		api.ResponseError(c, api.ErrorInternal, fmt.Errorf("error on getDatasourceWithParams: %w", err))
+		api.ResponseError(c, api.ErrorInternal, fmt.Errorf("getDatasourceWithParams err: %w", err))
 		return
 	}
 	code, body, err := h.remoteService.GET(c.Request.Context(), &datasource, action, rawQuery)
 	if err != nil {
-		api.ResponseError(c, api.ErrorInternal, fmt.Errorf("error on GET: %w", err))
+		api.ResponseError(c, api.ErrorInternal, fmt.Errorf("GET err: %w", err))
 		return
 	}
 	c.String(code, body)
 }
 
 // Select and return the datasource corresponding to the dsID or dsType parameter
-func (h *RemoteHandler) getDatasourceWithParams(dsID string, dsType string) (model.Datasource, error) {
-	if dsID == "" && dsType == "" {
-		return model.Datasource{}, errors.New("either dsID or dsType must be specified")
+func (h *RemoteHandler) getDatasourceWithParams(dsName string, dsType string) (model.Datasource, error) {
+	if dsName == "" && dsType == "" {
+		return model.Datasource{}, errors.New("either dsName or dsType must be specified")
 	}
 
 	// If there is a dsID, return the datasource of the corresponding index
-	if dsID != "" {
-		dsIndex, err := strconv.Atoi(dsID)
+	if dsName != "" {
+		datasource, err := h.datasourceService.GetDatasourceByName(dsName)
 		if err != nil {
-			return model.Datasource{}, fmt.Errorf("invalid dsid: %w", err)
-		}
-		datasource, err := h.datasourceService.GetDatasourceByIndex(dsIndex)
-		if err != nil {
-			return model.Datasource{}, fmt.Errorf("error on GetDatasourceByIndex: %w", err)
+			return model.Datasource{}, fmt.Errorf("GetDatasourceByName err: %w", err)
 		}
 		return datasource, nil
 	}
-	// The following handles cases where there is no dsID...
+	// The following handles cases where there is no dsName...
 	// Invalid if dsType is neither lethe nor prometheus
 	if dsType != string(model.DatasourceTypeLethe) && dsType != string(model.DatasourceTypePrometheus) {
-		return model.Datasource{}, errors.New("invalid dstype")
+		return model.Datasource{}, errors.New("invalid dsType")
 	}
 	// Returns the main datasource for the requested dsType
 	datasource, err := h.datasourceService.GetMainDatasourceByType(model.DatasourceType(dsType))
 	if err != nil {
-		return model.Datasource{}, fmt.Errorf("error on GetMainDatasourceByType: %w", err)
+		return model.Datasource{}, fmt.Errorf("GetMainDatasourceByType err: %w", err)
 	}
 	return datasource, nil
 }

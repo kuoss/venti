@@ -2,14 +2,16 @@ import { defineStore } from 'pinia';
 // import axios from "axios";
 
 export const useTimeStore = defineStore('time', {
-  state: () => ({
-    now: null,
-    range: 1800,
-    offset: new Date().getTimezoneOffset(),
-    status: { ready: false, loading: false, retries: 0 },
-    timerIDs: [],
-    timerManager: '',
-  }),
+  state: () => {
+    return {
+      now: null,
+      range: 1800,
+      offset: new Date().getTimezoneOffset(),
+      status: { ready: false, loading: false, retries: 0 },
+      timerIDs: [],
+      timerManager: '',
+    };
+  },
   computed: {
     nowUnix() {
       return Date.parse(this.nowDate);
@@ -18,10 +20,10 @@ export const useTimeStore = defineStore('time', {
   actions: {
     async toTimeRangeForQuery(r, updateNow = true) {
       const now = await this.getNow(updateNow);
-      return [await this.toAbsoluteTime(r[0], now), await this.toAbsoluteTime(r[1], now)];
+      return [this.toAbsoluteTime(r[0], now), this.toAbsoluteTime(r[1], now)];
     },
-    async toAbsoluteTime(t, now) {
-      if (!t.startsWith('now')) {
+    toAbsoluteTime(t, now) {
+      if (!('' + t).startsWith('now')) {
         return Date.parse(t) / 1000;
       }
       if (t == 'now') return now;
@@ -46,7 +48,7 @@ export const useTimeStore = defineStore('time', {
     },
     async updateNow() {
       try {
-        const response = await fetch('/api/v1/remote/query?query=time()&dstype=prometheus');
+        const response = await fetch('/api/v1/remote/query?query=time()&dsType=prometheus');
         const data = await response.json();
         this.now = data.data.result[0];
       } catch (error) {

@@ -2,6 +2,15 @@ import { defineStore } from 'pinia';
 import { useErrorStore } from '@/stores/error';
 import axios from 'axios';
 
+interface Response {
+  status: string;
+  data: any;
+}
+
+interface ResponseError {
+  response: Response;
+}
+
 export const useAuthStore = defineStore('auth', {
   state: () => ({
     loggedIn: localStorage.getItem('token') ? true : false,
@@ -31,8 +40,9 @@ export const useAuthStore = defineStore('auth', {
           this.loggedIn = true;
         }
       } catch (error) {
-        console.log('login error response:', error.response)
-        useErrorStore().set(error.response.data);
+        const err = error as ResponseError;
+        console.log('login error response:', err.response)
+        useErrorStore().set(err.response.data);
       }
     },
     async logout() {
@@ -42,7 +52,8 @@ export const useAuthStore = defineStore('auth', {
           console.warn('logout response status is not 200')
         }
       } catch (error) {
-        console.error('logout error response:', error.response)
+        const err = error as ResponseError;
+        console.error('logout error response:', err.response)
       }
       localStorage.removeItem('token');
       localStorage.removeItem('userID');

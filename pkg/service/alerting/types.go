@@ -30,28 +30,27 @@ func (s AlertState) String() string {
 }
 
 type Alert struct {
-	State     AlertState
-	CreatedAt time.Time
-	UpdatedAt time.Time
-
-	Labels      map[string]string
-	Annotations map[string]string
+	State       AlertState        `json:"state"`
+	CreatedAt   time.Time         `json:"createdAt,omitempty"`
+	UpdatedAt   time.Time         `json:"updatedAt,omitempty"`
+	Labels      map[string]string `json:"labels"`
+	Annotations map[string]string `json:"annotations"`
 }
 
 type AlertingRuleGroup struct {
-	datasourceSelector model.DatasourceSelector
-	groupLabels        map[string]string
-	alertingRules      []AlertingRule
+	DatasourceSelector model.DatasourceSelector `json:"datasourceSelector,omitempty"`
+	GroupLabels        map[string]string        `json:"groupLabels,omitempty"`
+	AlertingRules      []AlertingRule           `json:"alertingRules,omitempty"`
 }
 
 type AlertingRule struct {
-	rule   model.Rule
-	active map[uint64]*Alert
+	Rule   model.Rule        `json:"rule,omitempty"`
+	Active map[uint64]*Alert `json:"active,omitempty"`
 }
 
 func (r AlertingRule) State() AlertState {
 	maxState := StateInactive
-	for _, alert := range r.active {
+	for _, alert := range r.Active {
 		if alert.State > maxState {
 			maxState = alert.State
 		}

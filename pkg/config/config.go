@@ -16,6 +16,10 @@ import (
 func Load(version string) (*model.Config, error) {
 	logger.Infof("loading configurations...")
 
+	appInfo := model.AppInfo{
+		Version: version,
+	}
+
 	globalConfig, err := loadGlobalConfigFile("etc/venti.yml")
 	if err != nil {
 		return nil, fmt.Errorf("loadGlobalConfigFile err: %w", err)
@@ -37,7 +41,7 @@ func Load(version string) (*model.Config, error) {
 	}
 
 	return &model.Config{
-		Version:          version,
+		AppInfo:          appInfo,
 		GlobalConfig:     globalConfig,
 		DatasourceConfig: *datasourceConfig,
 		UserConfig:       *userConfig,

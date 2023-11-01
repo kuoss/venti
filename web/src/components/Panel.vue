@@ -1,4 +1,6 @@
 <script setup>
+import { computed, ref, onMounted } from 'vue';
+
 import PanelLogs from '@/components/PanelLogs.vue';
 import PanelMultitable from '@/components/PanelMultitable.vue';
 import PanelPiechart from '@/components/PanelPiechart.vue';
@@ -7,11 +9,64 @@ import PanelTable from '@/components/PanelTable.vue';
 import PanelTimeSeries from '@/components/PanelTimeSeries.vue';
 
 import { useSidePanelStore } from '@/stores/sidePanel';
-</script>
 
+const sidePanel = useSidePanelStore()
+
+const props = defineProps({
+  position: String,
+  count: Number,
+  panelConfig: Object,
+  panelWidth: Number,
+  timeRange: Object,
+})
+
+const isLoading = ref(false)
+const showPanelPosition = ref(false)
+const usingVariables = ref([])
+
+const componentName = computed(() => {
+  switch (props.panelConfig.type) {
+    case 'logs':
+      return PanelLogs;
+    case 'multitable':
+      return PanelMultitable;
+    case 'piechart':
+      return PanelPiechart;
+    case 'stat':
+      return PanelStat;
+    case 'table':
+      return PanelTable;
+  }
+  // case 'time_series'
+  return PanelTimeSeries;
+})
+
+onMounted(() => {
+  const variables = [
+    { name: '$namespace', class: 'namespace' },
+    { name: '$node', class: 'node' },
+  ];
+  variables.forEach(v => {
+    if (props.panelConfig.targets[0].expr.indexOf(v.name) > 0) {
+      usingVariables.value.push(v);
+    }
+  });
+  sidePanel.$subscribe((_, state) => {
+    showPanelPosition.value = state.show && state.type == 'DashboardInfo';
+  });
+})
+
+function setIsLoading(b) {
+  isLoading.value = b;
+}
+
+function togglePanelInfo() {
+  sidePanel.goToPanelConfig(props.position);
+}
+</script>
 <template>
   <div class="flex border-b">
-    <button v-if="showPanelPosition" class="p-1 bg-cyan-100" @click="useSidePanelStore().goToPanelConfig(position)">
+    <button v-if="showPanelPosition" class="p-1 bg-cyan-100" @click="sidePanel.goToPanelConfig(position)">
       {{ position }}
     </button>
     <div class="flex-1 py-1 text-center font-bold" :class="{ 'is-loading': isLoading }">
@@ -23,83 +78,9 @@ import { useSidePanelStore } from '@/stores/sidePanel';
       </button>
     </div>
   </div>
-  <component
-    :is="componentName"
-    :count="count"
-    :is-loading="isLoading"
-    :panel-config="panelConfig"
-    :panel-width="panelWidth"
-    :time-range="timeRange"
-    @setIsLoading="setIsLoading"
-  />
+  <component :is="componentName" :count="count" :is-loading="isLoading" :panel-config="panelConfig"
+    :panel-width="panelWidth" :time-range="timeRange" @setIsLoading="setIsLoading" />
 </template>
-
-<script>
-export default {
-  components: {
-    PanelLogs,
-    PanelMultitable,
-    PanelPiechart,
-    PanelStat,
-    PanelTable,
-    PanelTimeSeries,
-  },
-  props: {
-    position: String,
-    count: Number,
-    panelConfig: Object,
-    panelWidth: Number,
-    timeRange: Object,
-  },
-  data() {
-    return {
-      isLoading: false,
-      showPanelPosition: false,
-      usingVariables: [],
-    };
-  },
-  computed: {
-    componentName() {
-      switch (this.panelConfig.type) {
-        case 'logs':
-          return 'PanelLogs';
-        case 'multitable':
-          return 'PanelMultitable';
-        case 'piechart':
-          return 'PanelPiechart';
-        case 'stat':
-          return 'PanelStat';
-        case 'table':
-          return 'PanelTable';
-      }
-      // case 'time_series'
-      return 'PanelTimeSeries';
-    },
-  },
-  mounted() {
-    const variables = [
-      { name: '$namespace', class: 'namespace' },
-      { name: '$node', class: 'node' },
-    ];
-    variables.forEach(v => {
-      if (this.panelConfig.targets[0].expr.indexOf(v.name) > 0) {
-        this.usingVariables.push(v);
-      }
-    });
-    useSidePanelStore().$subscribe((mutation, state) => {
-      this.showPanelPosition = state.show && state.type == 'DashboardInfo';
-    });
-  },
-  methods: {
-    setIsLoading(b) {
-      this.isLoading = b;
-    },
-    togglePanelInfo() {
-      useSidePanelStore().goToPanelConfig(this.position);
-    },
-  },
-};
-</script>
 
 <style scoped>
 .node {

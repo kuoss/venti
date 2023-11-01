@@ -15,8 +15,8 @@ func NewAlertHandler(alertRuleService *alertrule.AlertRuleService, alertingServi
 	return &alertHandler{alertRuleService, alertingService}
 }
 
-func (h *alertHandler) AlertRuleFiles(c *gin.Context) {
-	c.JSON(200, h.alertRuleService.GetAlertRuleFiles())
+func (h *alertHandler) Alerts(c *gin.Context) {
+	c.JSON(200, gin.H{"status": "success", "data": h.alertingService.GetAlertingRuleGroups()})
 }
 
 func (h *alertHandler) SendTestAlert(c *gin.Context) {
@@ -25,4 +25,11 @@ func (h *alertHandler) SendTestAlert(c *gin.Context) {
 		c.JSON(500, gin.H{"status": "error", "error": err.Error()})
 	}
 	c.JSON(200, gin.H{"status": "success"})
+}
+
+func (h *alertHandler) Alertmanagers(c *gin.Context) {
+	c.JSON(200, gin.H{
+		"status": "success",
+		"data":   h.alertingService.GetAlertmanagerDiscovery(),
+	})
 }

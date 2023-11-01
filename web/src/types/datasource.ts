@@ -1,30 +1,37 @@
+export enum DatasourceType {
+  Prometheus = 'persist',
+  Lethe = 'demand',
+}
+
 export interface Datasource {
-  name: string;
-  type: string;
-  url: string;
-  isMain: boolean;
-  isDiscovered: boolean;
-  health: number;
-  targets: Target[];
+  name: string
+  type: string
+  url: string
+  isMain: boolean
+  isDiscovered: boolean
+  health: number
+  targets: Target[]
 }
 
 export interface Target {
-  age: string;
-  discoveredLabels: DiscoveredLabels,
-  health: string;
-  icon: string;
-  job: string;
-  name: string;
-  // Legend     string      `json:"legend,omitempty" yaml:"legend,omitempty"`
-// Legends    []string    `json:"legends,omitempty" yaml:"legends,omitempty"`
-// Unit       string      `json:"unit,omitempty" yaml:"unit,omitempty"`
-// Columns    []string    `json:"columns,omitempty" yaml:"columns,omitempty"`
-// Headers    []string    `json:"headers,omitempty" yaml:"headers,omitempty"`
-// Key        string      `json:"key,omitempty" yaml:"key,omitempty"`
-// Thresholds []Threshold `json:"thresholds,omitempty" yaml:"thresholds,omitempty"`
+  discoveredLabels: DiscoveredLabels
+  globalUrl: string
+  health: string
+  labels: object
+  lastError: string
+  lastScrape: string
+  lastScrapeDuration: number
+  scrapeInterval: string
+  scrapePool: string
+  scrapeTimeout: string
+  scrapeUrl: string
 }
 
 export interface DiscoveredLabels {
-  job: string;
-  __address__: string;
+  job: string
+  __address__: string
+  __meta_kubernetes_namespace: string
+  __meta_kubernetes_node_name: string
+  __meta_kubernetes_pod_name: string
+  __meta_kubernetes_service_name: string
 }

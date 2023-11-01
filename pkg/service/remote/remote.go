@@ -20,6 +20,7 @@ type RemoteService struct {
 type Action string
 
 const (
+	ActionHealthy    Action = "/-/healthy"
 	ActionReady      Action = "/-/ready"
 	ActionMetadata   Action = "/api/v1/metadata"
 	ActionQuery      Action = "/api/v1/query"

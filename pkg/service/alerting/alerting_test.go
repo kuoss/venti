@@ -115,36 +115,66 @@ func TestNew(t *testing.T) {
 	require.NotZero(t, alertingService1)
 }
 
+func TestGetAlertingRuleGroups(t *testing.T) {
+	got := alertingService1.GetAlertingRuleGroups()
+	require.NotEmpty(t, got)
+}
+
+func TestGetAlertmanagerDiscovery(t *testing.T) {
+	got := alertingService1.GetAlertmanagerDiscovery()
+	require.NotEmpty(t, got)
+}
+
 func TestDoAlert(t *testing.T) {
-	t.Run("ok", func(t *testing.T) {
-		err := alertingService1.DoAlert()
-		require.NoError(t, err)
-	})
+	alertingRuleGroups := alertingService1.alertingRuleGroups
+	datasourceService := alertingService1.datasourceService
+	datasourceReload := alertingService1.datasourceReload
+	alertmanagerURL := alertingService1.alertmanagerURL
+	defer func() {
+		alertingService1.alertingRuleGroups = alertingRuleGroups
+		alertingService1.datasourceService = datasourceService
+		alertingService1.datasourceReload = datasourceReload
+		alertingService1.alertmanagerURL = alertmanagerURL
+	}()
 
-	t.Run("no_alertingRules", func(t *testing.T) {
-		temp := alertingService1.alertingRuleGroups
-		alertingService1.alertingRuleGroups = []AlertingRuleGroup{}
-		err := alertingService1.DoAlert()
-		require.NoError(t, err)
-		alertingService1.alertingRuleGroups = temp
-	})
-
-	t.Run("reload err", func(t *testing.T) {
-		temp := alertingService1.datasourceService
-		alertingService1.datasourceService = &mockDatasourceService{}
-		alertingService1.datasourceReload = true
-		err := alertingService1.DoAlert()
-		require.EqualError(t, err, "reload err: mock reload err")
-		alertingService1.datasourceService = temp
-	})
-
-	t.Run("sendFire err", func(t *testing.T) {
-		temp := alertingService1.alertmanagerURL
-		alertingService1.alertmanagerURL = ""
-		err := alertingService1.DoAlert()
-		require.EqualError(t, err, `sendFires err: error on Post: Post "/api/v1/alerts": unsupported protocol scheme ""`)
-		alertingService1.alertmanagerURL = temp
-	})
+	testCases := []struct {
+		alertingRuleGroups []AlertingRuleGroup
+		datasourceService  datasourceservice.IDatasourceService
+		datasourceReload   bool
+		alertmanagerURL    string
+		wantError          string
+	}{
+		{
+			alertingRuleGroups, datasourceService, datasourceReload, alertmanagerURL,
+			"",
+		},
+		{
+			[]AlertingRuleGroup{}, datasourceService, datasourceReload, alertmanagerURL,
+			"",
+		},
+		{
+			[]AlertingRuleGroup{}, &mockDatasourceService{}, true, alertmanagerURL,
+			"reload err: mock reload err",
+		},
+		{
+			[]AlertingRuleGroup{}, datasourceService, datasourceReload, "",
+			`sendFires err: post err: Post "/api/v1/alerts": unsupported protocol scheme ""`,
+		},
+	}
+	for _, tc := range testCases {
+		t.Run("", func(t *testing.T) {
+			alertingService1.alertingRuleGroups = tc.alertingRuleGroups
+			alertingService1.datasourceService = tc.datasourceService
+			alertingService1.datasourceReload = tc.datasourceReload
+			alertingService1.alertmanagerURL = tc.alertmanagerURL
+			err := alertingService1.DoAlert()
+			if tc.wantError == "" {
+				require.NoError(t, err)
+			} else {
+				require.EqualError(t, err, tc.wantError)
+			}
+		})
+	}
 }
 
 func TestEvalAlertingRuleGroups(t *testing.T) {
@@ -216,7 +246,7 @@ func TestEvalAlertingRule(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		t.Run("", func(t *testing.T) {
-			ar := &AlertingRule{active: tc.active}
+			ar := &AlertingRule{Active: tc.active}
 			fires := []Fire{}
 			alertingService1.evalAlertingRule(ar, servers.GetDatasources(), tc.commonLabels, evalTime, &fires)
 			require.Equal(t, tc.want, fires)
@@ -227,102 +257,129 @@ func TestEvalAlertingRule(t *testing.T) {
 func TestEvalAlertingRuleSample(t *testing.T) {
 	active := map[uint64]*Alert{}
 	ar := AlertingRule{
-		active: active,
+		Active: active,
+		Rule: model.Rule{
+			Annotations: map[string]string{"severity": "info"},
+		},
 	}
 	sample := commonModel.Sample{}
 	labels := map[string]string{}
 	evalTime := time.Now()
-	alertingService1.evalAlertingRuleSample(&ar, sample, labels, evalTime)
+
 	want := AlertingRule{
-		rule: model.Rule{
+		Rule: model.Rule{
 			Labels:      map[string]string(nil),
-			Annotations: map[string]string(nil),
+			Annotations: map[string]string{"severity": "info"},
 		},
-		active: active,
+		Active: active,
 	}
+	alertingService1.evalAlertingRuleSample(&ar, sample, labels, evalTime)
 	require.Equal(t, want, ar)
 }
 
 func TestRenderSummaryAnnotation(t *testing.T) {
+	defer func() {
+		fakeErr1 = false
+	}()
 	testCases := []struct {
 		annotations map[string]string
-		value       string
 		labels      map[string]string
+		value       string
+		fakeErr1    bool
 		want        map[string]string
 		wantError   string
 	}{
 		// error
 		{
 			map[string]string{},
-			"100", map[string]string{"datasource": "datasource1", "hello": "world", "foo": "bar"},
+			map[string]string{"datasource": "datasource1", "hello": "world", "foo": "bar"},
+			"100", false,
 			map[string]string{"summary": "placeholder summary"},
 			`no summary annotation`,
 		},
 		{
 			map[string]string{"summary": "{{$xxx}}"},
-			"100", map[string]string{"datasource": "datasource1", "hello": "world", "foo": "bar"},
+			map[string]string{"datasource": "datasource1", "hello": "world", "foo": "bar"},
+			"100", false,
 			map[string]string{"summary": "{{$xxx}}"},
 			`parse err: template: :1: undefined variable "$xxx"`,
+		},
+		{
+			map[string]string{"summary": "{{.}}"},
+			map[string]string{"datasource": "datasource1", "hello": "world", "foo": "bar"},
+			"100", true,
+			map[string]string{"summary": "{{.}}"},
+			`tmpl.Execute err: %!w(<nil>)`,
 		},
 		// ok
 		{
 			map[string]string{"summary": ""},
-			"100", map[string]string{"datasource": "datasource1", "hello": "world", "foo": "bar"},
+			map[string]string{"datasource": "datasource1", "hello": "world", "foo": "bar"},
+			"100", false,
 			map[string]string{"summary": ""},
-			"",
+			``,
 		},
 		{
 			map[string]string{"summary": "hello"},
-			"100", map[string]string{"datasource": "datasource1", "hello": "world", "foo": "bar"},
+			map[string]string{"datasource": "datasource1", "hello": "world", "foo": "bar"},
+			"100", false,
 			map[string]string{"summary": "hello"},
-			"",
+			``,
 		},
 		{
 			map[string]string{"summary": "{{$value}}"},
-			"100", map[string]string{"datasource": "datasource1", "hello": "world", "foo": "bar"},
+			map[string]string{"datasource": "datasource1", "hello": "world", "foo": "bar"},
+			"100", false,
 			map[string]string{"summary": "100"},
-			"",
+			``,
 		},
 		{
 			map[string]string{"summary": "{{$labels}}"},
-			"100", map[string]string{"datasource": "datasource1", "hello": "world", "foo": "bar"},
+			map[string]string{"datasource": "datasource1", "hello": "world", "foo": "bar"},
+			"100", false,
 			map[string]string{"summary": "map[datasource:datasource1 foo:bar hello:world]"},
-			"",
+			``,
 		},
 		{
 			map[string]string{"summary": "{{$labels.hello}}"},
-			"100", map[string]string{"datasource": "datasource1", "hello": "world", "foo": "bar"},
+			map[string]string{"datasource": "datasource1", "hello": "world", "foo": "bar"},
+			"100", false,
 			map[string]string{"summary": "world"},
-			"",
+			``,
 		},
 		{
 			map[string]string{"summary": "{{$labels.xxx}}"},
-			"100", map[string]string{"datasource": "datasource1", "hello": "world", "foo": "bar"},
+			map[string]string{"datasource": "datasource1", "hello": "world", "foo": "bar"},
+			"100", false,
 			map[string]string{"summary": "<no value>"},
-			"",
+			``,
 		},
 		{
 			map[string]string{"summary": "{{$}}"},
-			"100", map[string]string{"datasource": "datasource1", "hello": "world", "foo": "bar"},
+			map[string]string{"datasource": "datasource1", "hello": "world", "foo": "bar"},
+			"100", false,
 			map[string]string{"summary": "map[datasource:datasource1 foo:bar hello:world]"},
-			"",
+			``,
 		},
 		{
 			map[string]string{"summary": "{{$.foo}}"},
-			"100", map[string]string{"datasource": "datasource1", "hello": "world", "foo": "bar"},
+			map[string]string{"datasource": "datasource1", "hello": "world", "foo": "bar"},
+			"100", false,
 			map[string]string{"summary": "bar"},
-			"",
+			``,
 		},
 		{
 			map[string]string{"summary": "{{.}}"},
-			"100", map[string]string{"datasource": "datasource1", "hello": "world", "foo": "bar"},
+			map[string]string{"datasource": "datasource1", "hello": "world", "foo": "bar"},
+			"100", false,
 			map[string]string{"summary": "map[datasource:datasource1 foo:bar hello:world]"},
-			"",
+			``,
 		},
 	}
 	for _, tc := range testCases {
 		t.Run("", func(t *testing.T) {
 			annotations := tc.annotations
+			fakeErr1 = tc.fakeErr1
 			err := renderSummaryAnnotaion(annotations, tc.labels, tc.value)
 			if tc.wantError == "" {
 				require.NoError(t, err)
@@ -408,43 +465,114 @@ func TestGetDataFromLogs(t *testing.T) {
 }
 
 func TestGetDataFromVector(t *testing.T) {
-	// ok
+	defer func() {
+		fakeErr1 = false
+	}()
+
 	body := `{"status":"success","data":{"resultType":"vector","result":[
 		{"metric":{"__name__":"up","job":"prometheus","instance":"localhost:9090"},"value":[1435781451.781,"1"]},
 		{"metric":{"__name__":"up","job":"prometheus","instance":"localhost:9090"},"value":[1435781451.781,"1"]}]}}`
-	want := []commonModel.Sample{
-		{Metric: commonModel.Metric{"__name__": "up", "instance": "localhost:9090", "job": "prometheus"}, Value: 1, Timestamp: 1435781451781},
-		{Metric: commonModel.Metric{"__name__": "up", "instance": "localhost:9090", "job": "prometheus"}, Value: 1, Timestamp: 1435781451781}}
-	got, err := getDataFromVector([]byte(body))
-	require.NoError(t, err)
-	require.Equal(t, want, got)
+	testCases := []struct {
+		body      string
+		fakeErr1  bool
+		want      []commonModel.Sample
+		wantError string
+	}{
+		{
+			body, false,
+			[]commonModel.Sample{
+				{Metric: commonModel.Metric{"__name__": "up", "instance": "localhost:9090", "job": "prometheus"}, Value: 1, Timestamp: 1435781451781},
+				{Metric: commonModel.Metric{"__name__": "up", "instance": "localhost:9090", "job": "prometheus"}, Value: 1, Timestamp: 1435781451781}},
+			``,
+		},
+		{
+			body, true,
+			[]commonModel.Sample{},
+			`unmarshal err: %!w(<nil>)`,
+		},
+	}
+	for _, tc := range testCases {
+		fakeErr1 = tc.fakeErr1
+		got, err := getDataFromVector([]byte(body))
+		if tc.wantError == "" {
+			require.NoError(t, err)
+			require.Equal(t, tc.want, got)
+		} else {
+			require.EqualError(t, err, tc.wantError)
+			require.Equal(t, tc.want, got)
+		}
+	}
+
 }
 
 func TestSendFires(t *testing.T) {
-	fires := []Fire{
+	alertmanagerURL := alertingService1.alertmanagerURL
+	defer func() {
+		alertingService1.alertmanagerURL = alertmanagerURL
+		fakeErr1 = false
+		fakeErr2 = false
+	}()
+	fires1 := []Fire{
 		{Labels: map[string]string{"test": "test", "severity": "info", "pizza": "🍕", "time": time.Now().String()}},
 	}
-	// ok
-	err := alertingService1.sendFires(fires)
-	require.NoError(t, err)
-	// error
-	temp := alertingService1.alertmanagerURL
-	alertingService1.alertmanagerURL = ""
-	err = alertingService1.sendFires(fires)
-	require.EqualError(t, err, `error on Post: Post "/api/v1/alerts": unsupported protocol scheme ""`)
-	alertingService1.alertmanagerURL = temp
+	testCases := []struct {
+		fires           []Fire
+		alertmanagerURL string
+		fakeErr1        bool
+		fakeErr2        bool
+		wantError       string
+	}{
+		{
+			fires1, alertmanagerURL, false, false,
+			``,
+		},
+		{
+			fires1, "", false, false,
+			`post err: Post "/api/v1/alerts": unsupported protocol scheme ""`,
+		},
+		{
+			fires1, alertmanagerURL, true, false,
+			`marshal err: %!w(<nil>)`,
+		},
+		{
+			fires1, alertmanagerURL, false, true,
+			`statusCode is not ok(200)`,
+		},
+	}
+	for _, tc := range testCases {
+		t.Run("", func(t *testing.T) {
+			alertingService1.alertmanagerURL = tc.alertmanagerURL
+			fakeErr1 = tc.fakeErr1
+			fakeErr2 = tc.fakeErr2
+			err := alertingService1.sendFires(tc.fires)
+			if tc.wantError == "" {
+				require.NoError(t, err)
+			} else {
+				require.EqualError(t, err, tc.wantError)
+			}
+		})
+	}
 }
 
 func TestSendTestAlert(t *testing.T) {
-	t.Run("ok", func(t *testing.T) {
+	alertmanagerURL := alertingService1.alertmanagerURL
+	defer func() {
+		alertingService1.alertmanagerURL = alertmanagerURL
+	}()
+	testCases := []struct {
+		alertmanagerURL string
+		wantError       string
+	}{
+		{alertmanagerURL, ``},
+		{"", `sendFires err: post err: Post "/api/v1/alerts": unsupported protocol scheme ""`},
+	}
+	for _, tc := range testCases {
+		alertingService1.alertmanagerURL = tc.alertmanagerURL
 		err := alertingService1.SendTestAlert()
-		require.NoError(t, err)
-	})
-	t.Run("error", func(t *testing.T) {
-		temp := alertingService1.alertmanagerURL
-		alertingService1.alertmanagerURL = ""
-		err := alertingService1.SendTestAlert()
-		require.EqualError(t, err, `sendFires err: error on Post: Post "/api/v1/alerts": unsupported protocol scheme ""`)
-		alertingService1.alertmanagerURL = temp
-	})
+		if tc.wantError == "" {
+			require.NoError(t, err)
+		} else {
+			require.EqualError(t, err, tc.wantError)
+		}
+	}
 }

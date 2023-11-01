@@ -18,7 +18,7 @@ func init() {
 func TestLoad(t *testing.T) {
 	cfg, err := Load("Unknown")
 	assert.NoError(t, err)
-	assert.Equal(t, cfg.Version, "Unknown")
+	assert.Equal(t, cfg.AppInfo.Version, "Unknown")
 	assert.Equal(t, []model.Datasource{
 		{Type: model.DatasourceTypePrometheus, Name: "prometheus", URL: "http://localhost:9090"},
 		{Type: model.DatasourceTypeLethe, Name: "lethe", URL: "http://localhost:6060"},

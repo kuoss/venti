@@ -16,6 +16,7 @@ import (
 	datasourceservice "github.com/kuoss/venti/pkg/service/datasource"
 	"github.com/kuoss/venti/pkg/service/remote"
 	commonModel "github.com/prometheus/common/model"
+	promWebAPI "github.com/prometheus/prometheus/web/api/v1"
 	"github.com/valyala/fastjson"
 )
 
@@ -24,19 +25,29 @@ type IAlertingService interface {
 }
 
 type AlertingService struct {
-	alertingRuleGroups []AlertingRuleGroup
-	globalLabels       map[string]string
-	datasourceService  datasourceservice.IDatasourceService
-	datasourceReload   bool
-	remoteService      *remote.RemoteService
-	alertmanagerURL    string
-	client             http.Client
+	alertingRuleGroups  []AlertingRuleGroup
+	globalLabels        map[string]string
+	datasourceService   datasourceservice.IDatasourceService
+	datasourceReload    bool
+	remoteService       *remote.RemoteService
+	alertmanagerConfigs model.AlertmanagerConfigs
+	alertmanagerURL     string
+	client              http.Client
 }
 
+var (
+	fakeErr1 bool = false
+	fakeErr2 bool = false
+)
+
 func New(cfg *model.Config, alertRuleFiles []model.RuleFile, datasourceService datasourceservice.IDatasourceService, remoteService *remote.RemoteService) *AlertingService {
+	var alertmanagerConfigs model.AlertmanagerConfigs
 	var alertmanagerURL string
-	if len(cfg.AlertingConfig.AlertmanagerConfigs) > 0 && len(cfg.AlertingConfig.AlertmanagerConfigs[0].StaticConfig) > 0 && len(cfg.AlertingConfig.AlertmanagerConfigs[0].StaticConfig[0].Targets) > 0 {
-		alertmanagerURL = cfg.AlertingConfig.AlertmanagerConfigs[0].StaticConfig[0].Targets[0]
+	if len(cfg.AlertingConfig.AlertmanagerConfigs) > 0 {
+		alertmanagerConfigs = cfg.AlertingConfig.AlertmanagerConfigs
+		if len(cfg.AlertingConfig.AlertmanagerConfigs[0].StaticConfig) > 0 && len(cfg.AlertingConfig.AlertmanagerConfigs[0].StaticConfig[0].Targets) > 0 {
+			alertmanagerURL = cfg.AlertingConfig.AlertmanagerConfigs[0].StaticConfig[0].Targets[0]
+		}
 	}
 	var alertingRuleGroups = []AlertingRuleGroup{}
 	for _, alertRuleFile := range alertRuleFiles {
@@ -44,25 +55,45 @@ func New(cfg *model.Config, alertRuleFiles []model.RuleFile, datasourceService d
 		for _, group := range alertRuleFile.RuleGroups {
 			for _, rule := range group.Rules {
 				alertingRules = append(alertingRules, AlertingRule{
-					rule:   rule,
-					active: map[uint64]*Alert{},
+					Rule:   rule,
+					Active: map[uint64]*Alert{},
 				})
 			}
 		}
 		alertingRuleGroups = append(alertingRuleGroups, AlertingRuleGroup{
-			datasourceSelector: alertRuleFile.DatasourceSelector,
-			groupLabels:        alertRuleFile.CommonLabels,
-			alertingRules:      alertingRules,
+			DatasourceSelector: alertRuleFile.DatasourceSelector,
+			GroupLabels:        alertRuleFile.CommonLabels,
+			AlertingRules:      alertingRules,
 		})
 	}
 	return &AlertingService{
-		alertingRuleGroups: alertingRuleGroups,
-		globalLabels:       cfg.AlertingConfig.GlobalLabels,
-		datasourceService:  datasourceService,
-		datasourceReload:   cfg.DatasourceConfig.Discovery.Enabled,
-		remoteService:      remoteService,
-		alertmanagerURL:    alertmanagerURL,
-		client:             http.Client{Timeout: 5 * time.Second},
+		alertingRuleGroups:  alertingRuleGroups,
+		globalLabels:        cfg.AlertingConfig.GlobalLabels,
+		datasourceService:   datasourceService,
+		datasourceReload:    cfg.DatasourceConfig.Discovery.Enabled,
+		remoteService:       remoteService,
+		alertmanagerConfigs: alertmanagerConfigs,
+		alertmanagerURL:     alertmanagerURL,
+		client:              http.Client{Timeout: 5 * time.Second},
+	}
+}
+
+func (s *AlertingService) GetAlertingRuleGroups() []AlertingRuleGroup {
+	return s.alertingRuleGroups
+}
+
+func (s *AlertingService) GetAlertmanagerDiscovery() promWebAPI.AlertmanagerDiscovery {
+	var alertmanagers []*promWebAPI.AlertmanagerTarget
+	for _, alertmanagerConfig := range s.alertmanagerConfigs {
+		for _, staticConfig := range alertmanagerConfig.StaticConfig {
+			for _, target := range staticConfig.Targets {
+				alertmanagers = append(alertmanagers, &promWebAPI.AlertmanagerTarget{URL: target})
+			}
+		}
+	}
+	return promWebAPI.AlertmanagerDiscovery{
+		ActiveAlertmanagers:  alertmanagers,
+		DroppedAlertmanagers: []*promWebAPI.AlertmanagerTarget{},
 	}
 }
 
@@ -91,16 +122,16 @@ func (s *AlertingService) evalAlertingRuleGroups(fires *[]Fire) {
 }
 
 func (s *AlertingService) evalAlertingRuleGroup(group *AlertingRuleGroup, evalTime time.Time, fires *[]Fire) {
-	datasources := s.datasourceService.GetDatasourcesWithSelector(group.datasourceSelector)
+	datasources := s.datasourceService.GetDatasourcesWithSelector(group.DatasourceSelector)
 	logger.Debugf("datasources(%d): %v", len(datasources), datasources) // 2023-09-19
 	labels := map[string]string{}
 	for k, v := range s.globalLabels {
 		labels[k] = v
 	}
-	for k, v := range group.groupLabels {
+	for k, v := range group.GroupLabels {
 		labels[k] = v
 	}
-	for _, ar := range group.alertingRules {
+	for _, ar := range group.AlertingRules {
 		s.evalAlertingRule(&ar, datasources, labels, evalTime, fires)
 	}
 }
@@ -110,10 +141,10 @@ func (s *AlertingService) evalAlertingRule(ar *AlertingRule, datasources []model
 	for k, v := range commonLabels {
 		labels[k] = v
 	}
-	for k, v := range ar.rule.Labels {
+	for k, v := range ar.Rule.Labels {
 		labels[k] = v
 	}
-	labels["alertname"] = ar.rule.Alert
+	labels["alertname"] = ar.Rule.Alert
 
 	for _, datasource := range datasources {
 		err := s.evalAlertingRuleDatasource(ar, datasource, labels, evalTime)
@@ -121,10 +152,10 @@ func (s *AlertingService) evalAlertingRule(ar *AlertingRule, datasources []model
 			logger.Warnf("evalAlertingRuleDatasource err: %s", err)
 		}
 	}
-	for key, alert := range ar.active {
+	for key, alert := range ar.Active {
 		// remove old alerts
 		if alert.UpdatedAt != evalTime {
-			delete(ar.active, key)
+			delete(ar.Active, key)
 			continue
 		}
 		// add to fires
@@ -142,12 +173,12 @@ func (s *AlertingService) evalAlertingRuleDatasource(ar *AlertingRule, datasourc
 	for k, v := range commonLabels {
 		labels[k] = v
 	}
-	for k, v := range ar.rule.Labels {
+	for k, v := range ar.Rule.Labels {
 		labels[k] = v
 	}
 	labels["datasource"] = datasource.Name
 
-	samples, err := s.queryRule(ar.rule, datasource)
+	samples, err := s.queryRule(ar.Rule, datasource)
 	if err != nil {
 		return fmt.Errorf("queryRule err: %w", err)
 	}
@@ -170,23 +201,23 @@ func (s *AlertingService) evalAlertingRuleSample(ar *AlertingRule, sample common
 
 	// annotations & summary
 	annotations := map[string]string{}
-	for k, v := range ar.rule.Annotations {
+	for k, v := range ar.Rule.Annotations {
 		annotations[k] = v
 	}
 	err := renderSummaryAnnotaion(annotations, labels, sample.Value.String())
 	if err != nil {
-		logger.Warnf("renderSummaryAnnotaion err: %s", err)
+		logger.Warnf("renderSummaryAnnotaion(%s) err: %s", ar.Rule.Alert, err)
 	}
 
 	// others
 	createdAt := evalTime
 	state := StatePending
 
-	temp, exists := ar.active[signature]
+	temp, exists := ar.Active[signature]
 	if exists {
 		createdAt = temp.CreatedAt
 	}
-	elapsed := evalTime.Sub(createdAt.Add(ar.rule.For))
+	elapsed := evalTime.Sub(createdAt.Add(ar.Rule.For))
 	if elapsed >= 0 {
 		state = StateFiring
 	}
@@ -197,8 +228,13 @@ func (s *AlertingService) evalAlertingRuleSample(ar *AlertingRule, sample common
 		Labels:      labels,
 		Annotations: annotations,
 	}
-	ar.active[signature] = alert
-	logger.Infof("%s(%s): %s: %s", alert.State.String(), elapsed.Round(time.Second), labels["alertname"], annotations["summary"])
+	ar.Active[signature] = alert
+
+	// show log if severity exists and not silence
+	severity, ok := alert.Annotations["severity"]
+	if ok && severity != "silence" {
+		logger.Infof("%s(%s): %s: %s", alert.State.String(), elapsed.Round(time.Second), labels["alertname"], annotations["summary"])
+	}
 }
 
 func renderSummaryAnnotaion(annotations map[string]string, labels map[string]string, value string) error {
@@ -220,7 +256,7 @@ func renderSummaryAnnotaion(annotations map[string]string, labels map[string]str
 	}
 	var buf bytes.Buffer
 	err = tmpl.Execute(&buf, labels)
-	if err != nil {
+	if err != nil || fakeErr1 {
 		return fmt.Errorf("tmpl.Execute err: %w", err)
 	}
 	annotations["summary"] = buf.String()
@@ -286,7 +322,7 @@ func getDataFromVector(bodyBytes []byte) ([]commonModel.Sample, error) {
 	}
 	var body Body
 	err := json.Unmarshal(bodyBytes, &body)
-	if err != nil {
+	if err != nil || fakeErr1 {
 		return []commonModel.Sample{}, fmt.Errorf("unmarshal err: %w", err)
 	}
 	return body.Data.Result, nil
@@ -295,17 +331,16 @@ func getDataFromVector(bodyBytes []byte) ([]commonModel.Sample, error) {
 func (s *AlertingService) sendFires(fires []Fire) error {
 	logger.Infof("sending %d fires...", len(fires))
 	pbytes, err := json.Marshal(fires)
-	if err != nil {
-		// unreachable
-		return fmt.Errorf("error on Marshal: %w", err)
+	if err != nil || fakeErr1 {
+		return fmt.Errorf("marshal err: %w", err)
 	}
 	buff := bytes.NewBuffer(pbytes)
 	resp, err := s.client.Post(s.alertmanagerURL+"/api/v1/alerts", "application/json", buff)
 	if err != nil {
-		return fmt.Errorf("error on Post: %w", err)
+		return fmt.Errorf("post err: %w", err)
 	}
 	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
+	if resp.StatusCode != http.StatusOK || fakeErr2 {
 		return fmt.Errorf("statusCode is not ok(200)")
 	}
 	return nil

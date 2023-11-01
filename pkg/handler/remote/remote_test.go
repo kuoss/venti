@@ -78,7 +78,7 @@ func TestNew(t *testing.T) {
 
 func TestBuildInfo(t *testing.T) {
 	w := httptest.NewRecorder()
-	req, err := http.NewRequest("GET", "/api/remote/metadata?dsid=0", nil)
+	req, err := http.NewRequest("GET", "/api/remote/metadata?dsName=prometheus1", nil)
 	assert.NoError(t, err)
 
 	remoteRouter.ServeHTTP(w, req)
@@ -88,7 +88,7 @@ func TestBuildInfo(t *testing.T) {
 
 func TestMetadata(t *testing.T) {
 	w := httptest.NewRecorder()
-	req, err := http.NewRequest("GET", "/api/remote/metadata?dsid=0", nil)
+	req, err := http.NewRequest("GET", "/api/remote/metadata?dsName=prometheus1", nil)
 	assert.NoError(t, err)
 
 	remoteRouter.ServeHTTP(w, req)
@@ -118,7 +118,7 @@ func TestQuery(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run("", func(t *testing.T) {
 			w := httptest.NewRecorder()
-			req, err := http.NewRequest("GET", "/api/remote/query?dsid=0&"+tc.rawQuery, nil)
+			req, err := http.NewRequest("GET", "/api/remote/query?dsName=prometheus1&"+tc.rawQuery, nil)
 			assert.NoError(t, err)
 
 			remoteRouter.ServeHTTP(w, req)
@@ -166,7 +166,7 @@ func TestQueryRange(t *testing.T) {
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("#%d - %s", i, tc.rawQuery), func(tt *testing.T) {
 			w := httptest.NewRecorder()
-			req, err := http.NewRequest("GET", "/api/remote/query_range?dsid=0&"+tc.rawQuery, nil)
+			req, err := http.NewRequest("GET", "/api/remote/query_range?dsName=prometheus1&"+tc.rawQuery, nil)
 			assert.NoError(tt, err)
 
 			remoteRouter.ServeHTTP(w, req)
