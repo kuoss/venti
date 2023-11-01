@@ -3,36 +3,37 @@ import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRoute } from 'vue-router';
 import Util from '@/lib/util';
 import { useTimeStore } from '@/stores/time';
-import { useDatasourceStore } from '@/stores/datasource';
+import DropdownDatasource from '@/components/DropdownDatasource.vue'
 
 import TimeRangePicker from '@/components/TimeRangePicker.vue';
 import RunButton from '@/components/RunButton.vue';
 import UplotVue from 'uplot-vue';
 import 'uplot/dist/uPlot.min.css';
 
-const route = useRoute()
-const timeStore = useTimeStore()
-// const datasourceStore = useDatasourceStore()
+const route = useRoute();
+const timeStore = useTimeStore();
 
-const tableWidth = ref(0)
-const searchMode = ref(false)
-const cursorIdx = ref(null)
-const cursorTime = ref(null)
-const busy = ref(false)
-const loading = ref(false)
+const tableWidth = ref(0);
+const searchMode = ref(false);
+const cursorIdx = ref(null);
+const cursorTime = ref(null);
+const busy = ref(false);
+const loading = ref(false);
 
-const metadata = ref({})
-const metaDict = ref({})
-const metricInfo = ref(null)
+const metadata = ref({});
+const metaDict = ref({});
+const metricInfo = ref(null);
 
-const expr = ref(`container_memory_working_set_bytes{namespace="kube-system"}`)
-const keys = ref([])
-const keyDict = ref({})
-const result = ref([])
-const tab = ref(0)
+const expr = ref(`container_memory_working_set_bytes{namespace="kube-system"}`);
+const keys = ref([]);
+const keyDict = ref({});
+const result = ref([]);
+const tab = ref(0);
 // const time = ref(null)
 
-const chartData = ref([])
+let dsName = '';
+
+const chartData = ref([]);
 const chartOptions = ref({
   axes: [
     {
@@ -73,37 +74,37 @@ const chartOptions = ref({
   select: { show: false },
   series: [],
   plugins: [tooltipPlugin()],
-})
+});
 
-let errorResponse
-let intervalSeconds = 0
-let range = []
-let lastExecuted = null
+let errorResponse;
+let intervalSeconds = 0;
+let range = [];
+let lastExecuted = null;
 
 const items = computed(() => {
-  const keyword = expr.value
-  if (!keyword || keyword.length < 1) return []
+  const keyword = expr.value;
+  if (!keyword || keyword.length < 1) return [];
   return Object.entries(metadata.value)
     .filter(x => x[0].indexOf(keyword) >= 0)
     .map(x => {
-      x.push(x[0].replaceAll(keyword, `<span class="text-blue-600 font-bold">${keyword}</span>`))
-      return x
-    })
-})
+      x.push(x[0].replaceAll(keyword, `<span class="text-blue-600 font-bold">${keyword}</span>`));
+      return x;
+    });
+});
 
 onMounted(() => {
-  timeStore.timerManager = 'MetricsView'
-  fetchMetadata()
+  timeStore.timerManager = 'MetricsView';
+  fetchMetadata();
   if (route.query?.query) {
-    expr = '' + route.query.query
-    setTimeout(execute, 500)
+    expr.value = '' + route.query.query;
+    setTimeout(execute, 500);
   }
-  window.addEventListener('resize', chartResize)
-})
+  window.addEventListener('resize', chartResize);
+});
 
 onUnmounted(() => {
-  window.removeEventListener('resize', chartResize)
-})
+  window.removeEventListener('resize', chartResize);
+});
 
 function searchKeyUp(e) {
   if (e.keyCode == 13) {
@@ -145,8 +146,9 @@ async function execute() {
   loading.value = true;
   try {
     const response = await fetch(
-      '/api/v1/remote/query_range?dsType=prometheus&' +
+      '/api/v1/remote/query_range?' +
       new URLSearchParams({
+        dsName: dsName,
         query: expr.value,
         start: timeRange[0],
         end: timeRange[1],
@@ -154,15 +156,15 @@ async function execute() {
       }),
     );
     const jsonData = await response.json();
-
     loading.value = false;
     result.value = jsonData.data.result;
-    keys.value = result.value
-      .map(x => Object.keys(x.metric))
-      .flat()
-      .filter((v, i, s) => s.indexOf(v) === i)
-      .sort()
-      .slice(1, 99);
+
+    let keySet = new Set()
+    for (const v of result.value) {
+      keySet = new Set([...keySet, ...Object.keys(v.metric)])
+    }
+    keySet.delete('__name__')
+    keys.value = Array.from(keySet)
     renderChart();
     if (intervalSeconds > 0) {
       busy.value = true;
@@ -183,24 +185,24 @@ function timerHandler() {
 }
 
 function renderChart() {
-  const temp = result.value.map(x => x.values)
-  const timestamps = Array.from(new Set(temp.map(a => a.map(b => b[0])).flat())).sort()
+  const temp = result.value.map(x => x.values);
+  const timestamps = Array.from(new Set(temp.map(a => a.map(b => b[0])).flat())).sort();
   let seriesData = temp.map(a => {
-    let newA = []
+    let newA = [];
     timestamps.forEach(t => {
       const newPoint = a.filter(b => t == b[0]);
       if (newPoint.length != 1 || isNaN(parseFloat(newPoint[0][1]))) {
-        newA.push(null)
-        return
+        newA.push(null);
+        return;
       }
-      newA.push(parseFloat(newPoint[0][1]))
-    })
-    return newA
-  })
-  const metrics = result.value.map(x => x.metric)
-  let newSeries = []
-  newSeries.push({})
-  keyDict.value = {}
+      newA.push(parseFloat(newPoint[0][1]));
+    });
+    return newA;
+  });
+  const metrics = result.value.map(x => x.metric);
+  let newSeries = [];
+  newSeries.push({});
+  keyDict.value = {};
 
   metrics.forEach(x => {
     delete x.__name__;
@@ -213,22 +215,22 @@ function renderChart() {
       };
       keyDict.value[a[0]].values.push(a[1]);
       keyDict.value[a[0]].values = keyDict.value[a[0]].values.filter((v, i, s) => s.indexOf(v) === i);
-    })
-    x = '{' + entries.map(v => `${v[0]}="${v[1]}"`).join(',') + '}'
+    });
+    x = '{' + entries.map(v => `${v[0]}="${v[1]}"`).join(',') + '}';
     newSeries.push({
       label: x,
       stroke: Util.string2color(x),
       points: { size: 1 },
-    })
-  })
+    });
+  });
   // this.chartOptions.axes[1].values = (self, ticks) => ticks.map(rawValue => rawValue / Math.pow(1000, c) + ['', 'k', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y'][c])
   chartOptions.value = {
     ...chartOptions.value,
     series: newSeries,
     scales: timeStore.scales,
-  }
-  chartData.value = [timestamps, ...seriesData]
-  chartResize()
+  };
+  chartData.value = [timestamps, ...seriesData];
+  chartResize();
 }
 
 function selectMetric(m) {
@@ -245,26 +247,26 @@ function clickOutside() {
 }
 async function fetchMetadata() {
   try {
-    const resp = await fetch('/api/v1/remote/metadata?dsType=prometheus')
-    const jsonData = await resp.json()
-    metadata.value = jsonData.data
+    const resp = await fetch('/api/v1/remote/metadata?dsType=prometheus');
+    const jsonData = await resp.json();
+    metadata.value = jsonData.data;
     metaDict.value = Object.keys(metadata.value).reduce((a, k) => {
-      const p = k.slice(0, k.indexOf('_'))
-      a[p] = a[p] || { showMetrics: false }
-      a[p].metrics = a[p].metrics || []
-      a[p].metrics.push({ name: k, data: metadata.value[k] })
-      return a
-    }, {})
+      const p = k.slice(0, k.indexOf('_'));
+      a[p] = a[p] || { showMetrics: false };
+      a[p].metrics = a[p].metrics || [];
+      a[p].metrics.push({ name: k, data: metadata.value[k] });
+      return a;
+    }, {});
   } catch (err) {
-    console.error(err)
+    console.error(err);
   }
 }
 
 const chartResize = () => {
-  const width = document.body.clientWidth - 545
-  chartOptions.value = { ...chartOptions.value, width: width }
-  tableWidth.value = width
-}
+  const width = document.body.clientWidth - 545;
+  chartOptions.value = { ...chartOptions.value, width: width };
+  tableWidth.value = width;
+};
 
 function tooltipPlugin() {
   return {
@@ -282,13 +284,20 @@ function clickItem(item) {
   expr.value = item[0];
   searchMode.value = false;
 }
+
+function onChangeDatasource(value) {
+  dsName = value
+}
 </script>
 
 <template>
   <header class="fixed right-0 w-full bg-white border-b border-common shadow z-30 p-2 pl-52"
     :class="{ 'is-loading': loading }">
     <div class="flex items-center flex-row">
-      <div><i class="mdi mdi-18px mdi-numeric" /> Metrics</div>
+      <div>
+        <i class="mdi mdi-18px mdi-numeric" /> Metrics
+        <DropdownDatasource dsType="prometheus" @change="onChangeDatasource" />
+      </div>
       <div class="flex ml-auto">
         <span>
           <TimeRangePicker @updateTimeRange="updateTimeRange" />
@@ -304,7 +313,7 @@ function clickItem(item) {
       <div class="pb-4">
         <div class="relative w-full">
           <input v-model="expr" type="search"
-            class="flex-1 relative flex-auto min-w-0 block w-full px-3 py-1.5 text-base font-normal text-gray-700 bg-white bg-clip-padding border border-solid border-gray-300 rounded transition ease-in-out m-0 focus:text-gray-700 focus:bg-white focus:border-blue-600 focus:outline-none"
+            class="flex-auto relative min-w-0 block w-full px-3 py-1.5 text-base font-normal text-gray-700 bg-white bg-clip-padding border border-solid border-gray-300 rounded transition ease-in-out m-0 focus:text-gray-700 focus:bg-white focus:border-blue-600 focus:outline-none"
             placeholder="Expression" aria-label="Expression" aria-describedby="button-addon3" @keyup="searchKeyUp" />
           <ul v-if="searchMode && expr" class="absolute bg-white border max-h-[70vh] overflow-y-auto z-20">
             <li v-for="item in items" class="flex gap-3 hover:bg-gray-200 cursor-pointer" @click="clickItem(item)">

@@ -54,7 +54,7 @@ func init() {
 		{Panels: []model.Panel{
 			{Title: "event", Type: "logs", Headers: []string(nil), Targets: []model.Target{{Expr: "pod{namespace=~\"kube-system|logmon\",container=\"eventrouter\"}", Legend: "", Legends: []string(nil), Unit: "", Columns: []string(nil), Headers: []string(nil), Key: "", Thresholds: []model.Threshold(nil), Aggregation: ""}}, ChartOptions: nil},
 			{Title: "no data I", Type: "logs", Headers: []string(nil), Targets: []model.Target{{Expr: "pod{namespace=~\"kube-system|logmon\",container=\"no_data\"}", Legend: "", Legends: []string(nil), Unit: "", Columns: []string(nil), Headers: []string(nil), Key: "", Thresholds: []model.Threshold(nil), Aggregation: ""}}, ChartOptions: nil},
-			{Title: "no data II", Type: "logs", Headers: []string(nil), Targets: []model.Target{{Expr: "no_data", Legend: "", Legends: []string(nil), Unit: "", Columns: []string(nil), Headers: []string(nil), Key: "", Thresholds: []model.Threshold(nil), Aggregation: ""}}, ChartOptions: nil}}}}}
+		}}}}
 
 	var err error
 	service1, err = New("etc/dashboards")

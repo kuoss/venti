@@ -1,3 +1,8 @@
+export enum DatasourceType {
+  Prometheus = 'persist',
+  Lethe = 'demand',
+}
+
 export interface Datasource {
   name: string
   type: string

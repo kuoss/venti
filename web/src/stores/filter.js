@@ -1,10 +1,11 @@
 import { defineStore } from 'pinia';
-// import axios from "axios";
 
 export const useFilterStore = defineStore('filter', {
   state: () => ({
+    datasources: [],
     namespaces: [],
     nodes: [],
+    selectedDatasource: '',
     selectedNamespace: 'All namespaces',
     selectedNode: 'All nodes',
     status: { loaded: false, loading: false },

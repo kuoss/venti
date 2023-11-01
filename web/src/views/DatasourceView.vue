@@ -1,29 +1,29 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import Util from '@/lib/util';
-import { formatTimeAgo } from '@vueuse/core'
+import { formatTimeAgo } from '@vueuse/core';
 import LetterAvatar from '@/components/LetterAvatar.vue';
 import { useDatasourceStore } from '@/stores/datasource';
 import type { Datasource, Target } from '@/types/datasource';
 
-const dsStore = useDatasourceStore()
+const dsStore = useDatasourceStore();
 
-const datasources = ref([] as Datasource[])
-const datasource = ref({} as Datasource)
-const targets = ref([] as Target[])
-const healthClasses = ref(['text-gray-400', 'text-green-400', 'text-red-400'])
+const datasources = ref([] as Datasource[]);
+const datasource = ref({} as Datasource);
+const targets = ref([] as Target[]);
+const healthClasses = ref(['text-gray-400', 'text-green-400', 'text-red-400']);
 
 async function fetchData() {
-  const dss = await dsStore.getDatasources()
-  datasources.value = dss
+  const dss = await dsStore.getDatasources();
+  datasources.value = dss;
   for (const i in dss) {
-    dss[i].health = await dsStore.getDatasourceHealthy(dss[i])
+    dss[i].health = await dsStore.getDatasourceHealthy(dss[i]);
   }
 }
 
 async function showTargets(ds: Datasource) {
-  datasource.value = ds
-  targets.value = await dsStore.getTargets(ds)
+  datasource.value = ds;
+  targets.value = await dsStore.getTargets(ds);
 }
 fetchData();
 </script>
@@ -105,9 +105,7 @@ fetchData();
           <td v-else-if="t.discoveredLabels.__meta_kubernetes_node_name">
             🏝 {{ t.discoveredLabels.__meta_kubernetes_node_name }}
           </td>
-          <td v-else>
-            🔥
-          </td>
+          <td v-else>🔥 prometheus</td>
           <td class="text-right pr-10">{{ formatTimeAgo(new Date(t.lastScrape)) }}</td>
           <td class="text-center px-2">
             <span :class="[t.health == 'up' ? 'text-green-400' : 'text-red-400']">●</span>

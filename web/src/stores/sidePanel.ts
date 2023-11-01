@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia';
+import type DataTable from '@/types/datatable'
 
 export const useSidePanelStore = defineStore('sidePanel', {
   state: () => ({
@@ -7,21 +8,21 @@ export const useSidePanelStore = defineStore('sidePanel', {
     type: '',
     dataTable: {},
     dashboardInfo: {},
-    currentPosition: null,
+    currentPosition: '',
   }),
   actions: {
     close() {
       this.show = false;
     },
-    updatetDataTable(t) {
+    updatetDataTable(t: DataTable) {
       this.dataTable.title = t.title;
       this.dataTable.time = t.time;
       this.dataTable.rows = t.rows.sort((a, b) => (a[1] > b[1] ? -1 : 1));
     },
-    updateDashboardInfo(dashboardConfig) {
+    updateDashboardInfo(dashboardConfig: any) {
       this.dashboardInfo = { dashboardConfig: dashboardConfig };
     },
-    toggleShow(type) {
+    toggleShow(type: string) {
       if (this.type != type) {
         this.type = type;
         this.show = true;
@@ -34,10 +35,9 @@ export const useSidePanelStore = defineStore('sidePanel', {
       else this.show = !this.show;
       if (this.show) this.type = 'DashboardInfo';
     },
-    goToPanelConfig(position) {
+    goToPanelConfig(position: string) {
       this.type = 'DashboardInfo';
       this.show = true;
-      // this.currentPosition = position
       setTimeout(() => (this.currentPosition = position), 300);
     },
   },

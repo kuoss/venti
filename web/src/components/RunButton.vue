@@ -1,35 +1,35 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import { age2seconds } from '@/lib/util2'
+import { ref } from 'vue';
+import { age2seconds } from '@/lib/util2';
 
 defineProps({
   disabled: { type: Boolean, default: false },
   btnText: { type: String, required: true },
-})
+});
 
 const emit = defineEmits<{
-  (e: 'execute'): void
-  (e: 'changeInterval', intervalSeconds: number): void
-}>()
+  (e: 'execute'): void;
+  (e: 'changeInterval', intervalSeconds: number): void;
+}>();
 
-const text = ref('')
-const isOpen = ref(false)
-const intervalSeconds = ref(0)
-const intervals = ref(['Off', '5s', '10s', '30s', '1m', '5m', '15m', '30m', '1h'])
+const text = ref('');
+const isOpen = ref(false);
+const intervalSeconds = ref(0);
+const intervals = ref(['Off', '5s', '10s', '30s', '1m', '5m', '15m', '30m', '1h']);
 
 function close() {
-  isOpen.value = false
+  isOpen.value = false;
 }
 
 function onClick() {
-  emit('execute')
+  emit('execute');
 }
 
 function onSelectInterval(i: string) {
-  text.value = i
-  intervalSeconds.value = age2seconds(i)
-  emit('changeInterval', intervalSeconds.value)
-  close()
+  text.value = i;
+  intervalSeconds.value = age2seconds(i);
+  emit('changeInterval', intervalSeconds.value);
+  close();
 }
 </script>
 

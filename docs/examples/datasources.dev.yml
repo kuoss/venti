@@ -1,5 +1,8 @@
 datasources:
-- name: prometheus
+- name: prometheus1
+  type: prometheus
+  url : http://vs-prometheus-server
+- name: prometheus2
   type: prometheus
   url : http://vs-prometheus-server
 - name: lethe

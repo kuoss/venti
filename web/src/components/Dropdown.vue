@@ -1,64 +1,47 @@
+<script setup lang="ts">
+import { ref, watch } from 'vue';
+import { vOnClickOutside } from '@vueuse/components'
+
+const props = defineProps({
+  options: { type: Array<String>, required: true },
+  index: { type: Number, default: 0 },
+})
+
+const emit = defineEmits<{
+  (e: 'change', value: String): void
+}>()
+
+const myOptions = ref(props.options)
+const myIndex = ref(props.index)
+
+const dropdown = ref(false)
+
+function onClickOutside() {
+  dropdown.value = false
+}
+
+function onClick(idx: number) {
+  dropdown.value = false
+  myIndex.value = idx
+  emit('change', myOptions.value[myIndex.value])
+}
+
+watch(() => props.options, (newValue) => {
+  myOptions.value = newValue
+})
+</script>
+
 <template>
   <div class="inline-block relative z-30">
-    <button class="border text-gray-700 py-2 px-4 rounded inline-flex items-center" @click.stop="toggleIsOpen">
-      <span v-if="selected">{{ selected }}</span>
-      <span v-else>{{ options[0] }}</span>
+    <button class="border text-gray-700 py-2 px-4 rounded inline-flex items-center" @click.stop="dropdown = !dropdown">
+      <span>{{ myOptions[myIndex] }}</span>
       <i class="mdi mdi-chevron-down" />
     </button>
-    <ul v-if="isOpen" class="absolute text-gray-700 w-max border border-gray-300 bg-white max-h-[80vh] overflow-y-auto">
-      <li v-for="option in options" class="hover:bg-gray-400 px-2 cursor-pointer py-[1px]" @click.stop="select(option)">
+    <ul v-if="dropdown" v-on-click-outside="onClickOutside"
+      class="absolute text-gray-700 w-max border border-gray-300 bg-white max-h-[80vh] overflow-y-auto">
+      <li v-for="(option, idx) in options" class="hover:bg-gray-400 px-2 cursor-pointer py-[1px]" @click="onClick(idx)">
         {{ option }}
       </li>
     </ul>
   </div>
 </template>
-
-<script>
-let uid = 0;
-export default {
-  props: {
-    options: Array,
-    currentDropdown: Number,
-  },
-  data() {
-    return {
-      isOpen: false,
-      selected: null,
-    };
-  },
-  watch: {
-    currentDropdown(newCurrentDropdown) {
-      if (this.uid != newCurrentDropdown) this.close();
-    },
-  },
-  beforeCreate() {
-    this.uid = ++uid;
-  },
-  mounted() {
-    document.addEventListener('click', this.close);
-  },
-  unmounted() {
-    document.removeEventListener('click', this.close);
-  },
-  methods: {
-    toggleIsOpen() {
-      this.isOpen = !this.isOpen;
-      if (this.isOpen) {
-        this.$emit('open', this.uid);
-      }
-    },
-    select(option) {
-      this.isOpen = false;
-      this.selected = option;
-      this.$emit('select', option);
-    },
-    close() {
-      this.isOpen = false;
-    },
-    clickOutside(event, object) {
-      console.log(event, object);
-      this.close();
-    },
-  },
-};
-</script>

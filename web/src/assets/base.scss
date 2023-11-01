@@ -65,12 +65,10 @@
 }
 
 .is-loading {
-  background: linear-gradient(
-    to right,
-    rgba(255, 255, 255, 0) 0%,
-    rgba(255, 255, 255, 0.5) 50%,
-    rgba(255, 255, 255, 0) 100%
-  );
+  background: linear-gradient(to right,
+      rgba(255, 255, 255, 0) 0%,
+      rgba(255, 255, 255, 0.5) 50%,
+      rgba(255, 255, 255, 0) 100%);
   background-size: 75% 100%;
   animation-duration: 2000ms;
   animation-name: headerShine;
@@ -94,19 +92,4 @@
   100% {
     background-position: 500% 0;
   }
-}
-
-.highlight-base {
-  @apply relative z-[1];
-}
-.highlight-base::before {
-  content: '';
-  @apply bg-gradient-to-r from-slate-100 to-yellow-100 absolute top-0 left-0 w-full h-full opacity-0 z-[-1] transition-opacity duration-500;
-}
-.dark .highlight-base::before {
-  @apply bg-gradient-to-r from-slate-800 to-teal-800;
-}
-
-.highlight::before {
-  @apply opacity-100;
 }

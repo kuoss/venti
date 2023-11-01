@@ -10,7 +10,7 @@ export const useTimeStore = defineStore('time', {
       status: { ready: false, loading: false, retries: 0 },
       timerIDs: [],
       timerManager: '',
-    }
+    };
   },
   computed: {
     nowUnix() {

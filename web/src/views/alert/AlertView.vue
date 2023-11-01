@@ -1,109 +1,112 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
-import { useDateFormat, useTimeAgo } from '@vueuse/core'
+import { ref, onMounted, onUnmounted } from 'vue';
+import { useDateFormat, useTimeAgo } from '@vueuse/core';
+import ProgressBar from '@/components/ProgressBar.vue';
 
 interface Alert {
-  annotations: Record<string, string>
-  labels: Record<string, string>
-  state: number
-  createdAt: string
-  updatedAt: string
+  annotations: Record<string, string>;
+  labels: Record<string, string>;
+  state: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
 interface Rule {
-  alert: string
-  annotations: Record<string, string>
-  labels: Record<string, string>
-  expr: string
-  for: number
+  alert: string;
+  annotations: Record<string, string>;
+  labels: Record<string, string>;
+  expr: string;
+  for: number;
 }
 
 interface AlertingRule {
-  active: Record<string, Alert>
-  rule: Rule
+  active: Record<string, Alert>;
+  rule: Rule;
 }
 
 interface DatasourceSelector {
-  system: string
-  type: string
+  system: string;
+  type: string;
 }
 
 interface AlertingFile {
-  datasourceSelector: DatasourceSelector
-  alertingRules: AlertingRule[]
-  groupLabels: Record<string, string>
+  datasourceSelector: DatasourceSelector;
+  alertingRules: AlertingRule[];
+  groupLabels: Record<string, string>;
 }
 
-const alertingFiles = ref([] as AlertingFile[])
-const isLoading = ref(false)
-const repeat = ref(true)
-const testAlertSent = ref(false)
+const alertingFiles = ref([] as AlertingFile[]);
+const isLoading = ref(false);
+const repeat = ref(true);
+const testAlertSent = ref(false);
 
 async function fetchData() {
-  isLoading.value = true
+  isLoading.value = true;
   try {
-    const resp = await fetch('/api/v1/alerts')
-    const json = await resp.json()
-    alertingFiles.value = json.data
+    const resp = await fetch('/api/v1/alerts');
+    const json = await resp.json();
+    alertingFiles.value = json.data;
     setTimeout(() => {
-      if (!repeat.value) return
-      fetchData()
+      if (!repeat.value) return;
+      fetchData();
     }, 3000);
   } catch (err) {
-    repeat.value = false
-    console.error(err)
+    repeat.value = false;
+    console.error(err);
   }
-  isLoading.value = false
+  isLoading.value = false;
 }
 async function sendTestAlert() {
   try {
-    const resp = await fetch('/api/v1/alerts/test')
-    const json = await resp.json()
-    console.log(json)
+    const resp = await fetch('/api/v1/alerts/test');
+    const json = await resp.json();
+    console.log(json);
   } catch (err) {
-    console.error(err)
+    console.error(err);
   }
-  testAlertSent.value = true
+  testAlertSent.value = true;
 }
 
 function filterRecord(record: Record<string, string>, unwantedKeys: string[]) {
-  let out = {} as Record<string, string>
+  let out = {} as Record<string, string>;
   for (const k in record) {
     if (unwantedKeys.includes(k)) {
-      continue
+      continue;
     }
-    out[k] = record[k]
+    out[k] = record[k];
   }
-  return out
+  return out;
 }
 
 function filterGroupLabels(labels: Record<string, string>) {
-  return filterRecord(labels, ['rulefile'])
+  return filterRecord(labels, ['rulefile']);
 }
 
 function filterLabels(labels: Record<string, string>) {
-  return filterRecord(labels, ['alertname','datasource','rulefile','severity','venti'])
+  return filterRecord(labels, ['alertname', 'datasource', 'rulefile', 'severity', 'venti']);
 }
 
 onMounted(() => {
-  fetchData()
-})
+  fetchData();
+});
 
 onUnmounted(() => {
-  repeat.value = false
-})
-
+  repeat.value = false;
+});
 </script>
 
 <template>
   <div>
-    <header class="fixed right-0 w-full bg-white border-b shadow z-30 p-2 pl-52" :class="{ 'is-loading': isLoading }">
-      <div class="flex items-center flex-row">
-        <div><i class="mdi mdi-18px mdi-database-outline" /> Alert</div>
+    <header class="fixed right-0 w-full bg-white border-b shadow z-30">
+      <div class="flex items-center flex-row p-2 pb-1">
+        <div class="pl-52"><i class="mdi mdi-18px mdi-database-outline" /> Alert</div>
         <div class="flex ml-auto">
           <div class="inline-flex">
-            <button class="h-rounded-group py-2 px-4 text-gray-900 bg-white border border-common" v-if="!testAlertSent"
-              @click="sendTestAlert">
+            <button
+              class="h-rounded-group py-2 px-4 text-gray-900 bg-white border border-common"
+              v-if="!testAlertSent"
+              @click="sendTestAlert"
+            >
               <i class="mdi mdi-cube-send" /> Send Test Alert
             </button>
             <button class="h-rounded-group py-2 px-4 text-gray-900 bg-white border border-common">
@@ -111,6 +114,13 @@ onUnmounted(() => {
             </button>
           </div>
         </div>
+      </div>
+      <div class="h-1">
+        <Transition name="fade">
+          <div v-if="isLoading">
+            <ProgressBar />
+          </div>
+        </Transition>
       </div>
     </header>
 
@@ -129,9 +139,9 @@ onUnmounted(() => {
         <tbody v-for="f in alertingFiles">
           <tr class="border-t">
             <th class="text-left px-2 bg-slate-300 p-1 pl-3" colspan="9">
-              {{ f.groupLabels["rulefile"] }}
-              ({{ f.datasourceSelector.type == 'prometheus' ? '🔥' : '💧' }}{{ f.datasourceSelector.system }} {{
-                f.alertingRules.length }} rules)
+              {{ f.groupLabels['rulefile'] }}
+              ({{ f.datasourceSelector.type == 'prometheus' ? '🔥' : '💧' }}{{ f.datasourceSelector.system }}
+              {{ f.alertingRules.length }} rules)
               <span class="bg-slate-200 text-xs px-2 rounded-full" v-for="(v, k) in filterGroupLabels(f.groupLabels)">
                 {{ k }}: {{ v }}
               </span>
@@ -142,9 +152,7 @@ onUnmounted(() => {
               <td class="text-center bg-red-400" v-if="r.active">
                 {{ Object.keys(r.active).length }}
               </td>
-              <td class="text-center bg-green-400" v-else>
-                0
-              </td>
+              <td class="text-center bg-green-400" v-else>0</td>
               <td>
                 {{ f.groupLabels.severity }}
               </td>
@@ -157,19 +165,15 @@ onUnmounted(() => {
               <td>
                 {{ r.rule.expr }}
               </td>
-              <td>
-                {{ r.rule.for / 100000000 }}s
-              </td>
+              <td>{{ r.rule.for / 100000000 }}s</td>
             </tr>
             <tr class="bg-gray-100" v-for="(alert, k) in r.active">
-              <td colspan="2">
-                &nbsp;
+              <td colspan="2">&nbsp;</td>
+              <td>
+                {{ alert.labels['datasource'] }}
               </td>
               <td>
-                {{ alert.labels["datasource"] }}
-              </td>
-              <td>
-                {{ alert.annotations["summary"] }}
+                {{ alert.annotations['summary'] }}
               </td>
               <td>
                 <span class="bg-slate-200 text-xs mr-2 px-2 rounded-full" v-for="(v, k) in filterLabels(alert.labels)">
@@ -192,5 +196,15 @@ onUnmounted(() => {
 .table1 th,
 .table1 td {
   @apply px-2;
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 1.8s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 </style>
