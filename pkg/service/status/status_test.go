@@ -1,6 +1,7 @@
 package status
 
 import (
+	"os"
 	"runtime"
 	"testing"
 	"time"
@@ -14,10 +15,13 @@ var (
 	goVersion1   string      = runtime.Version()
 	buildInfo1   BuildInfo   = BuildInfo{Version: "", Revision: "(TBD)", Branch: "(TBD)", BuildUser: "(TBD)", BuildDate: "(TBD)", GoVersion: goVersion1}
 	gomaxprocs1  int         = runtime.GOMAXPROCS(0)
-	runtimeInfo1 RuntimeInfo = RuntimeInfo{StartTime: time.Time{}, CWD: "/root/go/src/venti/pkg/service/status", ReloadConfigSuccess: true, LastConfigTime: time.Time{}, CorruptionCount: -1, GoroutineCount: -1, GOMAXPROCS: gomaxprocs1, GOMEMLIMIT: -1, GOGC: "", GODEBUG: "", StorageRetention: "N/A"}
+	runtimeInfo1 RuntimeInfo = RuntimeInfo{StartTime: time.Time{}, CWD: "", ReloadConfigSuccess: true, LastConfigTime: time.Time{}, CorruptionCount: -1, GoroutineCount: -1, GOMAXPROCS: gomaxprocs1, GOMEMLIMIT: -1, GOGC: "", GODEBUG: "", StorageRetention: "N/A"}
 )
 
 func init() {
+	cwd, _ := os.Getwd()
+	runtimeInfo1.CWD = cwd
+
 	var err error
 	service1, err = New(&model.Config{
 		AppInfo:          model.AppInfo{Version: "test"},
