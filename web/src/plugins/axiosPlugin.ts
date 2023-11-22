@@ -1,14 +1,8 @@
 import type { App } from 'vue';
 import type { AxiosInstance } from 'axios';
-import type { HeadersDefaults } from 'axios';
 import { useErrorStore } from '../stores/error';
 import router from '../router';
 import axios from 'axios';
-
-interface CommonHeaderProperties extends HeadersDefaults {
-  Authorization: string;
-  UserID: string;
-}
 
 declare module '@vue/runtime-core' {
   interface ComponentCustomProperties {
@@ -22,10 +16,8 @@ export default {
 
     instance.defaults.baseURL = import.meta.env.AXIOS_BASE_URL;
     instance.defaults.withCredentials = true;
-    instance.defaults.headers = {
-      Authorization: localStorage.getItem('token'),
-      UserID: localStorage.getItem('userID'),
-    } as CommonHeaderProperties;
+    instance.defaults.headers.common['Authorization'] = localStorage.getItem('token')
+    instance.defaults.headers.common['UserID'] =localStorage.getItem('userID')
 
     instance.interceptors.request.use(
       function (config) {
