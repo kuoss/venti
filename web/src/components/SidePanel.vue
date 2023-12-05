@@ -4,7 +4,7 @@ import { XIcon } from '@heroicons/vue/solid';
 import ButtonClipboard from '@/components/ButtonClipboard.vue';
 import yaml from 'js-yaml';
 import Util from '@/lib/util';
-import { computed, ref, onMounted, watch } from 'vue';
+import { computed, ref } from 'vue';
 
 const sidePanelStore = useSidePanelStore()
 
@@ -112,9 +112,9 @@ sidePanelStore.$subscribe((_, state) => {
 
 <template>
   <div v-if="show" :style="{ width: width }">
-    <div style="height: calc(100vh - 56px)" :style="{ width: width }" class="fixed right-0 bottom-0 bg-slate-300">
+    <div style="height: calc(100vh - 56px)" :style="{ width: width }" class="fixed right-0 bottom-0 bg-slate-300 dark:bg-slate-700">
       <div class="h-[44px]">
-        <button class="float-right px-2 py-1 cursor-pointer hover:bg-slate-400" @click="sidePanelStore.close()">
+        <button class="float-right px-2 py-1 cursor-pointer hover:bg-slate-400 dark:hover:bg-slate-600" @click="sidePanelStore.close()">
           <XIcon class="w-5 h-4" />
         </button>
         <div class="flex-1 h-full">
@@ -132,15 +132,15 @@ sidePanelStore.$subscribe((_, state) => {
             <span class="ml-2">
               <ButtonClipboard text="Dashboard" tooltip-direction="right"
                 :value="yamlDashboard(dashboardInfo.dashboardConfig)"
-                button-class="inline border-slate-400 hover:bg-slate-400" />
+                button-class="inline border-slate-400 dark:border-slate-600 hover:bg-slate-400 dark:hover:bg-slate-600" />
             </span>
           </div>
         </div>
       </div>
       <div
-        class="overflow-y-auto border-l border-2 w-full bg-slate-300 border-b scrollbar-thin scrollbar-track-transparnt scrollbar-thumb-slate-400 dark:scrollbar-thumb-slate-500"
+        class="overflow-y-auto border-l border-2 w-full bg-slate-300 dark:bg-slate-700 border-b scrollbar-thin scrollbar-track-transparnt scrollbar-thumb-slate-400 dark:scrollbar-thumb-slate-500"
         style="height: calc(100vh - 100px)">
-        <div class="bg-slate-200 pb-8">
+        <div class="bg-slate-200 dark:bg-slate-800 pb-8">
           <div v-if="type == 'DataTable'">
             <table v-if="dataTable.time" class="w-full">
               <tr v-for="row in dataTable.rows">
@@ -161,20 +161,20 @@ sidePanelStore.$subscribe((_, state) => {
             <table class="w-full font-mono">
               <tr class="align-top">
                 <td class="w-6 text-center" />
-                <td class="bg-slate-100 whitespace-pre-wrap">title:
+                <td class="bg-slate-100 dark:bg-slate-900 whitespace-pre-wrap">title:
                   {{ dashboardInfo.dashboardConfig.title + '\nrows:' }}
                 </td>
               </tr>
               <template v-for="(row, i) in dashboardInfo.dashboardConfig.rows">
                 <tr class="border-b align-top">
                   <td />
-                  <td class="bg-slate-100 whitespace-pre-wrap">- panels:</td>
+                  <td class="bg-slate-100 dark:bg-slate-900 whitespace-pre-wrap">- panels:</td>
                 </tr>
                 <tr v-for="(panel, j) in row.panels" class="border-b align-top">
                   <td class="text-center">
-                    <div class="p-1 bg-cyan-100" style="user-select: none">{{ i + 1 }}{{ j + 1 }}</div>
+                    <div class="p-1 bg-cyan-100 dark:bg-cyan-900" style="user-select: none">{{ i + 1 }}{{ j + 1 }}</div>
                   </td>
-                  <td class="bg-slate-100 highlight-base transition-colors duration-[5000ms]"
+                  <td class="bg-slate-100 dark:bg-slate-900 highlight-base transition-colors duration-[5000ms]"
                     :ref="(el) => { panelRefs[10 * (i + 1) + (j + 1)] = el }">
                     <div class="float-right my-1 mr-3">
                       <ButtonClipboard :value="yamlPanel(panel)" button-class="hover:bg-slate-300" />

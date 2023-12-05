@@ -10,8 +10,7 @@ import clickOutsidePlugin from './plugins/clickOutsidePlugin';
 
 import { useThemeStore } from './stores/theme';
 
-import '@/assets/base.scss';
-import '@mdi/font/css/materialdesignicons.css';
+import '@/assets/app.scss';
 
 const app = createApp(App)
 app.use(createPinia())

@@ -11,7 +11,7 @@ const dsStore = useDatasourceStore();
 const datasources = ref([] as Datasource[]);
 const datasource = ref({} as Datasource);
 const targets = ref([] as Target[]);
-const healthClasses = ref(['text-gray-400', 'text-green-400', 'text-red-400']);
+const healthClasses = ref(['text-gray-500', 'text-green-500', 'text-red-500']);
 
 async function fetchData() {
   const dss = await dsStore.getDatasources();
@@ -47,7 +47,7 @@ fetchData();
     <div class="p-8">
       <h2 class="text-lg font-bold">Datasources</h2>
       <table class="w-full border bg-white dark:bg-black" v-if="datasources">
-        <tr class="border-b bg-slate-50">
+        <tr class="border-b bg-slate-50 dark:bg-slate-900">
           <th>Name</th>
           <th>Type</th>
           <th>URL</th>
@@ -56,7 +56,7 @@ fetchData();
           <th>Up</th>
           <th>Actions</th>
         </tr>
-        <tr class="border-b" v-for="d in datasources" :class="{ 'bg-blue-50': d.name == datasource.name }">
+        <tr class="border-b" v-for="d in datasources" :class="{ 'bg-blue-50 dark:bg-blue-900': d.name == datasource.name }">
           <td class="px-2">
             <LetterAvatar :letters="d.name.charAt(0)" :bgcolor="Util.string2color(d.name)" />
             {{ d.name }}
@@ -66,7 +66,7 @@ fetchData();
           <td class="text-center">{{ d.isMain ? '✔️' : '-' }}</td>
           <td class="text-center">{{ d.isDiscovered ? '✔️' : '-' }}</td>
           <td class="text-center">
-            <span :class="d.health ? healthClasses[d.health] : 'text-gray-400'">●</span>
+            <span :class="d.health ? healthClasses[d.health] : 'text-gray-500'">●</span>
           </td>
           <td class="text-center">
             <button class="btn" @click="showTargets(d)">Show Targets</button>
@@ -82,8 +82,8 @@ fetchData();
           {{ datasource.name }}
         </span>
       </div>
-      <table class="w-full bg-white border">
-        <tr class="border-b bg-slate-50">
+      <table class="w-full bg-white dark:bg-black border">
+        <tr class="border-b bg-slate-50 dark:bg-slate-900">
           <th>Job</th>
           <th>Address</th>
           <th>Info</th>
@@ -108,7 +108,7 @@ fetchData();
           <td v-else>🔥 prometheus</td>
           <td class="text-right pr-10">{{ formatTimeAgo(new Date(t.lastScrape)) }}</td>
           <td class="text-center px-2">
-            <span :class="[t.health == 'up' ? 'text-green-400' : 'text-red-400']">●</span>
+            <span :class="[t.health == 'up' ? 'text-green-500' : 'text-red-500']">●</span>
           </td>
         </tr>
       </table>
