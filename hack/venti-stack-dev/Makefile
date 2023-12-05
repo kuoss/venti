@@ -9,3 +9,7 @@ apply:
 
 delete:
 	helm uninstall -n venti-stack-dev vs
+
+dep:
+	helm dependency update
+	helm dependency build

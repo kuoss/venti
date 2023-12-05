@@ -1,9 +1,9 @@
 dependencies:
 - name: venti-stack
   repository: https://kuoss.github.io/helm-charts
-  version: 0.1.27
+  version: 0.1.33
 - name: code-server-go
   repository: https://kuoss.github.io/helm-charts
-  version: 0.0.12
-digest: sha256:8c8a0b3b25b280f0ad81c8435d5d4a21ec59428a0600979ff2298c08c6010968
-generated: "2023-10-23T06:36:31.880892177Z"
+  version: 0.1.0
+digest: sha256:8ea7f616c35fe6b501906c3bc4011bdb3a676f65b65d22d65442e85328d1a1b7
+generated: "2023-12-05T06:22:19.317906789Z"

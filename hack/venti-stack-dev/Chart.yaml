@@ -7,10 +7,10 @@ description: venti-stack-dev
 type: application
 dependencies:
   - name: venti-stack
-    version: "0.1.27"
+    version: "0.1.33"
     repository: https://kuoss.github.io/helm-charts
     condition: venti-stack.enabled
   - name: code-server-go
-    version: "0.0.12"
+    version: "0.1.0"
     repository: https://kuoss.github.io/helm-charts
     condition: code-server-go.enabled
