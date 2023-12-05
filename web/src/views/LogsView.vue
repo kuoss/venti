@@ -181,7 +181,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <header class="fixed right-0 w-full bg-white border-b border-common shadow z-30 p-2 pl-52"
+  <header class="fixed right-0 w-full bg-white dark:bg-black border-b border-common shadow z-30 p-2 pl-52"
     :class="{ 'is-loading': loading }">
     <div class="flex items-center flex-row">
       <div>
@@ -203,12 +203,12 @@ onMounted(() => {
       <div class="pb-4">
         <div class="flex">
           <input v-model="expr" type="search"
-            class="flex-auto relative min-w-0 block w-full px-3 py-1.5 text-base font-normal text-gray-700 bg-white bg-clip-padding border border-solid rounded transition ease-in-out m-0 focus:text-gray-700 focus:bg-white focus:border-blue-600 focus:outline-none"
+            class="flex-auto relative min-w-0 block w-full px-3 py-1.5 text-base font-normal text-gray-700 dark:text-gray-300 bg-white dark:bg-black bg-clip-padding border border-solid rounded transition ease-in-out m-0 focus:text-gray-700 focus:bg-white focus:border-blue-600 focus:outline-none"
             placeholder="Expression" aria-label="Expression" aria-describedby="button-addon3" @keyup.enter="execute()" />
         </div>
       </div>
       <div class="break-all">
-        <table class="w-full bg-slate-300">
+        <table class="w-full bg-slate-300 dark:bg-slate-700">
           <tr>
             <td v-if="lastExecuted" class="px-2">{{ lastExecuted.range[0] }} - {{ lastExecuted.range[1] }}</td>
             <td v-if="lastExecuted" class="px-2">
@@ -218,30 +218,30 @@ onMounted(() => {
           </tr>
         </table>
         <div v-if="errorResponse">
-          <div class="rounded bg-slate-200 text-yellow-200 text-center py-20">
+          <div class="rounded bg-slate-200 dark:bg-slate-800 text-yellow-200 dark:text-yellow-800 text-center py-20">
             [{{ errorResponse.status }}] {{ errorResponse.data.error }}
           </div>
         </div>
         <div v-else-if="result.length > 0">
-          <div class="text-xs font-mono bg-white">
+          <div class="text-xs font-mono bg-white dark:bg-black">
             <div v-for="row in result" class="border-b">
-              <span class="bg-slate-100">
-                <span class="mr-1 text-yellow-400">{{ Util.utc2local(row.time) }}</span>
+              <span class="bg-slate-100 dark:bg-slate-900">
+                <span class="mr-1 text-yellow-500">{{ Util.utc2local(row.time) }}</span>
                 <template v-if="logType == 'pod'">
-                  <span class="mr-1 text-green-400">{{ row.namespace }}</span>
-                  <span class="mr-1 text-teal-400">{{ row.pod }}</span>
-                  <span class="mr-1 text-sky-400">{{ row.container }}</span>
+                  <span class="mr-1 text-green-500">{{ row.namespace }}</span>
+                  <span class="mr-1 text-teal-500">{{ row.pod }}</span>
+                  <span class="mr-1 text-sky-500">{{ row.container }}</span>
                 </template>
                 <template v-if="logType == 'node'">
-                  <span class="mr-1 text-green-400">{{ row.node }}</span>
-                  <span class="mr-1 text-teal-400">{{ row.process }}</span>
+                  <span class="mr-1 text-green-500">{{ row.node }}</span>
+                  <span class="mr-1 text-teal-500">{{ row.process }}</span>
                 </template>
               </span>
               {{ row.log }}
             </div>
           </div>
         </div>
-        <table class="w-full bg-slate-300">
+        <table class="w-full bg-slate-300 dark:bg-slate-700">
           <tr>
             <td v-if="lastExecuted" class="px-2">{{ lastExecuted.range[0] }} - {{ lastExecuted.range[1] }}</td>
             <td v-if="lastExecuted" class="px-2">
@@ -253,16 +253,16 @@ onMounted(() => {
       </div>
     </div>
     <div class="w-80">
-      <div class="fixed right-0 bottom-0 bg-slate-300 text-xs pt-4 w-80">
+      <div class="fixed right-0 bottom-0 bg-slate-300 dark:bg-slate-700 text-xs pt-4 w-80">
         <div>
           <div class="w-full py-2 text-center">Targets</div>
         </div>
-        <div class="overflow-y-auto border-l border-2 w-full bg-slate-200 border-b" style="height: calc(100vh - 90px)">
-          <div class="bg-gray-100 text-center cursor-pointer">node</div>
+        <div class="overflow-y-auto border-l border-2 w-full bg-slate-200 dark:bg-slate-800 border-b" style="height: calc(100vh - 90px)">
+          <div class="bg-gray-100 dark:bg-gray-900 text-center cursor-pointer">node</div>
           <div v-for="node in nodes" class="cursor-pointer" @click="selectNode(node.name)">
             {{ node.name }}
           </div>
-          <div class="bg-gray-100 text-center cursor-pointer">pod</div>
+          <div class="bg-gray-100 dark:bg-gray-900 text-center cursor-pointer">pod</div>
           <div v-for="ns in namespaces">
             <div class="cursor-pointer" @click="ns.isExpanded = !ns.isExpanded">
               <i class="mdi" :class="[ns.isExpanded ? 'mdi-chevron-down' : 'mdi-chevron-right']" />

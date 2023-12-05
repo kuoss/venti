@@ -71,7 +71,7 @@ fetchAlertmanagers();
 </script>
 
 <template>
-  <header class="fixed right-0 w-full bg-white border-b shadow z-30 p-2 pl-52">
+  <header class="fixed right-0 w-full bg-white dark:bg-black border-b shadow z-30 p-2 pl-52">
     <div><i class="mdi mdi-18px mdi-database-outline"></i> Status</div>
   </header>
   <div class="w-full py-8">
@@ -153,7 +153,7 @@ fetchAlertmanagers();
         </tr>
         <tr v-for="el in alertmanagers.activeAlertmanagers">
           <td>
-            <a class="text-blue-600" :href="`${el.url}/api/v2/alerts`">{{ el.url }}</a
+            <a class="text-blue-500" :href="`${el.url}/api/v2/alerts`">{{ el.url }}</a
             >/api/v2/alerts
           </td>
         </tr>

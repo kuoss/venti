@@ -67,7 +67,7 @@ export default {
           });
         }
         // console.log('level=', level)
-        this.thresholdClass = ['', 'bg-green-100', 'bg-orange-100', 'bg-red-100'][level];
+        this.thresholdClass = ['', 'bg-green-100 dark:bg-green-800', 'bg-orange-100 dark:bg-orange-800', 'bg-red-100 dark:bg-red-800'][level];
       } catch (error) {
         console.error(error);
       }

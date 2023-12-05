@@ -107,7 +107,7 @@ onUnmounted(() => {
 
 <template>
   <div class="w-full" ref="root1">
-    <nav class="fixed left-0 w-full bg-white border-b shadow p-2 pl-52 pr-4 z-10">
+    <nav class="fixed left-0 w-full bg-white dark:bg-black border-b shadow p-2 pl-52 pr-4 z-10">
       <div class="flex gap-2">
         <div class="flex-none">
           <Dropdown :options="namespaces" :current-dropdown="currentDropdown" @select="selectNamespace"
@@ -152,7 +152,7 @@ onUnmounted(() => {
                 'grid-cols-12',
               ][row.panels.length],
             ]">
-              <div v-for="(panel, j) in row.panels" class="flex-1 bg-white border">
+              <div v-for="(panel, j) in row.panels" class="flex-1 bg-white dark:bg-black border">
                 <Panel :position="`${i + 1}${j + 1}`" :count="count" :panel-config="panel"
                   :panel-width="clientWidth / row.panels.length" :time-range="timeRange" />
               </div>

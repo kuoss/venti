@@ -33,13 +33,13 @@ watch(() => props.options, (newValue) => {
 
 <template>
   <div class="inline-block relative z-30">
-    <button class="border text-gray-700 py-2 px-4 rounded inline-flex items-center" @click.stop="dropdown = !dropdown">
+    <button class="border text-gray-700 dark:text-gray-300 py-2 px-4 rounded inline-flex items-center" @click.stop="dropdown = !dropdown">
       <span>{{ myOptions[myIndex] }}</span>
       <i class="mdi mdi-chevron-down" />
     </button>
     <ul v-if="dropdown" v-on-click-outside="onClickOutside"
-      class="absolute text-gray-700 w-max border border-gray-300 bg-white max-h-[80vh] overflow-y-auto">
-      <li v-for="(option, idx) in options" class="hover:bg-gray-400 px-2 cursor-pointer py-[1px]" @click="onClick(idx)">
+      class="absolute text-gray-700 dark:text-gray-300 w-max border border-gray-300 dark:border-gray-700 bg-white dark:bg-black max-h-[80vh] overflow-y-auto">
+      <li v-for="(option, idx) in options" class="hover:bg-gray-400 dark:hover:bg-gray-600 px-2 cursor-pointer py-[1px]" @click="onClick(idx)">
         {{ option }}
       </li>
     </ul>

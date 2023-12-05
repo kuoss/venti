@@ -291,7 +291,7 @@ function onChangeDatasource(value) {
 </script>
 
 <template>
-  <header class="fixed right-0 w-full bg-white border-b border-common shadow z-30 p-2 pl-52"
+  <header class="fixed right-0 w-full border-b border-common shadow z-30 p-2 pl-52 bg-white dark:bg-black"
     :class="{ 'is-loading': loading }">
     <div class="flex items-center flex-row">
       <div>
@@ -313,10 +313,10 @@ function onChangeDatasource(value) {
       <div class="pb-4">
         <div class="relative w-full">
           <input v-model="expr" type="search"
-            class="flex-auto relative min-w-0 block w-full px-3 py-1.5 text-base font-normal text-gray-700 bg-white bg-clip-padding border border-solid border-gray-300 rounded transition ease-in-out m-0 focus:text-gray-700 focus:bg-white focus:border-blue-600 focus:outline-none"
+            class="flex-auto relative min-w-0 block w-full px-3 py-1.5 text-base font-normal text-gray-700 dark:text-gray-300 bg-white dark:bg-black bg-clip-padding border border-solid border-gray-300 rounded transition ease-in-out m-0 focus:text-gray-700 focus:bg-white focus:border-blue-600 focus:outline-none"
             placeholder="Expression" aria-label="Expression" aria-describedby="button-addon3" @keyup="searchKeyUp" />
-          <ul v-if="searchMode && expr" class="absolute bg-white border max-h-[70vh] overflow-y-auto z-20">
-            <li v-for="item in items" class="flex gap-3 hover:bg-gray-200 cursor-pointer" @click="clickItem(item)">
+          <ul v-if="searchMode && expr" class="absolute bg-white dark:bg-black border max-h-[70vh] overflow-y-auto z-20">
+            <li v-for="item in items" class="flex gap-3 hover:bg-gray-200 dark:hover:bg-gray-800 selection:cursor-pointer" @click="clickItem(item)">
               <div class="text-gray-600" v-html="item[2]" />
               <div class="flex-auto text-right text-gray-500">
                 {{ item[1][0].type }}
@@ -327,7 +327,7 @@ function onChangeDatasource(value) {
       </div>
       <div class="break-all">
         <div v-if="result.length < 1">
-          <div class="rounded bg-slate-200 text-center p-8">Empty query result</div>
+          <div class="rounded bg-slate-200 dark:bg-slate-800 text-center p-8">Empty query result</div>
         </div>
         <div v-else>
           <div class="border">
@@ -342,15 +342,15 @@ function onChangeDatasource(value) {
           </div>
           <div class="overflow-x-auto overflow-y-auto margin-l-[5em] max-h-[50vh]" :style="{ width: tableWidth + 'px' }">
             <table class="whitespace-nowrap border-separate w-full" style="border-spacing: 0">
-              <tr class="sticky z-10 top-0 border-y bg-slate-200 text-left">
+              <tr class="sticky z-10 top-0 border-y bg-slate-200 dark:bg-slate-800 text-left">
                 <th v-for="key in keys"
                   class="font-normal max-w-[100px] px-2 border border-r-0 text-ellipsis overflow-hidden hover:whitespace-normal hover:min-w-[200px]">
                   {{ key }}
                 </th>
-                <th class="min-w-[120px] sticky top-0 right-0 font-normal border bg-slate-200 text-center">VALUE</th>
+                <th class="min-w-[120px] sticky top-0 right-0 font-normal border bg-slate-200 dark:bg-slate-800 text-center">VALUE</th>
               </tr>
               <template v-if="result && result.length > 0">
-                <tr v-for="row in result" class="border-b hover:bg-gray-200">
+                <tr v-for="row in result" class="border-b hover:bg-gray-200 dark:hover:bg-gray-800">
                   <td v-for="key in keys"
                     class="max-w-[250px] px-2 border border-r-0 text-ellipsis overflow-hidden hover:whitespace-normal hover:min-w-[200px]"
                     @mouseover="
@@ -359,15 +359,15 @@ function onChangeDatasource(value) {
                     " @mouseleave="row.hover[key] = false">
                     {{ row.metric[key] }}
                     <span v-if="row.hover && row.hover[key]" class="inline-flex">
-                      <button class="rounded px-1 border bg-slate-50 ml-1" @click="addLabel('', key, row.metric[key])">
+                      <button class="rounded px-1 border bg-slate-50 dark:bg-slate-900 ml-1" @click="addLabel('', key, row.metric[key])">
                         <i class="mdi mdi-plus-circle-outline" />
                       </button>
-                      <button class="rounded px-1 border bg-slate-50" @click="addLabel('!', key, row.metric[key])">
+                      <button class="rounded px-1 border bg-slate-50 dark:bg-slate-900" @click="addLabel('!', key, row.metric[key])">
                         <i class="mdi mdi-minus-circle-outline" />
                       </button>
                     </span>
                   </td>
-                  <td class="sticky right-0 top-auto px-4 border bg-slate-50 text-right">
+                  <td class="sticky right-0 top-auto px-4 border bg-slate-50 dark:bg-slate-900 text-right">
                     <span v-if="cursorIdx">{{ row.values[cursorIdx][1] }}</span>
                   </td>
                 </tr>
@@ -378,25 +378,25 @@ function onChangeDatasource(value) {
       </div>
     </div>
     <div class="w-80">
-      <div class="fixed right-0 bottom-0 bg-slate-300 text-xs pt-4 w-80">
+      <div class="fixed right-0 bottom-0 bg-slate-300 dark:bg-slate-700 text-xs pt-4 w-80">
         <div>
           <ul class="w-full flex list-none">
-            <li class="py-3 basis-1/2 text-center hover:bg-slate-50 cursor-pointer border-b-2 border-transparent"
+            <li class="py-3 basis-1/2 text-center hover:bg-slate-50 dark:bg-slate-900 cursor-pointer border-b-2 border-transparent"
               :class="tab == 0 ? 'active' : ''" @click="tab = 0">
               Metrics ({{ Object.keys(metadata).length }})
             </li>
-            <li class="py-3 basis-1/2 text-center hover:bg-slate-50 cursor-pointer border-b-2 border-transparent"
+            <li class="py-3 basis-1/2 text-center hover:bg-slate-50 dark:bg-slate-900 cursor-pointer border-b-2 border-transparent"
               :class="tab == 1 ? 'active' : ''" @click="tab = 1">
               Labels ({{ keys.length }})
             </li>
           </ul>
         </div>
         <div
-          class="overflow-y-auto scrollbar-thin scrollbar-thumb-rounded scrollbar-track-rounded scrollbar-thumb-slate-300 scrollbar-track-transparnt dark:scrollbar-thumb-slate-900 border-l border-2 border-slate-300 w-full bg-slate-200 border-b"
+          class="overflow-y-auto bg-slate-200 dark:bg-slate-800 scrollbar-thin scrollbar-thumb-rounded scrollbar-track-rounded scrollbar-thumb-slate-300 scrollbar-track-transparnt dark:scrollbar-thumb-slate-500 border-l border-2 border-slate-300 dark:border-slate-700 w-full border-b"
           style="height: calc(100vh - 100px)">
           <div v-if="tab == 0">
             <div v-for="(d, k) in metaDict" class>
-              <div class="pl-1 cursor-pointer text-stone-600" @click="d.showMetrics = !d.showMetrics">
+              <div class="pl-1 cursor-pointer text-stone-600 dark:text-stone-400" @click="d.showMetrics = !d.showMetrics">
                 {{ k }} ({{ d.metrics.length }})
               </div>
               <template v-if="d.showMetrics">
@@ -409,16 +409,16 @@ function onChangeDatasource(value) {
           </div>
           <div v-else>
             <div v-for="(d, key) in keyDict">
-              <div class="pl-1 overflow-hidden text-ellipsis hover:bg-white cursor-pointer" @click="d.show = !d.show">
+              <div class="pl-1 overflow-hidden text-ellipsis hover:bg-white dark:bg-black cursor-pointer" @click="d.show = !d.show">
                 {{ key }} ({{ d.values.length }})
               </div>
               <template v-if="d.show">
                 <div v-for="v in d.values" class="pl-4">
                   {{ v }}
-                  <button class="rounded px-1 border bg-slate-50 ml-1" @click="addLabel('', key, v)">
+                  <button class="rounded px-1 border bg-slate-50 dark:bg-slate-900 ml-1" @click="addLabel('', key, v)">
                     <i class="mdi mdi-plus-circle-outline" />
                   </button>
-                  <button class="rounded px-1 border bg-slate-50" @click="addLabel('!', key, v)">
+                  <button class="rounded px-1 border bg-slate-50 dark:bg-slate-900" @click="addLabel('!', key, v)">
                     <i class="mdi mdi-minus-circle-outline" />
                   </button>
                 </div>
@@ -430,8 +430,8 @@ function onChangeDatasource(value) {
     </div>
   </div>
   <div v-if="metricInfo" v-click-outside="clickOutside"
-    class="fixed z-50 top-[9rem] right-[20.5rem] w-80 bg-white border border-slate-300 rounded opacity-[.9] hover:opacity-100">
-    <div class="border-b border-slate-300 p-2 break-all font-bold">
+    class="fixed z-50 top-[9rem] right-[20.5rem] w-80 bg-white dark:bg-black border border-slate-300 dark:border-slate-700 rounded opacity-[.9] hover:opacity-100">
+    <div class="border-b border-slate-300 dark:border-slate-700 p-2 break-all font-bold">
       {{ metricInfo.name }}
     </div>
     <div v-for="v in metricInfo.data[0]" class="px-2 py-1 word-break">
@@ -469,7 +469,7 @@ function onChangeDatasource(value) {
 
 .u-legend th,
 .u-legend td {
-  @apply border border-slate-200 table-cell;
+  @apply border border-slate-200 dark:border-slate-800 table-cell;
 }
 
 .u-legend th {

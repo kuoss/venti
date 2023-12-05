@@ -116,7 +116,7 @@ export default {
 <template>
   <section v-click-outside="close" class="relative">
     <button
-      class="py-2 px-4 text-gray-900 bg-white rounded border border-gray-200 hover:bg-gray-100 hover:text-blue-700"
+      class="py-2 px-4 text-gray-900 dark:text-gray-100 bg-white dark:bg-black rounded border border-gray-200 dark:border-gray-800 hover:bg-gray-100 dark:hover:bg-gray-900 hover:text-blue-700 dark:hover:text-blue-300"
       @click="toggleIsOpen"
     >
       <i class="mdi mdi-clock-outline" />
@@ -158,26 +158,26 @@ export default {
             <input
               v-model="startTime"
               type="text"
-              class="p-1 w-full border bg-white text-black"
+              class="p-1 w-full border bg-white dark:bg-black text-black dark:text-white"
               @click="onClickTimeInput"
             />
             <div class="mt-2">To</div>
             <input
               v-model="endTime"
               type="text"
-              class="p-1 w-full border bg-white text-black"
+              class="p-1 w-full border bg-white dark:bg-black text-black dark:text-white"
               @click="onClickTimeInput"
             />
-            <button class="p-1 mt-3 w-full bg-gray-200 border rounded" @click="applyTimeRange">Apply time range</button>
+            <button class="p-1 mt-3 w-full bg-gray-200 dark:bg-gray-800 border rounded" @click="applyTimeRange">Apply time range</button>
           </div>
         </div>
         <div class="col-span-1 border-l pb-3">
           <div class="p-2 font-bold">Relative time range</div>
           <div v-for="r in relativeTimeRanges">
             <div
-              class="p-1 px-4 cursor-pointer hover:bg-gray-200"
+              class="p-1 px-4 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-800"
               :class="{
-                'text-bold bg-gray-300': rangeToText(r) == rangeToText(range),
+                'text-bold bg-gray-300 dark:bg-gray-700': rangeToText(r) == rangeToText(range),
               }"
               @click="onSelectRelativeTimeRange(r)"
             >
@@ -188,7 +188,7 @@ export default {
       </div>
       <div class="border-t p-2">
         {{ timezone }}
-        <div class="float-right px-2 bg-gray-200">
+        <div class="float-right px-2 bg-gray-200 dark:bg-gray-800">
           {{ offsetString }}
         </div>
       </div>

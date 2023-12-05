@@ -66,7 +66,7 @@ function togglePanelInfo() {
 </script>
 <template>
   <div class="flex border-b">
-    <button v-if="showPanelPosition" class="p-1 bg-cyan-100" @click="sidePanel.goToPanelConfig(position)">
+    <button v-if="showPanelPosition" class="p-1 bg-cyan-100 dark:bg-cyan-900" @click="sidePanel.goToPanelConfig(position)">
       {{ position }}
     </button>
     <div class="flex-1 py-1 text-center font-bold" :class="{ 'is-loading': isLoading }">
