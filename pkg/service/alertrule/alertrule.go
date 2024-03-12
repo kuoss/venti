@@ -14,27 +14,24 @@ type AlertRuleService struct {
 	AlertRuleFiles []model.RuleFile
 }
 
-func New(pattern string) (alertRuleService *AlertRuleService, err error) {
+func New(pattern string) (*AlertRuleService, error) {
 	logger.Infof("loading alertrules...")
 	if pattern == "" {
 		pattern = "etc/alertrules/*.y*ml"
 	}
 	files, err := filepath.Glob(pattern)
 	if err != nil {
-		err = fmt.Errorf("error on Glob: %w", err)
-		return
+		return nil, fmt.Errorf("glob err: %w", err)
 	}
 	var alertRuleFiles []model.RuleFile
 	for _, filename := range files {
 		alertRuleFile, err := loadAlertRuleFileFromFilename(filename)
 		if err != nil {
-			logger.Warnf("loadAlertRuleFileFromFilename err: %s", err)
-			continue
+			return nil, fmt.Errorf("loadAlertRuleFileFromFilename err: %w", err)
 		}
 		alertRuleFiles = append(alertRuleFiles, *alertRuleFile)
 	}
-	alertRuleService = &AlertRuleService{AlertRuleFiles: alertRuleFiles}
-	return
+	return &AlertRuleService{AlertRuleFiles: alertRuleFiles}, nil
 }
 
 func loadAlertRuleFileFromFilename(filename string) (*model.RuleFile, error) {
