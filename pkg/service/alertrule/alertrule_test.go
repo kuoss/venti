@@ -40,36 +40,101 @@ func init() {
 
 func TestNew(t *testing.T) {
 	testCases := []struct {
+		name      string
 		pattern   string
 		want      *AlertRuleService
 		wantError string
 	}{
 		// ok
 		{
+			"ok",
 			"etc/alertrules/*.y*ml",
 			&AlertRuleService{AlertRuleFiles: ruleFiles1},
 			"",
 		},
 		{
+			"ok",
 			"",
 			&AlertRuleService{AlertRuleFiles: ruleFiles1},
 			"",
 		},
 		// error
 		{
+			"error",
 			"asdf",
 			&AlertRuleService{AlertRuleFiles: []model.RuleFile(nil)},
 			"",
 		},
 		{
+			"error",
 			"[]",
 			(*AlertRuleService)(nil),
-			"error on Glob: syntax error in pattern",
+			"glob err: syntax error in pattern",
 		},
 	}
-	for i, tc := range testCases {
-		t.Run(fmt.Sprintf("#%d", i), func(t *testing.T) {
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
 			service, err := New(tc.pattern)
+			if tc.wantError == "" {
+				assert.NoError(t, err)
+			} else {
+				assert.EqualError(t, err, tc.wantError)
+			}
+			assert.Equal(t, tc.want, service)
+		})
+	}
+}
+
+func TestNew_tempFiles(t *testing.T) {
+	testCases := []struct {
+		filename  string
+		content   string
+		want      *AlertRuleService
+		wantError string
+	}{
+		{
+			"test.ok.yaml",
+			`
+groups:
+- name: info
+  rules:
+  - alert: hello
+    expr: greet > 90
+    for: 1m
+    annotations:
+      summary: "hello world"
+`,
+			&AlertRuleService{AlertRuleFiles: []model.RuleFile{{RuleGroups: []model.RuleGroup{
+				{Name: "info", Rules: []model.Rule{{
+					Alert:       "hello",
+					Expr:        "greet > 90",
+					For:         60000000000,
+					Annotations: map[string]string{"summary": "hello world"}}}}}}}},
+			"",
+		},
+		{
+			"test.err.yaml",
+			`
+groups:
+- name: info
+  rules:
+  - alert: hello
+    expr: greet > 90
+    for: 0m
+    annotations:
+      summary: "hello" world"
+`,
+			nil,
+			"loadAlertRuleFileFromFilename err: unmarshalStrict err: yaml: line 8: did not find expected key",
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.filename, func(t *testing.T) {
+			_ = os.WriteFile(tc.filename, []byte(tc.content), 0660)
+			defer func() {
+				os.RemoveAll(tc.filename)
+			}()
+			service, err := New(tc.filename)
 			if tc.wantError == "" {
 				assert.NoError(t, err)
 			} else {

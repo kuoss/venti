@@ -2,6 +2,7 @@ package config
 
 import (
 	"os"
+	"os/exec"
 	"testing"
 
 	"github.com/kuoss/venti/pkg/model"
@@ -16,6 +17,10 @@ func init() {
 }
 
 func TestLoad(t *testing.T) {
+	_ = exec.Command("cp", "docs/examples/datasources.dev1.yml", "etc/datasources.yml").Run()
+	defer func() {
+		os.RemoveAll("etc/datasources.yml")
+	}()
 	cfg, err := Load("Unknown")
 	assert.NoError(t, err)
 	assert.Equal(t, cfg.AppInfo.Version, "Unknown")
@@ -42,7 +47,8 @@ func TestLoadGlobalConfigFile(t *testing.T) {
 		{
 			"etc/datasources.yml",
 			model.GlobalConfig{LogLevel: ""},
-			"error on UnmarshalStrict: yaml: unmarshal errors:\n  line 1: field datasources not found in type model.GlobalConfig",
+			//"error on UnmarshalStrict: yaml: unmarshal errors:\n  line 1: field datasources not found in type model.GlobalConfig",
+			"error on ReadFile: open etc/datasources.yml: no such file or directory",
 		},
 		{
 			"etc/venti.yml",
@@ -76,14 +82,27 @@ func TestLoadDatasourceConfigFile(t *testing.T) {
 			"error on ReadFile: open : no such file or directory",
 		},
 		{
-			"etc/datasources.yml",
+			"docs/examples/datasources.dev1.yml",
 			&model.DatasourceConfig{
 				QueryTimeout: 30000000000,
 				Datasources: []model.Datasource{
 					{Type: "prometheus", Name: "prometheus", URL: "http://localhost:9090"},
 					{Type: "lethe", Name: "lethe", URL: "http://localhost:6060"},
 				},
-				Discovery: model.Discovery{Enabled: false, MainNamespace: "", AnnotationKey: "kuoss.org/datasource-type"},
+				Discovery: model.Discovery{AnnotationKey: "kuoss.org/datasource-type"},
+			},
+			"",
+		},
+		{
+			"docs/examples/datasources.dev2.yml",
+			&model.DatasourceConfig{
+				QueryTimeout: 30000000000,
+				Datasources: []model.Datasource{
+					{Type: "prometheus", Name: "prometheus1", URL: "http://vs-prometheus-server"},
+					{Type: "prometheus", Name: "prometheus2", URL: "http://vs-prometheus-server"},
+					{Type: "lethe", Name: "lethe", URL: "http://vs-lethe"},
+				},
+				Discovery: model.Discovery{AnnotationKey: "kuoss.org/datasource-type"},
 			},
 			"",
 		},
