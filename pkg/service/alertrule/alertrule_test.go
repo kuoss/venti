@@ -130,7 +130,7 @@ groups:
 	}
 	for _, tc := range testCases {
 		t.Run(tc.filename, func(t *testing.T) {
-			os.WriteFile(tc.filename, []byte(tc.content), 0660)
+			_ = os.WriteFile(tc.filename, []byte(tc.content), 0660)
 			defer func() {
 				os.RemoveAll(tc.filename)
 			}()

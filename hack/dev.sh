@@ -2,7 +2,7 @@
 
 cd $(dirname $0)/..
 
-cp docs/examples/datasources.dev.yml etc/datasources.yml
+cp docs/examples/datasources.dev2.yml etc/datasources.yml
 
 set -x
 go mod tidy -v
