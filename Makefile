@@ -3,6 +3,11 @@ IMAGE := ghcr.io/kuoss/venti:$(VERSION)
 
 MAKEFLAGS += -j2
 
+datasources:
+	docker ps | grep prometheus   || docker run -d -p9090:9090 --name prometheus   prom/prometheus
+	docker ps | grep lethe        || docker run -d -p6060:6060 --name lethe        ghcr.io/kuoss/lethe
+	docker ps | grep alertmanager || docker run -d -p9093:9093 --name alertmanager prom/alertmanager
+
 install-dev:
 	sudo apt-get update
 	sudo apt-get install -y ca-certificates curl gnupg
