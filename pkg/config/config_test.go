@@ -170,7 +170,7 @@ func TestLoadAlertingConfigFile(t *testing.T) {
 				AlertRelabelConfigs: nil,
 				AlertmanagerConfigs: model.AlertmanagerConfigs{
 					{StaticConfig: []*model.TargetGroup{
-						{Targets: []string{"http://vs-alertmanager:9093"}},
+						{Targets: []string{"http://localhost:9093"}},
 					}},
 				},
 				GlobalLabels: map[string]string{"venti": "development"},

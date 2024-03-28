@@ -335,7 +335,7 @@ func (s *AlertingService) sendFires(fires []Fire) error {
 		return fmt.Errorf("marshal err: %w", err)
 	}
 	buff := bytes.NewBuffer(pbytes)
-	resp, err := s.client.Post(s.alertmanagerURL+"/api/v1/alerts", "application/json", buff)
+	resp, err := s.client.Post(s.alertmanagerURL+"/api/v2/alerts", "application/json", buff)
 	if err != nil {
 		return fmt.Errorf("post err: %w", err)
 	}

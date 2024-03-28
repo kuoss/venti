@@ -3,6 +3,6 @@ alerting:
   alertmanagers:
   - static_configs:
     - targets:
-      - http://localhost:9093
+      - http://vs-alertmanager:9093
   globalLabels:
     venti: development

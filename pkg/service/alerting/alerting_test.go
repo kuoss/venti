@@ -158,7 +158,7 @@ func TestDoAlert(t *testing.T) {
 		},
 		{
 			[]AlertingRuleGroup{}, datasourceService, datasourceReload, "",
-			`sendFires err: post err: Post "/api/v1/alerts": unsupported protocol scheme ""`,
+			`sendFires err: post err: Post "/api/v2/alerts": unsupported protocol scheme ""`,
 		},
 	}
 	for _, tc := range testCases {
@@ -528,7 +528,7 @@ func TestSendFires(t *testing.T) {
 		},
 		{
 			fires1, "", false, false,
-			`post err: Post "/api/v1/alerts": unsupported protocol scheme ""`,
+			`post err: Post "/api/v2/alerts": unsupported protocol scheme ""`,
 		},
 		{
 			fires1, alertmanagerURL, true, false,
@@ -564,7 +564,7 @@ func TestSendTestAlert(t *testing.T) {
 		wantError       string
 	}{
 		{alertmanagerURL, ``},
-		{"", `sendFires err: post err: Post "/api/v1/alerts": unsupported protocol scheme ""`},
+		{"", `sendFires err: post err: Post "/api/v2/alerts": unsupported protocol scheme ""`},
 	}
 	for _, tc := range testCases {
 		alertingService1.alertmanagerURL = tc.alertmanagerURL
