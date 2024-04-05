@@ -7,16 +7,20 @@ import (
 )
 
 func New() (*mocker.Server, error) {
-	s := mocker.New()
+	s := NewWithPort(0)
+	if err := s.Start(); err != nil {
+		return nil, fmt.Errorf("start err: %w", err)
+	}
+	return s, nil
+}
+
+func NewWithPort(port int) *mocker.Server {
+	s := mocker.NewWithPort(port)
 	s.GET("/api/v1/status/buildinfo", handleBuildInfo)
 	s.GET("/api/v1/metadata", handleMetadata)
 	s.GET("/api/v1/query", handleQuery)
 	s.GET("/api/v1/query_range", handleQueryRange)
-	err := s.Start()
-	if err != nil {
-		err = fmt.Errorf("error on Start: %w", err)
-	}
-	return s, err
+	return s
 }
 
 func handleBuildInfo(c *mocker.Context) {

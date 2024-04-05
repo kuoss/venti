@@ -1,4 +1,5 @@
 #!/bin/bash
+set -x
 which npm
 retVal=$?
 if [[ $retVal -ne 0 ]]; then

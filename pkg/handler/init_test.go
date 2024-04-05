@@ -52,7 +52,7 @@ func setup() {
 		AlertmanagerConfigs: model.AlertmanagerConfigs{
 			&model.AlertmanagerConfig{
 				StaticConfig: []*model.TargetGroup{
-					{Targets: []string{alertmanagerMock.URL}},
+					{Targets: []string{alertmanagerMock.URL()}},
 				},
 			},
 		},
@@ -61,7 +61,7 @@ func setup() {
 	if err != nil {
 		panic(err)
 	}
-	handlers = loadHandlers(cfg, services)
+	handlers = loadHandlers(services)
 }
 
 func shutdown() {

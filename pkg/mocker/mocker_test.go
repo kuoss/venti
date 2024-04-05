@@ -41,7 +41,7 @@ func setup() {
 	if err != nil {
 		panic(err)
 	}
-	mainClient = mockerClient.New(mainServer.URL)
+	mainClient = mockerClient.New(mainServer.URL())
 }
 
 func shutdown() {
@@ -50,16 +50,23 @@ func shutdown() {
 
 func TestNew(t *testing.T) {
 	require.NotZero(t, mainServer)
-	u, err := url.Parse(mainServer.URL)
+	u, err := url.Parse(mainServer.URL())
 	require.NoError(t, err)
 	require.Equal(t, "http", u.Scheme)
 	require.Equal(t, "127.0.0.1", u.Hostname())
 }
 
 func TestStart(t *testing.T) {
-	tempServer := mocker.New()
+	tempServer := mocker.NewWithPort(12345)
 	err := tempServer.Start()
 	require.NoError(t, err)
+}
+
+func TestClose(t *testing.T) {
+	tempServer := mocker.NewWithPort(12346)
+	err := tempServer.Start()
+	require.NoError(t, err)
+	tempServer.Close()
 }
 
 func TestSetBasicAuth(t *testing.T) {
@@ -71,12 +78,12 @@ func TestSetBasicAuth(t *testing.T) {
 	err := tempServer.Start()
 	require.NoError(t, err)
 
-	tempClient1 := mockerClient.New(tempServer.URL)
+	tempClient1 := mockerClient.New(tempServer.URL())
 
-	tempClient2 := mockerClient.New(tempServer.URL)
+	tempClient2 := mockerClient.New(tempServer.URL())
 	tempClient2.SetBasicAuth("xxx", "xxx")
 
-	tempClient3 := mockerClient.New(tempServer.URL)
+	tempClient3 := mockerClient.New(tempServer.URL())
 	tempClient3.SetBasicAuth("abc", "123")
 
 	testCases := []struct {

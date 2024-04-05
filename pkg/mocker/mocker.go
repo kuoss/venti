@@ -1,6 +1,8 @@
 package mocker
 
 import (
+	"fmt"
+	"net"
 	"net/http"
 	"net/http/httptest"
 )
@@ -8,7 +10,7 @@ import (
 type Server struct {
 	mux               *http.ServeMux
 	server            *httptest.Server
-	URL               string
+	port              int
 	basicAuth         bool
 	basicAuthUser     string
 	basicAuthPassword string
@@ -19,7 +21,11 @@ type H map[string]any
 type HandlerFunc func(*Context)
 
 func New() *Server {
-	return &Server{mux: http.NewServeMux()}
+	return NewWithPort(0)
+}
+
+func NewWithPort(port int) *Server {
+	return &Server{mux: http.NewServeMux(), port: port}
 }
 
 func (s *Server) SetBasicAuth(username string, password string) {
@@ -54,11 +60,17 @@ func (s *Server) verifyBasicAuth(w http.ResponseWriter, r *http.Request) bool {
 
 func (s *Server) Start() error {
 	s.server = httptest.NewUnstartedServer(s.mux)
+	if s.port != 0 {
+		s.server.Listener, _ = net.Listen("tcp", fmt.Sprintf(":%d", s.port))
+	}
 	s.server.Start()
-	s.URL = s.server.URL
 	return nil
 }
 
 func (s *Server) Close() {
 	s.server.Close()
+}
+
+func (s *Server) URL() string {
+	return s.server.URL
 }

@@ -5,9 +5,9 @@ MAKEFLAGS += -j2
 
 datasources:
 	hack/genernate-logs.sh
-	docker ps | grep lethe        || docker run -d -p6060:6060 --name lethe -v /tmp/log:/var/data/log ghcr.io/kuoss/lethe
-	docker ps | grep prometheus   || docker run -d -p9090:9090 --name prometheus   prom/prometheus
-	docker ps | grep alertmanager || docker run -d -p9093:9093 --name alertmanager prom/alertmanager
+	docker ps | grep lethe1        || docker run -d -p6060:6060 --name lethe1 -v /tmp/log:/var/data/log ghcr.io/kuoss/lethe
+	docker ps | grep prometheus1   || docker run -d -p9090:9090 --name prometheus1   prom/prometheus
+	docker ps | grep alertmanager1 || docker run -d -p9093:9093 --name alertmanager1 prom/alertmanager
 
 install-dev:
 	hack/install-dev.sh

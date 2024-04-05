@@ -114,7 +114,7 @@ func TestGET(t *testing.T) {
 			"",
 		},
 		{
-			servers.GetServersByType(ms.TypeAlertmanager)[0].URL, ActionQuery, "query=up",
+			servers.GetServersByType(ms.TypeAlertmanager)[0].URL(), ActionQuery, "query=up",
 			404, "404 page not found\n",
 			"",
 		},
