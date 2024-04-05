@@ -317,8 +317,8 @@ function onChangeDatasource(value) {
             placeholder="Expression" aria-label="Expression" aria-describedby="button-addon3" @keyup="searchKeyUp" />
           <ul v-if="searchMode && expr" class="absolute bg-white dark:bg-black border max-h-[70vh] overflow-y-auto z-20">
             <li v-for="item in items" class="flex gap-3 hover:bg-gray-200 dark:hover:bg-gray-800 selection:cursor-pointer" @click="clickItem(item)">
-              <div class="text-gray-600" v-html="item[2]" />
-              <div class="flex-auto text-right text-gray-500">
+              <div class="text-gray-600 dark:text-gray-300" v-html="item[2]" />
+              <div class="flex-auto text-right text-gray-300 dark:text-gray-500">
                 {{ item[1][0].type }}
               </div>
             </li>

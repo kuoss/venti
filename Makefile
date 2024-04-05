@@ -4,22 +4,13 @@ IMAGE := ghcr.io/kuoss/venti:$(VERSION)
 MAKEFLAGS += -j2
 
 datasources:
+	hack/genernate-logs.sh
+	docker ps | grep lethe        || docker run -d -p6060:6060 --name lethe -v /tmp/log:/var/data/log ghcr.io/kuoss/lethe
 	docker ps | grep prometheus   || docker run -d -p9090:9090 --name prometheus   prom/prometheus
-	docker ps | grep lethe        || docker run -d -p6060:6060 --name lethe        ghcr.io/kuoss/lethe
 	docker ps | grep alertmanager || docker run -d -p9093:9093 --name alertmanager prom/alertmanager
 
 install-dev:
-	sudo apt-get update
-	sudo apt-get install -y ca-certificates curl gnupg
-	sudo mkdir -p /etc/apt/keyrings
-	[ -f /etc/apt/keyrings/nodesource.gpg ] || curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | sudo gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg
-	echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_20.x nodistro main" | sudo tee /etc/apt/sources.list.d/nodesource.list
-	sudo apt-get update
-	sudo apt-get install nodejs -y
-	go mod tidy
-	cd web && npm install
-	which air   || go install github.com/cosmtrek/air@latest
-	which godef || go install github.com/rogpeppe/godef@latest
+	hack/install-dev.sh
 
 # dev server (port 5173)
 dev:

@@ -82,7 +82,7 @@ export default {
     <template v-if="result.length > 0">
       <template v-if="logType == 'pod'">
         <div v-for="row in result" class="border-b">
-          <span class="bg-slate-100">
+          <span class="bg-slate-100 dark:bg-slate-900">
             <span class="mr-1 text-yellow-400">{{ Util.utc2local(row.time) }}</span>
             <span class="mr-1 text-green-400">{{ row.namespace }}</span>
             <span class="mr-1 text-teal-400">{{ row.pod }}</span>
@@ -93,7 +93,7 @@ export default {
       </template>
       <template v-if="logType == 'node'">
         <div v-for="row in result" class="border-b">
-          <span class="bg-slate-100">
+          <span class="bg-slate-100 dark:bg-slate-900">
             <span class="mr-1 text-yellow-400">{{ Util.utc2local(row.time) }}</span>
             <span class="mr-1 text-green-400">{{ row.node }}</span>
             <span class="mr-1 text-teal-400">{{ row.process }}</span>
