@@ -1,5 +1,6 @@
 #!/bin/bash
-set -x
+cd $(dirname $0)/../
+
 which npm
 retVal=$?
 if [[ $retVal -ne 0 ]]; then
@@ -10,8 +11,10 @@ if [[ $retVal -ne 0 ]]; then
     echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_20.x nodistro main" | sudo tee /etc/apt/sources.list.d/nodesource.list
     sudo apt-get update
     sudo apt-get install nodejs -y
+    cd web
+    npm install 
+    cd ..
 fi
 go mod tidy
 which air   || go install github.com/cosmtrek/air@latest
 which godef || go install github.com/rogpeppe/godef@latest
-cd web && npm install

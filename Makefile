@@ -3,20 +3,11 @@ IMAGE := ghcr.io/kuoss/venti:$(VERSION)
 
 MAKEFLAGS += -j2
 
-datasources:
-	hack/genernate-logs.sh
-	docker ps | grep lethe1        || docker run -d -p6060:6060 --name lethe1 -v /tmp/log:/var/data/log ghcr.io/kuoss/lethe
-	docker ps | grep prometheus1   || docker run -d -p9090:9090 --name prometheus1   prom/prometheus
-	docker ps | grep alertmanager1 || docker run -d -p9093:9093 --name alertmanager1 prom/alertmanager
-
-install-dev:
-	hack/install-dev.sh
-
 # dev server (port 5173)
 dev:
 	hack/dev.sh
 
-kill-dev:
+cleanup-dev:
 	fuser 3030/tcp && kill -9 `fuser 3030/tcp | awk '{print $1}'` || true
 	fuser 5173/tcp && kill -9 `fuser 5173/tcp | awk '{print $1}'` || true
 

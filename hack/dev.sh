@@ -1,6 +1,9 @@
 #!/bin/bash
+cd $(dirname $0)/../
 
-cd $(dirname $0)/..
+## datasources
+hack/datasources.sh
+hack/install-dev.sh
 
 cp docs/examples/alerting.dev1.yml    etc/alerting.yml
 cp docs/examples/datasources.dev1.yml etc/datasources.yml

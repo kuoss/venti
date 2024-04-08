@@ -2,6 +2,9 @@ datasources:
 - name: prometheus1
   type: prometheus
   url : http://localhost:9090
+- name: prometheus2
+  type: prometheus
+  url : http://localhost:9091
 - name: lethe1
   type: lethe
   url: http://localhost:6060
