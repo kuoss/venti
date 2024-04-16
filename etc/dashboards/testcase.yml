@@ -1,0 +1,18 @@
+title: TestCase
+rows:
+- panels:
+  - title: prometheus version
+    type: stat
+    targets:
+    - expr: prometheus_build_info
+      legend: "{{version}}"
+- panels:
+  - title: queries
+    type: time_series
+    targets:
+    - expr: prometheus_engine_queries
+  # - title: zeros
+  #   type: time_series
+  #   targets:
+  #   - expr: 0
+

@@ -1,7 +1,7 @@
 {
   "recommendations": [
-    "golang.go",
-    "vue.volar",
+    "golang.Go",
+    "Vue.volar",
     "bradlc.vscode-tailwindcss"
   ]
 }

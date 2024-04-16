@@ -1,7 +1,6 @@
 #!/bin/bash
 cd $(dirname $0)/../
 
-## datasources
 hack/datasources.sh
 hack/install-dev.sh
 
