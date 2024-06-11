@@ -165,7 +165,7 @@ onUnmounted(() => {
               <td>
                 {{ r.rule.expr }}
               </td>
-              <td>{{ r.rule.for / 100000000 }}s</td>
+              <td>{{ r.rule.for / 1000 / 1000 / 1000 }}s</td>
             </tr>
             <tr class="bg-gray-100 dark:bg-gray-900" v-for="(alert, k) in r.active">
               <td colspan="2">&nbsp;</td>
