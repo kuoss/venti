@@ -21,7 +21,7 @@ func TestLoadHandlers(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotEmpty(t, services)
 
-	handlers := loadHandlers(cfg, services)
+	handlers := loadHandlers(services)
 	assert.NotEmpty(t, handlers)
 	assert.NotEmpty(t, handlers.alertHandler)
 	assert.NotEmpty(t, handlers.authHandler)
