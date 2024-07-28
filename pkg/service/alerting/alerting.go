@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/kuoss/common/logger"
+	"github.com/kuoss/venti/pkg/config"
 	"github.com/kuoss/venti/pkg/model"
 	datasourceservice "github.com/kuoss/venti/pkg/service/datasource"
 	"github.com/kuoss/venti/pkg/service/remote"
@@ -40,7 +41,7 @@ var (
 	fakeErr2 bool = false
 )
 
-func New(cfg *model.Config, alertRuleFiles []model.RuleFile, datasourceService datasourceservice.IDatasourceService, remoteService *remote.RemoteService) *AlertingService {
+func New(cfg *config.Config, alertRuleFiles []model.RuleFile, datasourceService datasourceservice.IDatasourceService, remoteService *remote.RemoteService) *AlertingService {
 	var alertmanagerConfigs model.AlertmanagerConfigs
 	var alertmanagerURL string
 	if len(cfg.AlertingConfig.AlertmanagerConfigs) > 0 {

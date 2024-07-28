@@ -7,7 +7,7 @@ import (
 	"runtime/debug"
 	"time"
 
-	"github.com/kuoss/venti/pkg/model"
+	"github.com/kuoss/venti/pkg/config"
 )
 
 type StatusService struct {
@@ -15,7 +15,7 @@ type StatusService struct {
 	runtimeInfo RuntimeInfo
 }
 
-func New(cfg *model.Config) (*StatusService, error) {
+func New(cfg *config.Config) (*StatusService, error) {
 	cwd, err := os.Getwd()
 	if err != nil {
 		return nil, fmt.Errorf("getwd err: %w", err)

@@ -5,6 +5,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/kuoss/venti/pkg/config"
 	"github.com/kuoss/venti/pkg/mocker"
 	"github.com/kuoss/venti/pkg/mocker/alertmanager"
 	"github.com/kuoss/venti/pkg/model"
@@ -15,7 +16,7 @@ var (
 	services         *service.Services
 	handlers         *Handlers
 	alertmanagerMock *mocker.Server
-	cfg              = &model.Config{
+	cfg              = &config.Config{
 		AppInfo:    model.AppInfo{Version: "Unknown"},
 		UserConfig: model.UserConfig{},
 		DatasourceConfig: model.DatasourceConfig{
@@ -61,7 +62,7 @@ func setup() {
 	if err != nil {
 		panic(err)
 	}
-	handlers = loadHandlers(cfg, services)
+	handlers = loadHandlers(services)
 }
 
 func shutdown() {
