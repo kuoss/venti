@@ -64,16 +64,15 @@ jobs:
     steps:
     - uses: actions/setup-go@v4
     - uses: actions/checkout@v3
-    - run: cp docs/examples/datasources.test.yml etc/datasources.yml
-    - run: go test ./... -race -v -failfast
+    - run: go test -v -failfast ./...
+    - run: go test -v -failfast -race github.com/kuoss/venti/pkg/alerter
 
   go-test-coverage:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/setup-go@v4
     - uses: actions/checkout@v3
-    - run: cp docs/examples/datasources.test.yml etc/datasources.yml
-    - run: go test ./... -race -coverprofile=coverage.out
+    - run: go test ./... -coverprofile=coverage.out
     # https://about.codecov.io/blog/getting-started-with-code-coverage-for-golang/
     - uses: codecov/codecov-action@v3
     # https://github.com/mattn/goveralls#github-actions

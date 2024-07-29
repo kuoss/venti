@@ -33,7 +33,7 @@ func SetupTest(t *testing.T, pathsToCopy map[string]string) (string, func()) {
 		panic(err)
 	}
 	cleanup := func() {
-		os.Chdir(wd)
+		_ = os.Chdir(wd)
 	}
 	tempDir := t.TempDir()
 	projectRoot := findProjectRoot()

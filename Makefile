@@ -37,10 +37,7 @@ docker:
 	docker build -t $(IMAGE) --build-arg VERSION=$(VERSION) . && docker push $(IMAGE)
 
 test:
-	hack/test-failfast.sh
-
-testall:
-	hack/test-all.sh
+	hack/test.sh
 
 cover:
 	hack/test-cover.sh
