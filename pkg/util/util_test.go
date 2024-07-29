@@ -2,6 +2,8 @@ package util
 
 import (
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 type TestStruct struct {
@@ -9,21 +11,30 @@ type TestStruct struct {
 	Age  int    `yaml:"age"`
 }
 
-func TestUnmarshalStrict(t *testing.T) {
-	t.Run("Valid YAML", func(t *testing.T) {
-		data := []byte(`
+func TestUnmarshalStrict_ValidYAML(t *testing.T) {
+	data := []byte(`
 name: John Doe
 age: 30
 `)
-		var ts TestStruct
-		err := UnmarshalStrict(data, &ts)
-		if err != nil {
-			t.Errorf("UnmarshalStrict failed: %v", err)
-		}
-		if ts.Name != "John Doe" || ts.Age != 30 {
-			t.Errorf("UnmarshalStrict failed: expected name: John Doe, age: 30, got: name: %s, age: %d", ts.Name, ts.Age)
-		}
-	})
+	var ts TestStruct
+	err := UnmarshalStrict(data, &ts)
+	assert.NoError(t, err)
+	assert.Equal(t, "John Doe", ts.Name)
+	assert.Equal(t, 30, ts.Age)
+}
+
+func TestUnmarshalStrict_InvalidYAML_UnknownField(t *testing.T) {
+	data := []byte(`
+name: John Doe
+age: 30
+city: New York
+`)
+	var ts TestStruct
+	err := UnmarshalStrict(data, &ts)
+	assert.EqualError(t, err, "yaml: unmarshal errors:\n  line 4: field city not found in type util.TestStruct")
+}
+
+func TestUnmarshalStrict_InvalidYAML_InvalidType(t *testing.T) {
 
 	t.Run("Invalid YAML - Unknown Field", func(t *testing.T) {
 		data := []byte(`
@@ -33,9 +44,7 @@ city: New York
 `)
 		var ts TestStruct
 		err := UnmarshalStrict(data, &ts)
-		if err == nil {
-			t.Errorf("UnmarshalStrict should have failed due to unknown field 'city'")
-		}
+		assert.EqualError(t, err, "yaml: unmarshal errors:\n  line 4: field city not found in type util.TestStruct")
 	})
 
 	t.Run("Invalid YAML - Invalid Type", func(t *testing.T) {
@@ -45,8 +54,6 @@ age: "thirty"
 `)
 		var ts TestStruct
 		err := UnmarshalStrict(data, &ts)
-		if err == nil {
-			t.Errorf("UnmarshalStrict should have failed due to invalid type for 'age'")
-		}
+		assert.EqualError(t, err, "yaml: unmarshal errors:\n  line 3: cannot unmarshal !!str `thirty` into int")
 	})
 }
