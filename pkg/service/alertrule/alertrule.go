@@ -7,7 +7,7 @@ import (
 
 	"github.com/kuoss/common/logger"
 	"github.com/kuoss/venti/pkg/model"
-	"gopkg.in/yaml.v2"
+	"github.com/kuoss/venti/pkg/util"
 )
 
 type AlertRuleService struct {
@@ -41,7 +41,7 @@ func loadAlertRuleFileFromFilename(filename string) (*model.RuleFile, error) {
 		return nil, fmt.Errorf("readFile err: %w", err)
 	}
 	var alertRuleFile *model.RuleFile
-	if err := yaml.UnmarshalStrict(yamlBytes, &alertRuleFile); err != nil {
+	if err := util.UnmarshalStrict(yamlBytes, &alertRuleFile); err != nil {
 		return nil, fmt.Errorf("unmarshalStrict err: %w", err)
 	}
 	return alertRuleFile, nil

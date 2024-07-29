@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kuoss/venti/pkg/config"
 	"github.com/kuoss/venti/pkg/model"
 	"github.com/stretchr/testify/require"
 )
@@ -23,7 +24,7 @@ func init() {
 	runtimeInfo1.CWD = cwd
 
 	var err error
-	service1, err = New(&model.Config{
+	service1, err = New(&config.Config{
 		AppInfo:          model.AppInfo{Version: "test"},
 		GlobalConfig:     model.GlobalConfig{},
 		DatasourceConfig: model.DatasourceConfig{},
@@ -40,18 +41,18 @@ func TestNew(t *testing.T) {
 	buildInfo101.Version = "hello"
 
 	testCases := []struct {
-		cfg  *model.Config
+		cfg  *config.Config
 		want *StatusService
 	}{
 		{
-			&model.Config{},
+			&config.Config{},
 			&StatusService{
 				buildInfo:   buildInfo1,
 				runtimeInfo: runtimeInfo1,
 			},
 		},
 		{
-			&model.Config{AppInfo: model.AppInfo{Version: "hello"}},
+			&config.Config{AppInfo: model.AppInfo{Version: "hello"}},
 			&StatusService{
 				buildInfo:   buildInfo101,
 				runtimeInfo: runtimeInfo1,

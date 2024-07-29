@@ -47,7 +47,7 @@ func (r *RemoteService) GET(ctx context.Context, datasource *model.Datasource, a
 	defer cancel()
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), nil)
 	if err != nil {
-		// unreachable
+		// test unreachable
 		return 0, "", fmt.Errorf("NewRequest err: %w", err)
 	}
 
@@ -62,7 +62,7 @@ func (r *RemoteService) GET(ctx context.Context, datasource *model.Datasource, a
 	code = resp.StatusCode
 	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
-		// unreachable
+		// test unreachable
 		return code, "", fmt.Errorf("error on ReadAll: %w", err)
 	}
 	if code != 200 {

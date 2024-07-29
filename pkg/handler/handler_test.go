@@ -3,6 +3,7 @@ package handler
 import (
 	"testing"
 
+	"github.com/kuoss/venti/pkg/config"
 	"github.com/kuoss/venti/pkg/model"
 	"github.com/kuoss/venti/pkg/service"
 	"github.com/stretchr/testify/assert"
@@ -10,7 +11,7 @@ import (
 
 func TestLoadHandlers(t *testing.T) {
 
-	cfg := &model.Config{
+	cfg := &config.Config{
 		AppInfo:          model.AppInfo{Version: "Unknown"},
 		GlobalConfig:     model.GlobalConfig{},
 		DatasourceConfig: model.DatasourceConfig{Datasources: []model.Datasource{{Type: model.DatasourceTypePrometheus, Name: "prometheus", IsMain: true}}},
@@ -21,7 +22,7 @@ func TestLoadHandlers(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotEmpty(t, services)
 
-	handlers := loadHandlers(cfg, services)
+	handlers := loadHandlers(services)
 	assert.NotEmpty(t, handlers)
 	assert.NotEmpty(t, handlers.alertHandler)
 	assert.NotEmpty(t, handlers.authHandler)

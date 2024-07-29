@@ -7,7 +7,7 @@ import (
 
 	"github.com/kuoss/common/logger"
 	"github.com/kuoss/venti/pkg/model"
-	"gopkg.in/yaml.v2"
+	"github.com/kuoss/venti/pkg/util"
 )
 
 type DashboardService struct {
@@ -59,7 +59,7 @@ func loadDashboardFromFile(filename string) (*model.Dashboard, error) {
 		return nil, fmt.Errorf("error on ReadFile: %w", err)
 	}
 	var dashboard *model.Dashboard
-	if err := yaml.UnmarshalStrict(yamlBytes, &dashboard); err != nil {
+	if err := util.UnmarshalStrict(yamlBytes, &dashboard); err != nil {
 		return nil, fmt.Errorf("error on UnmarshalStrict: %w", err)
 	}
 	return dashboard, nil

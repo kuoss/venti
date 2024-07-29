@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kuoss/venti/pkg/config"
 	ms "github.com/kuoss/venti/pkg/mock/servers"
 	"github.com/kuoss/venti/pkg/model"
 	alertingservice "github.com/kuoss/venti/pkg/service/alerting"
@@ -23,7 +24,7 @@ func (m *mockAlertingService) DoAlert() error {
 }
 
 var (
-	alerter1         *alerter
+	alerter1         *Alerter
 	servers          *ms.Servers
 	alertingService1 *alertingservice.AlertingService
 	ruleFiles1       []model.RuleFile = []model.RuleFile{
@@ -69,7 +70,7 @@ func setup() {
 		{Type: ms.TypePrometheus, Name: "prometheus2", IsMain: false},
 		{Type: ms.TypePrometheus, Name: "prometheus3", IsMain: false},
 	})
-	cfg := &model.Config{
+	cfg := &config.Config{
 		AlertingConfig: model.AlertingConfig{
 			AlertmanagerConfigs: model.AlertmanagerConfigs{
 				&model.AlertmanagerConfig{
@@ -101,7 +102,7 @@ func TestNew(t *testing.T) {
 }
 
 func TestStartAndStop(t *testing.T) {
-	tempAlerter := New(&model.Config{}, alertingService1)
+	tempAlerter := New(&config.Config{}, alertingService1)
 	tempAlerter.evaluationInterval = 1000 * time.Millisecond
 
 	// start(ok) start(error)

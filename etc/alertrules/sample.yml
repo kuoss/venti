@@ -9,19 +9,19 @@ groups:
   rules:
   - alert: S00-AlwaysOn
     expr: vector(1234)
-    for: 0
+    for: 0m
     annotations:
       summary: "AlwaysOn value={{ $value }}"
     labels:
       hello: world
   - alert: S01-Monday
     expr: day_of_week() == 1 and hour() < 2
-    for: 0
+    for: 0m
     annotations:
       summary: "Monday"
   - alert: S02-NewNamespace
     expr: time() - kube_namespace_created < 120
-    for: 0
+    for: 0m
     annotations:
       summary: "labels={{ $labels }} namespace={{ $labels.namespace }} value={{ $value }}"
   - alert: PodNotHealthy

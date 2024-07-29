@@ -1,5 +1,6 @@
-VERSION := v0.2.0
+VERSION := development
 IMAGE := ghcr.io/kuoss/venti:$(VERSION)
+GOLANGCI_LINT_VER := v1.59.1
 
 MAKEFLAGS += -j2
 
@@ -33,23 +34,31 @@ run-air:
 	air
 
 
+.PHONY: docker
 docker:
 	docker build -t $(IMAGE) --build-arg VERSION=$(VERSION) . && docker push $(IMAGE)
 
+.PHONY: test
 test:
-	hack/test-failfast.sh
+	hack/test.sh
 
-testall:
-	hack/test-all.sh
-
+.PHONY: cover
 cover:
 	hack/test-cover.sh
 
+.PHONY: checks
 checks:
 	hack/checks.sh
 
+.PHONY: misspell
 misspell:
 	hack/misspell.sh
 
+.PHONY: gocyclo
 gocyclo:
 	hack/gocyclo.sh
+
+.PHONY: lint
+lint:
+	go install -v github.com/golangci/golangci-lint/cmd/golangci-lint@$(GOLANGCI_LINT_VER) || true
+	golangci-lint run

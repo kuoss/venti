@@ -1,29 +1,61 @@
 package main
 
 import (
-	"os"
+	"errors"
 	"testing"
 
-	"github.com/kuoss/common/tester"
 	"github.com/stretchr/testify/assert"
 )
 
-// The main function doesn't exit when the router runs,
-// so we only test for errors here.
-func Test_main(t *testing.T) {
-	err := os.Chdir("./docs")
-	assert.NoError(t, err)
+type MockApp struct {
+	runFunc func(version string, addr ...string) error
+}
 
-	stdout, stderr, err := tester.CaptureChildTest(func() {
-		main()
-	})
+func (m *MockApp) Run(version string, addr ...string) error {
+	return m.runFunc(version)
+}
 
-	assert.Error(t, err)
-	assert.EqualError(t, err, "exit status 1")
+func TestMainFunctionExitCode(t *testing.T) {
+	testCases := []struct {
+		name         string
+		mockRunFunc  func(version string, addr ...string) error
+		wantExitCode int
+	}{
+		{
+			name: "Successful exit",
+			mockRunFunc: func(version string, addr ...string) error {
+				return nil
+			},
+			wantExitCode: 0,
+		},
+		{
+			name: "Error exit",
+			mockRunFunc: func(version string, addr ...string) error {
+				return errors.New("run error")
+			},
+			wantExitCode: 1,
+		},
+	}
 
-	assert.Equal(t, "", stdout)
+	originalApp := app
+	originalExit := exit
+	defer func() {
+		app = originalApp
+		exit = originalExit
+	}()
 
-	assert.Contains(t, stderr, `level=info msg="loading configurations..." file="main.go:`)
-	assert.Contains(t, stderr, `level=info msg="loading global config file: etc/venti.yml" file="config.go:`)
-	assert.Contains(t, stderr, `level=fatal msg="config.Load err: loadGlobalConfigFile err: error on ReadFile: open etc/venti.yml: no such file or directory" file="main_test.go:`)
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+
+			app = &MockApp{runFunc: tc.mockRunFunc}
+			var gotExitCode int
+			exit = func(code int) {
+				gotExitCode = code
+			}
+
+			main()
+
+			assert.Equal(t, tc.wantExitCode, gotExitCode)
+		})
+	}
 }

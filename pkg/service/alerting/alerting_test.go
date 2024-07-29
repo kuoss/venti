@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kuoss/venti/pkg/config"
 	ms "github.com/kuoss/venti/pkg/mock/servers"
 	"github.com/kuoss/venti/pkg/model"
 	datasourceservice "github.com/kuoss/venti/pkg/service/datasource"
@@ -86,7 +87,7 @@ func setup() {
 		{Type: ms.TypePrometheus, Name: "prometheus2", IsMain: false},
 		{Type: ms.TypePrometheus, Name: "prometheus3", IsMain: false},
 	})
-	cfg := &model.Config{
+	cfg := &config.Config{
 		AlertingConfig: model.AlertingConfig{
 			GlobalLabels: map[string]string{
 				"global1": "label1",

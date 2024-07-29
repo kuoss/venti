@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/kuoss/common/logger"
-	"github.com/kuoss/venti/pkg/model"
+	"github.com/kuoss/venti/pkg/config"
 	"github.com/kuoss/venti/pkg/service/alerting"
 	"github.com/kuoss/venti/pkg/service/alertrule"
 	"github.com/kuoss/venti/pkg/service/dashboard"
@@ -27,7 +27,7 @@ type Services struct {
 	*alerting.AlertingService
 }
 
-func NewServices(cfg *model.Config) (*Services, error) {
+func NewServices(cfg *config.Config) (*Services, error) {
 	// alertrule
 	alertRuleService, err := alertrule.New("")
 	if err != nil {
