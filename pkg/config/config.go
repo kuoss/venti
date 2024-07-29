@@ -1,7 +1,6 @@
 package config
 
 import (
-	"bytes"
 	"fmt"
 	"os"
 	"time"
@@ -9,7 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/kuoss/common/logger"
 	"github.com/kuoss/venti/pkg/model"
-	"gopkg.in/yaml.v3"
+	"github.com/kuoss/venti/pkg/util"
 )
 
 type Config struct {
@@ -57,7 +56,7 @@ func (c *Config) loadGlobalConfigFile(file string) error {
 	if err != nil {
 		return fmt.Errorf("error on ReadFile: %w", err)
 	}
-	if err := unmarshalStrict(yamlBytes, &cfg); err != nil {
+	if err := util.UnmarshalStrict(yamlBytes, &cfg); err != nil {
 		return fmt.Errorf("unmarshalStrict err: %w", err)
 	}
 
@@ -81,7 +80,7 @@ func (c *Config) loadDatasourceConfigFile(file string) error {
 		return fmt.Errorf("error on ReadFile: %w", err)
 	}
 	var cfg model.DatasourceConfig
-	if err := unmarshalStrict(yamlBytes, &cfg); err != nil {
+	if err := util.UnmarshalStrict(yamlBytes, &cfg); err != nil {
 		return fmt.Errorf("unmarshalStrict err: %w", err)
 	}
 
@@ -104,7 +103,7 @@ func (c *Config) loadUserConfigFile(file string) error {
 		return fmt.Errorf("error on ReadFile: %w", err)
 	}
 	var cfg model.UserConfig
-	if err := yaml.Unmarshal(yamlBytes, &cfg); err != nil {
+	if err := util.UnmarshalStrict(yamlBytes, &cfg); err != nil {
 		return fmt.Errorf("unmarshalStrict err: %w", err)
 	}
 	c.UserConfig = cfg
@@ -118,7 +117,7 @@ func (c *Config) loadAlertingConfigFile(file string) error {
 		return fmt.Errorf("error on ReadFile: %w", err)
 	}
 	var cfg *model.AlertingConfigFile
-	if err := unmarshalStrict(yamlBytes, &cfg); err != nil {
+	if err := util.UnmarshalStrict(yamlBytes, &cfg); err != nil {
 		return fmt.Errorf("unmarshalStrict err: %w", err)
 	}
 
@@ -129,10 +128,4 @@ func (c *Config) loadAlertingConfigFile(file string) error {
 	}
 	c.AlertingConfig = alertingConfig
 	return nil
-}
-
-func unmarshalStrict(data []byte, out interface{}) error {
-	decoder := yaml.NewDecoder(bytes.NewReader(data))
-	decoder.KnownFields(true) // Disallow unknown fields
-	return decoder.Decode(out)
 }

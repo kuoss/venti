@@ -12,7 +12,6 @@ require (
 	github.com/stretchr/testify v1.8.4
 	github.com/valyala/fastjson v1.6.4
 	golang.org/x/crypto v0.24.0
-	gopkg.in/yaml.v2 v2.4.0
 	gorm.io/gorm v1.24.5
 	k8s.io/api v0.28.2
 	k8s.io/apimachinery v0.28.2
@@ -130,6 +129,7 @@ require (
 	google.golang.org/grpc v1.58.3 // indirect
 	google.golang.org/protobuf v1.33.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
+	gopkg.in/yaml.v2 v2.4.0 // indirect
 	k8s.io/klog/v2 v2.100.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20230717233707-2695361300d9 // indirect
 	k8s.io/utils v0.0.0-20230711102312-30195339c3c7 // indirect
