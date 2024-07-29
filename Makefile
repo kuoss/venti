@@ -1,3 +1,5 @@
+VERSION := development
+IMAGE := ghcr.io/kuoss/venti:$(VERSION)
 GOLANGCI_LINT_VER := v1.59.1
 
 MAKEFLAGS += -j2
@@ -34,7 +36,7 @@ run-air:
 
 .PHONY: docker
 docker:
-	docker build -t $(IMAGE) --build-arg VERSION=$(VERSION) .
+	docker build -t $(IMAGE) --build-arg VERSION=$(VERSION) . && docker push $(IMAGE)
 
 .PHONY: test
 test:
