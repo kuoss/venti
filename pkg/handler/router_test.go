@@ -15,6 +15,6 @@ func TestSetupRouter(t *testing.T) {
 	assert.NotEmpty(t, handlers.remoteHandler)
 	assert.NotEmpty(t, handlers.statusHandler)
 
-	router := NewRouter(cfg, services)
+	router := NewRouter(services)
 	assert.NotEmpty(t, router)
 }

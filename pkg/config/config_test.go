@@ -1,27 +1,23 @@
 package config
 
 import (
-	"os"
-	"os/exec"
 	"testing"
 
 	"github.com/kuoss/venti/pkg/model"
+	"github.com/kuoss/venti/pkg/testutil"
 	"github.com/stretchr/testify/assert"
 )
 
-func init() {
-	err := os.Chdir("../..")
-	if err != nil {
-		panic(err)
-	}
-}
+var cfg1 = Config{}
 
 func TestLoad(t *testing.T) {
-	_ = exec.Command("cp", "docs/examples/datasources.dev1.yml", "etc/datasources.yml").Run()
-	defer func() {
-		os.RemoveAll("etc/datasources.yml")
-	}()
-	cfg, err := Load("Unknown")
+	_, cleanup := testutil.SetupTest(t, map[string]string{
+		"@/etc":                                "etc",
+		"@/docs/examples/datasources.dev1.yml": "etc/datasources.yml",
+	})
+	defer cleanup()
+
+	cfg, err := new(ConfigProvider).New("Unknown")
 	assert.NoError(t, err)
 	assert.Equal(t, cfg.AppInfo.Version, "Unknown")
 	assert.Equal(t, []model.Datasource{
@@ -34,6 +30,11 @@ func TestLoad(t *testing.T) {
 }
 
 func TestLoadGlobalConfigFile(t *testing.T) {
+	_, cleanup := testutil.SetupTest(t, map[string]string{
+		"@/etc": "etc",
+	})
+	defer cleanup()
+
 	testCases := []struct {
 		file      string
 		want      model.GlobalConfig
@@ -47,7 +48,6 @@ func TestLoadGlobalConfigFile(t *testing.T) {
 		{
 			"etc/datasources.yml",
 			model.GlobalConfig{LogLevel: ""},
-			//"error on UnmarshalStrict: yaml: unmarshal errors:\n  line 1: field datasources not found in type model.GlobalConfig",
 			"error on ReadFile: open etc/datasources.yml: no such file or directory",
 		},
 		{
@@ -58,32 +58,37 @@ func TestLoadGlobalConfigFile(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		t.Run("", func(t *testing.T) {
-			got, err := loadGlobalConfigFile(tc.file)
+			err := cfg1.loadGlobalConfigFile(tc.file)
 			if tc.wantError == "" {
 				assert.NoError(t, err)
 			} else {
 				assert.EqualError(t, err, tc.wantError)
 			}
-			assert.Equal(t, tc.want, got)
+			assert.Equal(t, tc.want, cfg1.GlobalConfig)
 		})
 	}
 
 }
 
 func TestLoadDatasourceConfigFile(t *testing.T) {
+	_, cleanup := testutil.SetupTest(t, map[string]string{
+		"@/docs/examples": "docs/examples",
+	})
+	defer cleanup()
+
 	testCases := []struct {
 		file      string
-		want      *model.DatasourceConfig
+		want      model.DatasourceConfig
 		wantError string
 	}{
 		{
 			"",
-			nil,
+			model.DatasourceConfig{},
 			"error on ReadFile: open : no such file or directory",
 		},
 		{
 			"docs/examples/datasources.dev1.yml",
-			&model.DatasourceConfig{
+			model.DatasourceConfig{
 				QueryTimeout: 30000000000,
 				Datasources: []model.Datasource{
 					{Type: "prometheus", Name: "prometheus", URL: "http://localhost:9090"},
@@ -95,7 +100,7 @@ func TestLoadDatasourceConfigFile(t *testing.T) {
 		},
 		{
 			"docs/examples/datasources.dev2.yml",
-			&model.DatasourceConfig{
+			model.DatasourceConfig{
 				QueryTimeout: 30000000000,
 				Datasources: []model.Datasource{
 					{Type: "prometheus", Name: "prometheus1", URL: "http://vs-prometheus-server"},
@@ -109,31 +114,37 @@ func TestLoadDatasourceConfigFile(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		t.Run("", func(t *testing.T) {
-			got, err := loadDatasourceConfigFile(tc.file)
+			err := cfg1.loadDatasourceConfigFile(tc.file)
 			if tc.wantError == "" {
 				assert.NoError(t, err)
 			} else {
 				assert.EqualError(t, err, tc.wantError)
 			}
-			assert.Equal(t, tc.want, got)
+			assert.Equal(t, tc.want, cfg1.DatasourceConfig)
 		})
 	}
 }
 
 func TestLoadUserConfigFile(t *testing.T) {
+	_, cleanup := testutil.SetupTest(t, map[string]string{
+		"@/etc":                                "etc",
+		"@/docs/examples/datasources.dev1.yml": "etc/datasources.yml",
+	})
+	defer cleanup()
+
 	testCases := []struct {
 		file      string
-		want      *model.UserConfig
+		want      model.UserConfig
 		wantError string
 	}{
 		{
 			"",
-			nil,
+			model.UserConfig{},
 			"error on ReadFile: open : no such file or directory",
 		},
 		{
 			"etc/users.yml",
-			&model.UserConfig{EtcUsers: []model.EtcUser{
+			model.UserConfig{EtcUsers: []model.EtcUser{
 				{Username: "admin", Hash: "$2a$12$VcCDgh2NDk07JGN0rjGbM.Ad41qVR/YFJcgHp0UGns5JDymv..TOG", IsAdmin: true},
 			}},
 			"",
@@ -141,18 +152,24 @@ func TestLoadUserConfigFile(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		t.Run("", func(t *testing.T) {
-			got, err := loadUserConfigFile(tc.file)
+			err := cfg1.loadUserConfigFile(tc.file)
 			if tc.wantError == "" {
 				assert.NoError(t, err)
 			} else {
 				assert.EqualError(t, err, tc.wantError)
 			}
-			assert.Equal(t, tc.want, got)
+			assert.Equal(t, tc.want, cfg1.UserConfig)
 		})
 	}
 }
 
 func TestLoadAlertingConfigFile(t *testing.T) {
+	_, cleanup := testutil.SetupTest(t, map[string]string{
+		"@/etc":                                "etc",
+		"@/docs/examples/datasources.dev1.yml": "etc/datasources.yml",
+	})
+	defer cleanup()
+
 	testCases := []struct {
 		file      string
 		want      model.AlertingConfig
@@ -180,13 +197,13 @@ func TestLoadAlertingConfigFile(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		t.Run("", func(t *testing.T) {
-			got, err := loadAlertingConfigFile(tc.file)
+			err := cfg1.loadAlertingConfigFile(tc.file)
 			if tc.wantError == "" {
 				assert.NoError(t, err)
 			} else {
 				assert.EqualError(t, err, tc.wantError)
 			}
-			assert.Equal(t, tc.want, got)
+			assert.Equal(t, tc.want, cfg1.AlertingConfig)
 		})
 	}
 }

@@ -2,7 +2,6 @@ package handler
 
 import (
 	"github.com/kuoss/venti/pkg/handler/remote"
-	"github.com/kuoss/venti/pkg/model"
 	"github.com/kuoss/venti/pkg/service"
 )
 
@@ -16,7 +15,7 @@ type Handlers struct {
 	statusHandler     *statusHandler
 }
 
-func loadHandlers(cfg *model.Config, services *service.Services) *Handlers {
+func loadHandlers(services *service.Services) *Handlers {
 	return &Handlers{
 		NewAlertHandler(services.AlertRuleService, services.AlertingService),
 		NewAuthHandler(services.UserService),

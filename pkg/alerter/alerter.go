@@ -5,25 +5,25 @@ import (
 	"time"
 
 	"github.com/kuoss/common/logger"
-	"github.com/kuoss/venti/pkg/model"
+	"github.com/kuoss/venti/pkg/config"
 	"github.com/kuoss/venti/pkg/service/alerting"
 )
 
-type alerter struct {
+type Alerter struct {
 	alertingService    alerting.IAlertingService
 	evaluationInterval time.Duration
 	isRunning          bool
 	quitCh             chan bool
 }
 
-func New(cfg *model.Config, alertingService alerting.IAlertingService) *alerter {
-	return &alerter{
+func New(cfg *config.Config, alertingService alerting.IAlertingService) *Alerter {
+	return &Alerter{
 		alertingService:    alertingService,
 		evaluationInterval: cfg.AlertingConfig.EvaluationInterval,
 	}
 }
 
-func (a *alerter) Start() error {
+func (a *Alerter) Start() error {
 	if a.isRunning {
 		return fmt.Errorf("already running")
 	}
@@ -34,7 +34,7 @@ func (a *alerter) Start() error {
 	return nil
 }
 
-func (a *alerter) Stop() error {
+func (a *Alerter) Stop() error {
 	if !a.isRunning {
 		return fmt.Errorf("already stopped")
 	}
@@ -44,7 +44,7 @@ func (a *alerter) Stop() error {
 	return nil
 }
 
-func (a *alerter) loop(quitCh chan bool) {
+func (a *Alerter) loop(quitCh chan bool) {
 	for {
 		select {
 		case <-quitCh:
@@ -59,7 +59,7 @@ func (a *alerter) loop(quitCh chan bool) {
 	}
 }
 
-func (a *alerter) Once() {
+func (a *Alerter) Once() {
 	err := a.alertingService.DoAlert()
 	if err != nil {
 		logger.Errorf("CatchAlertingRule err: %s", err)

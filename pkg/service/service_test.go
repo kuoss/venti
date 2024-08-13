@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/kuoss/common/logger"
+	"github.com/kuoss/venti/pkg/config"
 	"github.com/kuoss/venti/pkg/model"
 	"github.com/stretchr/testify/assert"
 )
@@ -35,7 +36,7 @@ func TestNewServices(t *testing.T) {
 			ByNameLethe:      true,
 		},
 	}
-	got, err := NewServices(&model.Config{DatasourceConfig: datasourceConfig})
+	got, err := NewServices(&config.Config{DatasourceConfig: datasourceConfig})
 	assert.NoError(t, err)
 	assert.NotEmpty(t, got)
 	assert.NotEmpty(t, got.AlertRuleService)
@@ -48,7 +49,7 @@ func TestNewServices(t *testing.T) {
 }
 
 func TestNewServicesError(t *testing.T) {
-	got, err := NewServices(&model.Config{})
+	got, err := NewServices(&config.Config{})
 	assert.NoError(t, err)
 	assert.NotEmpty(t, got)
 	assert.NotEmpty(t, got.AlertRuleService)

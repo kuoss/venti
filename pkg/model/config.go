@@ -7,14 +7,6 @@ import (
 	"github.com/prometheus/prometheus/model/relabel"
 )
 
-type Config struct {
-	AppInfo          AppInfo
-	GlobalConfig     GlobalConfig
-	DatasourceConfig DatasourceConfig
-	UserConfig       UserConfig
-	AlertingConfig   AlertingConfig
-}
-
 type AppInfo struct {
 	Version string
 }

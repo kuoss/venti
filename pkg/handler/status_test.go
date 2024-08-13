@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
+	"github.com/kuoss/venti/pkg/config"
 	"github.com/kuoss/venti/pkg/model"
 	"github.com/kuoss/venti/pkg/service/status"
 	"github.com/stretchr/testify/assert"
@@ -18,7 +19,7 @@ var (
 )
 
 func init() {
-	statusService, err := status.New(&model.Config{
+	statusService, err := status.New(&config.Config{
 		AppInfo:          model.AppInfo{Version: "test"},
 		DatasourceConfig: model.DatasourceConfig{},
 		UserConfig:       model.UserConfig{},
