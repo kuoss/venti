@@ -10,24 +10,6 @@ Metrics and logs data visualizer
 [![contribuiton welcome](https://img.shields.io/badge/contributions-welcome-orange.svg)](https://github.com/kuoss/venti/blob/main/CONTRIBUTING.md)
 [![Go Report Card](https://goreportcard.com/badge/github.com/kuoss/venti)](https://goreportcard.com/report/github.com/kuoss/venti)
 
-# users
+# docs
 
-```
-$ sudo apt-get install apache2-utils
-$ htpasswd -nbBC 12 testuser topsecret
-testuser:$2y$12$LbMigrXXYhtJcQ0kwI5Wue1uYzF20idYdWECtl3P79Ack.GhwnDOO
-```
-```
-# /app/etc/users.yml
-users:
-...
-- username: testuser
-  hash: $2y$12$LbMigrXXYhtJcQ0kwI5Wue1uYzF20idYdWECtl3P79Ack.GhwnDOO
-  isAdmin: false
-```
-
-## Contributors
-
-<a href="https://github.com/kuoss/venti/graphs/contributors">
-  <img src="https://contributors-img.web.app/image?repo=kuoss/venti" />
-</a>
+https://github.com/kuoss/venti/wiki
