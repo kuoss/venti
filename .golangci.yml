@@ -1,0 +1,27 @@
+run:
+  timeout: 5m
+  allow-parallel-runners: true
+
+linters:
+  disable-all: true
+  enable:
+  # - dupl
+  - errcheck
+  - ginkgolinter
+  - goconst
+  - gocyclo
+  - gofmt
+  - goimports
+  - gosimple
+  - govet
+  - ineffassign
+  # - lll
+  - misspell
+  - nakedret
+  # - prealloc
+  # - revive
+  - staticcheck
+  - typecheck
+  - unconvert
+  - unparam
+  - unused

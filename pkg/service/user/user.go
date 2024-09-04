@@ -5,22 +5,20 @@ import (
 	"log"
 
 	"github.com/glebarez/sqlite"
+	"gorm.io/gorm"
+
 	"github.com/kuoss/common/logger"
 	"github.com/kuoss/venti/pkg/model"
-	"gorm.io/gorm"
 )
-
-// todo remove
-// const dbfilepath = "./data/venti.sqlite3"
 
 type UserService struct {
 	db *gorm.DB
 }
 
-func New(filepath string, config model.UserConfig) (*UserService, error) {
+func New(filePath string, config model.UserConfig) (*UserService, error) {
 	log.Println("Initializing database...")
 
-	db, err := gorm.Open(sqlite.Open(filepath), &gorm.Config{})
+	db, err := gorm.Open(sqlite.Open(filePath), &gorm.Config{})
 	if err != nil {
 		return nil, fmt.Errorf("DB open err: %w", err)
 	}
@@ -34,7 +32,6 @@ func New(filepath string, config model.UserConfig) (*UserService, error) {
 }
 
 func setEtcUsers(db *gorm.DB, config model.UserConfig) {
-
 	for _, etcUser := range config.EtcUsers {
 		var user model.User
 		result := db.First(&user, "username = ?", etcUser.Username)
