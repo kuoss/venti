@@ -20,7 +20,7 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
-	client = mockerClient.New(server.URL)
+	client = mockerClient.New(server.URL())
 }
 
 func Test_api_v2_status(t *testing.T) {

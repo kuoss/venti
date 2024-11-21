@@ -4,20 +4,11 @@ GOLANGCI_LINT_VER := v1.59.1
 
 MAKEFLAGS += -j2
 
-datasources:
-	hack/genernate-logs.sh
-	docker ps | grep lethe        || docker run -d -p6060:6060 --name lethe -v /tmp/log:/var/data/log ghcr.io/kuoss/lethe
-	docker ps | grep prometheus   || docker run -d -p9090:9090 --name prometheus   prom/prometheus
-	docker ps | grep alertmanager || docker run -d -p9093:9093 --name alertmanager prom/alertmanager
-
-install-dev:
-	hack/install-dev.sh
-
 # dev server (port 5173)
 dev:
 	hack/dev.sh
 
-kill-dev:
+cleanup-dev:
 	fuser 3030/tcp && kill -9 `fuser 3030/tcp | awk '{print $1}'` || true
 	fuser 5173/tcp && kill -9 `fuser 5173/tcp | awk '{print $1}'` || true
 
