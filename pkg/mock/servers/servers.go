@@ -84,7 +84,7 @@ func (s *Servers) GetDatasources() []model.Datasource {
 		datasources = append(datasources, model.Datasource{
 			Type:   typ,
 			Name:   svr.Name,
-			URL:    svr.Server.URL,
+			URL:    svr.Server.URL(),
 			IsMain: svr.IsMain,
 		})
 	}
