@@ -1,4 +1,6 @@
 #!/bin/bash
+cd $(dirname $0)/../
+
 which npm
 retVal=$?
 if [[ $retVal -ne 0 ]]; then
@@ -10,7 +12,9 @@ if [[ $retVal -ne 0 ]]; then
     sudo apt-get update
     sudo apt-get install nodejs -y
 fi
+cd web
+npm install
+cd ..
 go mod tidy
 which air   || go install github.com/cosmtrek/air@latest
 which godef || go install github.com/rogpeppe/godef@latest
-cd web && npm install
