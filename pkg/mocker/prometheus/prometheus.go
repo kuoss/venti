@@ -7,16 +7,20 @@ import (
 )
 
 func New() (*mocker.Server, error) {
-	s := mocker.New()
+	s := NewWithPort(0)
+	if err := s.Start(); err != nil {
+		return nil, fmt.Errorf("start err: %w", err)
+	}
+	return s, nil
+}
+
+func NewWithPort(port int) *mocker.Server {
+	s := mocker.NewWithPort(port)
 	s.GET("/api/v1/status/buildinfo", handleBuildInfo)
 	s.GET("/api/v1/metadata", handleMetadata)
 	s.GET("/api/v1/query", handleQuery)
 	s.GET("/api/v1/query_range", handleQueryRange)
-	err := s.Start()
-	if err != nil {
-		err = fmt.Errorf("error on Start: %w", err)
-	}
-	return s, err
+	return s
 }
 
 func handleBuildInfo(c *mocker.Context) {
@@ -77,6 +81,13 @@ func handleQueryRange(c *mocker.Context) {
 	// 200
 	if query == "up" {
 		c.JSONString(200, `{"status":"success","data":{"resultType":"matrix","result":[{"metric":{"__name__":"up","job":"prometheus","instance":"localhost:9090"},"values":[[1435781430.781,"1"],[1435781445.781,"1"],[1435781460.781,"1"]]}]}}`)
+		return
+	}
+	if query == "case1" {
+		c.JSONString(200, `{"status":"success","data":{"resultType":"matrix","result":[
+			{"metric":{"node":"node1"},"values":[[1712817087.526,"0"],[1712817088.026,"0"],[1712817088.526,"0"],[1712817089.026,"0"],[1712817089.526,"0"],[1712817090.026,"0"],[1712817090.526,"0"],[1712817091.026,"0"],[1712817091.526,"0"],[1712817092.026,"0"]]},
+			{"metric":{"node":"node2"},"values":[[1712817087.526,"0"],[1712817088.026,"0"],[1712817088.526,"0"],[1712817089.026,"0"],[1712817089.526,"0"],[1712817090.026,"0"],[1712817090.526,"0"],[1712817091.026,"0"],[1712817091.526,"0"],[1712817092.026,"0"]]},
+			{"metric":{"node":"node3"},"values":[[1712817087.526,"0"],[1712817088.026,"0"],[1712817088.526,"0"],[1712817089.026,"0"],[1712817089.526,"0"],[1712817090.026,"0"],[1712817090.526,"0"],[1712817091.026,"0"],[1712817091.526,"0"],[1712817092.026,"0"]]}]}}`)
 		return
 	}
 	// 200 metric_not_exists

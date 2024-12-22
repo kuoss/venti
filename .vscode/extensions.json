@@ -1,8 +1,7 @@
 {
   "recommendations": [
-    "golang.go",
-    "vue.volar",
-    "vue.vscode-typescript-vue-plugin",
+    "golang.Go",
+    "Vue.volar",
     "bradlc.vscode-tailwindcss"
   ]
 }

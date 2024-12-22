@@ -9,6 +9,7 @@ import { useTimeStore } from '@/stores/time';
 import { useSidePanelStore } from '@/stores/sidePanel';
 
 import Util from '@/lib/util';
+import type Target from '@/types/dashboard';
 
 const props = defineProps({
   count: Number,
@@ -63,7 +64,7 @@ const options = ref({
 
 async function fetchData() {
   if (props.timeRange.length < 2) return;
-  const target = props.panelConfig.targets[0];
+  const target: Target = props.panelConfig.targets[0];
   emit('setIsLoading', true);
   try {
     const response = await fetch(
@@ -99,6 +100,9 @@ async function fetchData() {
       return newA;
     });
     // labels
+    if(!target.legend) {
+      target.legend = result[0].metrics.__name__;
+    }
     const labels = result.map((x: any) => target.legend.replace(/\{\{(.*?)\}\}/g, (_: any, m: any) => x.metric[m]));
     let newSeries = [];
     newSeries.push({});
@@ -112,11 +116,14 @@ async function fetchData() {
     );
     let newOptions = { ...options.value }
     newOptions.series = newSeries
-    newOptions.scales = {
-      y: {
-        range: (_a: any, _b: any, fromMax: any) => [0, Math.max(fromMax, props.panelConfig.chartOptions?.yMax ?? 0)],
-      },
-    };
+    console.log('props.panelConfig', props.panelConfig)
+    if(props.panelConfig.chartOptions.yMax) {
+      newOptions.scales = {
+        y: {
+          range: (_a: any, _b: any, fromMax: any) => [0, Math.max(fromMax, props.panelConfig.chartOptions.yMax)],
+        },
+      };
+    }
     data.value = [timestamps, ...seriesData];
     options.value = newOptions;
   } catch (error) {
