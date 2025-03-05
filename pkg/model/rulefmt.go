@@ -2,11 +2,13 @@ package model
 
 import (
 	"time"
+
+	commonmodel "github.com/prometheus/common/model"
 )
 
 /*
 types from prometheus projects
-- Let's consider the commonModel first! 🚀
+- Let's consider the commonmodel first! 🚀
 
 https://github.com/prometheus/alertmanager/blob/v0.25.0/api/v2/models/alert.go         | Alert
 https://github.com/prometheus/alertmanager/blob/v0.25.0/api/v2/models/alert_group.go   | AlertGroup
@@ -38,11 +40,11 @@ type RuleGroup struct {
 }
 
 type Rule struct {
-	Record        string            `json:"record,omitempty" yaml:"record,omitempty"`
-	Alert         string            `json:"alert,omitempty" yaml:"alert,omitempty"`
-	Expr          string            `json:"expr" yaml:"expr"`
-	For           time.Duration     `json:"for" yaml:"for,omitempty"`
-	KeepFiringFor time.Duration     `json:"keep_firing_for,omitempty" yaml:"keep_firing_for,omitempty"`
-	Labels        map[string]string `json:"labels,omitempty" yaml:"labels,omitempty"`
-	Annotations   map[string]string `json:"annotations,omitempty" yaml:"annotations,omitempty"`
+	Record        string               `json:"record,omitempty" yaml:"record,omitempty"`
+	Alert         string               `json:"alert,omitempty" yaml:"alert,omitempty"`
+	Expr          string               `json:"expr" yaml:"expr"`
+	For           commonmodel.Duration `json:"for" yaml:"for,omitempty"`
+	KeepFiringFor commonmodel.Duration `json:"keep_firing_for,omitempty" yaml:"keep_firing_for,omitempty"`
+	Labels        map[string]string    `json:"labels,omitempty" yaml:"labels,omitempty"`
+	Annotations   map[string]string    `json:"annotations,omitempty" yaml:"annotations,omitempty"`
 }

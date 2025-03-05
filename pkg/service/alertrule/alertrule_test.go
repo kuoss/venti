@@ -2,6 +2,8 @@ package alertrule
 
 import (
 	"fmt"
+	"io"
+	"net/http"
 	"os"
 	"testing"
 
@@ -177,6 +179,56 @@ func TestAlertRuleFiles(t *testing.T) {
 			assert.NoError(t, err)
 			ruleFiles := service.GetAlertRuleFiles()
 			assert.Equal(t, tc.want, ruleFiles)
+		})
+	}
+}
+
+func TestLoadAwesomeAlerts(t *testing.T) {
+	// Set up test case files
+	testUrls := []string{
+		"https://raw.githubusercontent.com/samber/awesome-prometheus-alerts/refs/heads/master/dist/rules/kubernetes/kubestate-exporter.yml",
+		"https://raw.githubusercontent.com/samber/awesome-prometheus-alerts/refs/heads/master/dist/rules/host-and-hardware/node-exporter.yml",
+		"https://raw.githubusercontent.com/samber/awesome-prometheus-alerts/refs/heads/master/dist/rules/prometheus-self-monitoring/embedded-exporter.yml",
+	}
+
+	for _, url := range testUrls {
+		t.Run(fmt.Sprintf("Testing with file: %s", url), func(t *testing.T) {
+			// Fetch the file
+			resp, err := http.Get(url)
+			if err != nil {
+				t.Fatalf("Failed to fetch URL %s: %v", url, err)
+			}
+			defer resp.Body.Close()
+
+			// Read the response body
+			yamlBytes, err := io.ReadAll(resp.Body)
+			if err != nil {
+				t.Fatalf("Failed to read response body from URL %s: %v", url, err)
+			}
+
+			// Create a temporary file
+			tmpFile, err := os.CreateTemp("", "*.yml")
+			if err != nil {
+				t.Fatalf("Failed to create temporary file: %v", err)
+			}
+			defer os.Remove(tmpFile.Name()) // Clean up
+
+			// Write the YAML bytes to the temporary file
+			if _, err = tmpFile.Write(yamlBytes); err != nil {
+				t.Fatalf("Failed to write to temporary file: %v", err)
+			}
+
+			if err = tmpFile.Close(); err != nil {
+				t.Fatalf("Failed to close the temporary file: %v", err)
+			}
+
+			// Now test the function with this temporary file
+			alertRuleFile, err := loadAlertRuleFileFromFilename(tmpFile.Name())
+			assert.NoError(t, err, "loadAlertRuleFileFromFilename should not return an error")
+
+			// Here you would add additional checks, for example:
+			assert.NotNil(t, alertRuleFile, "alertRuleFile should not be nil")
+			// Add more assertions depending on expected structure/content of `alertRuleFile`
 		})
 	}
 }
