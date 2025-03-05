@@ -16,7 +16,7 @@ import (
 	"github.com/kuoss/venti/pkg/model"
 	datasourceservice "github.com/kuoss/venti/pkg/service/datasource"
 	"github.com/kuoss/venti/pkg/service/remote"
-	commonModel "github.com/prometheus/common/model"
+	commonmodel "github.com/prometheus/common/model"
 	promWebAPI "github.com/prometheus/prometheus/web/api/v1"
 	"github.com/valyala/fastjson"
 )
@@ -189,7 +189,7 @@ func (s *AlertingService) evalAlertingRuleDatasource(ar *AlertingRule, datasourc
 	return nil
 }
 
-func (s *AlertingService) evalAlertingRuleSample(ar *AlertingRule, sample commonModel.Sample, commonLabels map[string]string, evalTime time.Time) {
+func (s *AlertingService) evalAlertingRuleSample(ar *AlertingRule, sample commonmodel.Sample, commonLabels map[string]string, evalTime time.Time) {
 	// labels & signature
 	labels := map[string]string{}
 	for k, v := range commonLabels {
@@ -198,7 +198,7 @@ func (s *AlertingService) evalAlertingRuleSample(ar *AlertingRule, sample common
 	for k, v := range sample.Metric {
 		labels[string(k)] = string(v)
 	}
-	signature := commonModel.LabelsToSignature(labels)
+	signature := commonmodel.LabelsToSignature(labels)
 
 	// annotations & summary
 	annotations := map[string]string{}
@@ -218,7 +218,7 @@ func (s *AlertingService) evalAlertingRuleSample(ar *AlertingRule, sample common
 	if exists {
 		createdAt = temp.CreatedAt
 	}
-	elapsed := evalTime.Sub(createdAt.Add(ar.Rule.For))
+	elapsed := evalTime.Sub(createdAt.Add(time.Duration(ar.Rule.For)))
 	if elapsed >= 0 {
 		state = StateFiring
 	}
@@ -264,38 +264,38 @@ func renderSummaryAnnotaion(annotations map[string]string, labels map[string]str
 	return nil
 }
 
-func (s *AlertingService) queryRule(rule model.Rule, datasource model.Datasource) ([]commonModel.Sample, error) {
+func (s *AlertingService) queryRule(rule model.Rule, datasource model.Datasource) ([]commonmodel.Sample, error) {
 	ctx, cancel := context.WithTimeout(context.TODO(), 10*time.Second)
 	defer cancel()
 
 	code, body, err := s.remoteService.GET(ctx, &datasource, remote.ActionQuery, "query="+url.QueryEscape(rule.Expr))
 	if err != nil {
-		return []commonModel.Sample{}, fmt.Errorf("GET err: %w", err)
+		return []commonmodel.Sample{}, fmt.Errorf("GET err: %w", err)
 	}
 	if code != http.StatusOK {
-		return []commonModel.Sample{}, fmt.Errorf("not successful code=%d", code)
+		return []commonmodel.Sample{}, fmt.Errorf("not successful code=%d", code)
 	}
 	bodyBytes := []byte(body)
 	status := fastjson.GetString(bodyBytes, "status")
 	if status != "success" {
-		return []commonModel.Sample{}, fmt.Errorf("not successful status=%s", status)
+		return []commonmodel.Sample{}, fmt.Errorf("not successful status=%s", status)
 	}
 	resultType := fastjson.GetString(bodyBytes, "data", "resultType")
 	if resultType == "logs" {
 		samples, err := getDataFromLogs(bodyBytes)
 		if err != nil {
-			return []commonModel.Sample{}, fmt.Errorf("getDataFromLogs err: %w", err)
+			return []commonmodel.Sample{}, fmt.Errorf("getDataFromLogs err: %w", err)
 		}
 		return samples, nil
 	}
 	samples, err := getDataFromVector(bodyBytes)
 	if err != nil {
-		return []commonModel.Sample{}, fmt.Errorf("getDataFromVector err: %w", err)
+		return []commonmodel.Sample{}, fmt.Errorf("getDataFromVector err: %w", err)
 	}
 	return samples, nil
 }
 
-func getDataFromLogs(bodyBytes []byte) ([]commonModel.Sample, error) {
+func getDataFromLogs(bodyBytes []byte) ([]commonmodel.Sample, error) {
 	type Data struct {
 		ResultType string              `json:"resultType"`
 		Result     []map[string]string `json:"result"`
@@ -307,15 +307,15 @@ func getDataFromLogs(bodyBytes []byte) ([]commonModel.Sample, error) {
 	var body Body
 	err := json.Unmarshal(bodyBytes, &body)
 	if err != nil {
-		return []commonModel.Sample{}, fmt.Errorf("unmarshal err: %w", err)
+		return []commonmodel.Sample{}, fmt.Errorf("unmarshal err: %w", err)
 	}
-	return []commonModel.Sample{{Value: commonModel.SampleValue(len(body.Data.Result))}}, nil
+	return []commonmodel.Sample{{Value: commonmodel.SampleValue(len(body.Data.Result))}}, nil
 }
 
-func getDataFromVector(bodyBytes []byte) ([]commonModel.Sample, error) {
+func getDataFromVector(bodyBytes []byte) ([]commonmodel.Sample, error) {
 	type Data struct {
 		ResultType string               `json:"resultType"`
-		Result     []commonModel.Sample `json:"result"`
+		Result     []commonmodel.Sample `json:"result"`
 	}
 	type Body struct {
 		Status string `json:"status"`
@@ -324,7 +324,7 @@ func getDataFromVector(bodyBytes []byte) ([]commonModel.Sample, error) {
 	var body Body
 	err := json.Unmarshal(bodyBytes, &body)
 	if err != nil || fakeErr1 {
-		return []commonModel.Sample{}, fmt.Errorf("unmarshal err: %w", err)
+		return []commonmodel.Sample{}, fmt.Errorf("unmarshal err: %w", err)
 	}
 	return body.Data.Result, nil
 }

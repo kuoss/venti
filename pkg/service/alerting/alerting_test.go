@@ -13,7 +13,7 @@ import (
 	datasourceservice "github.com/kuoss/venti/pkg/service/datasource"
 	"github.com/kuoss/venti/pkg/service/discovery"
 	remoteservice "github.com/kuoss/venti/pkg/service/remote"
-	commonModel "github.com/prometheus/common/model"
+	commonmodel "github.com/prometheus/common/model"
 	"github.com/stretchr/testify/require"
 )
 
@@ -263,7 +263,7 @@ func TestEvalAlertingRuleSample(t *testing.T) {
 			Annotations: map[string]string{"severity": "info"},
 		},
 	}
-	sample := commonModel.Sample{}
+	sample := commonmodel.Sample{}
 	labels := map[string]string{}
 	evalTime := time.Now()
 
@@ -396,34 +396,34 @@ func TestQueryRule(t *testing.T) {
 	testCases := []struct {
 		rule      model.Rule
 		ds        model.Datasource
-		want      []commonModel.Sample
+		want      []commonmodel.Sample
 		wantError string
 	}{
 		{
 			model.Rule{},
 			model.Datasource{},
-			[]commonModel.Sample{},
+			[]commonmodel.Sample{},
 			`GET err: error on Do: Get "/api/v1/query?query=": unsupported protocol scheme ""`,
 		},
 		{
 			ruleFiles1[0].RuleGroups[0].Rules[0],
 			servers.GetDatasources()[3],
-			[]commonModel.Sample{
-				{Metric: commonModel.Metric{"__name__": "up", "instance": "localhost:9090", "job": "prometheus"}, Value: 1, Timestamp: 1435781451781},
-				{Metric: commonModel.Metric{"__name__": "up", "instance2": "localhost:9092", "job": "prometheus2"}, Value: 1, Timestamp: 1435781451781}},
+			[]commonmodel.Sample{
+				{Metric: commonmodel.Metric{"__name__": "up", "instance": "localhost:9090", "job": "prometheus"}, Value: 1, Timestamp: 1435781451781},
+				{Metric: commonmodel.Metric{"__name__": "up", "instance2": "localhost:9092", "job": "prometheus2"}, Value: 1, Timestamp: 1435781451781}},
 			``,
 		},
 		{
 			ruleFiles1[0].RuleGroups[0].Rules[0],
 			servers.GetDatasources()[1],
-			[]commonModel.Sample{
-				{Metric: commonModel.Metric{"__name__": "up", "instance": "localhost:6060", "job": "lethe"}, Value: 1, Timestamp: 1435781451781}},
+			[]commonmodel.Sample{
+				{Metric: commonmodel.Metric{"__name__": "up", "instance": "localhost:6060", "job": "lethe"}, Value: 1, Timestamp: 1435781451781}},
 			``,
 		},
 		{
 			ruleFiles1[1].RuleGroups[0].Rules[0],
 			servers.GetDatasources()[1],
-			[]commonModel.Sample{{Value: 2}},
+			[]commonmodel.Sample{{Value: 2}},
 			``,
 		},
 	}
@@ -443,17 +443,17 @@ func TestQueryRule(t *testing.T) {
 func TestGetDataFromLogs(t *testing.T) {
 	testCases := []struct {
 		body string
-		want []commonModel.Sample
+		want []commonmodel.Sample
 	}{
 		{
 			`{}`,
-			[]commonModel.Sample{{Value: 0}},
+			[]commonmodel.Sample{{Value: 0}},
 		},
 		{
 			`{"status":"success","data":{"resultType":"logs", "result":[
 				{"time":"2009-11-10T22:59:00.000000Z","namespace":"namespace01","pod":"nginx-deployment-75675f5897-7ci7o","container":"nginx","log":"lerom ipsum"},
 				{"time":"2009-11-10T22:59:00.000000Z","namespace":"namespace01","pod":"nginx-deployment-75675f5897-7ci7o","container":"nginx","log":"hello world"}]}}`,
-			[]commonModel.Sample{{Value: 2}},
+			[]commonmodel.Sample{{Value: 2}},
 		},
 	}
 	for _, tc := range testCases {
@@ -476,19 +476,19 @@ func TestGetDataFromVector(t *testing.T) {
 	testCases := []struct {
 		body      string
 		fakeErr1  bool
-		want      []commonModel.Sample
+		want      []commonmodel.Sample
 		wantError string
 	}{
 		{
 			body, false,
-			[]commonModel.Sample{
-				{Metric: commonModel.Metric{"__name__": "up", "instance": "localhost:9090", "job": "prometheus"}, Value: 1, Timestamp: 1435781451781},
-				{Metric: commonModel.Metric{"__name__": "up", "instance": "localhost:9090", "job": "prometheus"}, Value: 1, Timestamp: 1435781451781}},
+			[]commonmodel.Sample{
+				{Metric: commonmodel.Metric{"__name__": "up", "instance": "localhost:9090", "job": "prometheus"}, Value: 1, Timestamp: 1435781451781},
+				{Metric: commonmodel.Metric{"__name__": "up", "instance": "localhost:9090", "job": "prometheus"}, Value: 1, Timestamp: 1435781451781}},
 			``,
 		},
 		{
 			body, true,
-			[]commonModel.Sample{},
+			[]commonmodel.Sample{},
 			`unmarshal err: %!w(<nil>)`,
 		},
 	}

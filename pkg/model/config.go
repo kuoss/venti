@@ -3,7 +3,7 @@ package model
 import (
 	"time"
 
-	commonModel "github.com/prometheus/common/model"
+	commonmodel "github.com/prometheus/common/model"
 	"github.com/prometheus/prometheus/model/relabel"
 )
 
@@ -61,5 +61,5 @@ type AlertmanagerConfig struct {
 }
 type TargetGroup struct {
 	Targets []string             `yaml:"targets"`
-	Labels  commonModel.LabelSet `yaml:"labels,omitempty"`
+	Labels  commonmodel.LabelSet `yaml:"labels,omitempty"`
 }
