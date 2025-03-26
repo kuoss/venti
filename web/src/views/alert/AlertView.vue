@@ -154,7 +154,7 @@ onUnmounted(() => {
               </td>
               <td class="text-center bg-green-400 dark:bg-green-600" v-else>0</td>
               <td>
-                {{ f.groupLabels.severity }}
+                {{ r.rule.labels['severity'] }}
               </td>
               <td>
                 {{ r.rule.alert }}
@@ -165,7 +165,7 @@ onUnmounted(() => {
               <td>
                 {{ r.rule.expr }}
               </td>
-              <td>{{ r.rule.for / 1000 / 1000 / 1000 }}s</td>
+              <td>{{ r.rule.for }}</td>
             </tr>
             <tr class="bg-gray-100 dark:bg-gray-900" v-for="(alert, k) in r.active">
               <td colspan="2">&nbsp;</td>

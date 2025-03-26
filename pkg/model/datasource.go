@@ -22,6 +22,7 @@ const (
 type DatasourceSelector struct {
 	System DatasourceSystem `json:"system" yaml:"system"`
 	Type   DatasourceType   `json:"type" yaml:"type"`
+	Name   string           `json:"name,omitempty" yaml:"name,omitempty"`
 }
 
 type DatasourceSystem string
