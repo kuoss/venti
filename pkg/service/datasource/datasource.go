@@ -144,6 +144,7 @@ func (s *DatasourceService) GetDatasourcesWithSelector(selector model.Datasource
 	outputs := s.getDatasources()
 	outputs = filterBySystem(outputs, selector.System)
 	outputs = filterByType(outputs, selector.Type)
+	outputs = filterByName(outputs, selector.Name)
 	return outputs
 }
 
@@ -167,6 +168,20 @@ func filterByType(inputs []model.Datasource, typ model.DatasourceType) []model.D
 	outputs := []model.Datasource{}
 	for _, input := range inputs {
 		if input.Type == typ {
+			outputs = append(outputs, input)
+		}
+	}
+	return outputs
+}
+
+func filterByName(inputs []model.Datasource, name string) []model.Datasource {
+
+	if name == "" {
+		return inputs
+	}
+	outputs := []model.Datasource{}
+	for _, input := range inputs {
+		if input.Name == name {
 			outputs = append(outputs, input)
 		}
 	}
