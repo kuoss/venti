@@ -309,7 +309,21 @@ func getDataFromLogs(bodyBytes []byte) ([]commonmodel.Sample, error) {
 	if err != nil {
 		return []commonmodel.Sample{}, fmt.Errorf("unmarshal err: %w", err)
 	}
-	return []commonmodel.Sample{{Value: commonmodel.SampleValue(len(body.Data.Result))}}, nil
+
+	if len(body.Data.Result) == 0 {
+		return []commonmodel.Sample{}, nil
+	}
+
+	var logData = make(map[commonmodel.LabelName]commonmodel.LabelValue)
+	for _, token := range body.Data.Result {
+		for k, v := range token {
+			logData[commonmodel.LabelName(k)] = commonmodel.LabelValue(v)
+		}
+	}
+	return []commonmodel.Sample{{
+		Metric: logData,
+		Value:  commonmodel.SampleValue(len(body.Data.Result)),
+	}}, nil
 }
 
 func getDataFromVector(bodyBytes []byte) ([]commonmodel.Sample, error) {
