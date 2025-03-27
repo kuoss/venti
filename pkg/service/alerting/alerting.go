@@ -311,12 +311,15 @@ func getDataFromLogs(bodyBytes []byte) ([]commonmodel.Sample, error) {
 	}
 
 	if len(body.Data.Result) == 0 {
-		return nil, nil
+		return []commonmodel.Sample{}, nil
 	}
 
-	logData := commonmodel.Metric{}
-	logData["log"] = commonmodel.LabelValue(string(bodyBytes))
-
+	var logData = make(map[commonmodel.LabelName]commonmodel.LabelValue)
+	for _, token := range body.Data.Result {
+		for k, v := range token {
+			logData[commonmodel.LabelName(k)] = commonmodel.LabelValue(v)
+		}
+	}
 	return []commonmodel.Sample{{
 		Metric: logData,
 		Value:  commonmodel.SampleValue(len(body.Data.Result)),

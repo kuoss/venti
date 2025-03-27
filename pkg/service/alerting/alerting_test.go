@@ -188,8 +188,8 @@ func TestEvalAlertingRuleGroups(t *testing.T) {
 		{Labels: map[string]string{"__name__": "up", "alertname": "Up", "datasource": "prometheus2", "global1": "label1", "hello": "world", "instance2": "localhost:9092", "job": "prometheus2", "rulefile": "sample-v3", "severity": "silence"}, Annotations: map[string]string{"summary": "Up value=1"}},
 		{Labels: map[string]string{"__name__": "up", "alertname": "Up", "datasource": "prometheus3", "global1": "label1", "hello": "world", "instance": "localhost:9090", "job": "prometheus", "rulefile": "sample-v3", "severity": "silence"}, Annotations: map[string]string{"summary": "Up value=1"}},
 		{Labels: map[string]string{"__name__": "up", "alertname": "Up", "datasource": "prometheus3", "global1": "label1", "hello": "world", "instance2": "localhost:9092", "job": "prometheus2", "rulefile": "sample-v3", "severity": "silence"}, Annotations: map[string]string{"summary": "Up value=1"}},
-		{Labels: map[string]string{"alertname": "Pod", "datasource": "lethe1", "global1": "label1", "hello": "world", "rulefile": "sample-v3", "severity": "silence"}, Annotations: map[string]string{"summary": "PodLogs value=2"}},
-		{Labels: map[string]string{"alertname": "Pod", "datasource": "lethe2", "global1": "label1", "hello": "world", "rulefile": "sample-v3", "severity": "silence"}, Annotations: map[string]string{"summary": "PodLogs value=2"}}}
+		{Labels: map[string]string{"alertname": "Pod", "datasource": "lethe1", "global1": "label1", "hello": "world", "rulefile": "sample-v3", "severity": "silence", "time": "2009-11-10T22:59:00.000000Z", "namespace": "namespace01", "pod": "nginx-deployment-75675f5897-7ci7o", "container": "nginx", "log": "hello world"}, Annotations: map[string]string{"summary": "PodLogs value=2"}},
+		{Labels: map[string]string{"alertname": "Pod", "datasource": "lethe2", "global1": "label1", "hello": "world", "rulefile": "sample-v3", "severity": "silence", "time": "2009-11-10T22:59:00.000000Z", "namespace": "namespace01", "pod": "nginx-deployment-75675f5897-7ci7o", "container": "nginx", "log": "hello world"}, Annotations: map[string]string{"summary": "PodLogs value=2"}}}
 	require.ElementsMatch(t, fires, want)
 }
 
@@ -423,7 +423,7 @@ func TestQueryRule(t *testing.T) {
 		{
 			ruleFiles1[1].RuleGroups[0].Rules[0],
 			servers.GetDatasources()[1],
-			[]commonmodel.Sample{{Value: 2}},
+			[]commonmodel.Sample{{Metric: commonmodel.Metric{"container": "nginx", "log": "hello world", "namespace": "namespace01", "pod": "nginx-deployment-75675f5897-7ci7o", "time": "2009-11-10T22:59:00.000000Z"}, Value: 2}},
 			``,
 		},
 	}
@@ -446,14 +446,14 @@ func TestGetDataFromLogs(t *testing.T) {
 		want []commonmodel.Sample
 	}{
 		{
-			`{}`,
-			[]commonmodel.Sample{{Value: 0}},
+			`{"status":"success","data":{"resultType":"logs", "result":[]}}`,
+			[]commonmodel.Sample{},
 		},
 		{
 			`{"status":"success","data":{"resultType":"logs", "result":[
 				{"time":"2009-11-10T22:59:00.000000Z","namespace":"namespace01","pod":"nginx-deployment-75675f5897-7ci7o","container":"nginx","log":"lerom ipsum"},
 				{"time":"2009-11-10T22:59:00.000000Z","namespace":"namespace01","pod":"nginx-deployment-75675f5897-7ci7o","container":"nginx","log":"hello world"}]}}`,
-			[]commonmodel.Sample{{Value: 2}},
+			[]commonmodel.Sample{{Metric: commonmodel.Metric{"container": "nginx", "log": "hello world", "namespace": "namespace01", "pod": "nginx-deployment-75675f5897-7ci7o", "time": "2009-11-10T22:59:00.000000Z"}, Value: 2}},
 		},
 	}
 	for _, tc := range testCases {
