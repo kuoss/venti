@@ -53,7 +53,7 @@ func setup() {
 		AlertmanagerConfigs: model.AlertmanagerConfigs{
 			&model.AlertmanagerConfig{
 				StaticConfig: []*model.TargetGroup{
-					{Targets: []string{alertmanagerMock.URL}},
+					{Targets: []string{alertmanagerMock.URL()}},
 				},
 			},
 		},

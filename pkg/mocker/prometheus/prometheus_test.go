@@ -1,11 +1,10 @@
-package prometheus_test
+package prometheus
 
 import (
 	"testing"
 
 	"github.com/kuoss/venti/pkg/mocker"
 	mockerClient "github.com/kuoss/venti/pkg/mocker/client"
-	"github.com/kuoss/venti/pkg/mocker/prometheus"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -16,11 +15,11 @@ var (
 
 func init() {
 	var err error
-	server, err = prometheus.New()
+	server, err = New()
 	if err != nil {
 		panic(err)
 	}
-	client = mockerClient.New(server.URL)
+	client = mockerClient.New(server.URL())
 }
 
 func Test_api_v1_status_buildinfo(t *testing.T) {
