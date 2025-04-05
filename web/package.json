@@ -39,7 +39,7 @@
     "@vue/test-utils": "^2.3.2",
     "@vue/tsconfig": "^0.3.2",
     "autoprefixer": "^10.4.4",
-    "axios": "^1.7.7",
+    "axios": "^1.8.4",
     "babel-plugin-prismjs": "^2.1.0",
     "chart.js": "^3.7.1",
     "click-outside-vue3": "^4.0.1",
