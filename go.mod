@@ -1,6 +1,7 @@
 module github.com/kuoss/venti
 
 go 1.22.9
+toolchain go1.24.1
 
 require (
 	github.com/gin-gonic/contrib v0.0.0-20221130124618-7e01895a63f2
@@ -11,7 +12,7 @@ require (
 	github.com/prometheus/prometheus v0.48.0
 	github.com/stretchr/testify v1.9.0
 	github.com/valyala/fastjson v1.6.4
-	golang.org/x/crypto v0.31.0
+	golang.org/x/crypto v0.35.0
 	gorm.io/gorm v1.24.5
 	k8s.io/api v0.28.2
 	k8s.io/apimachinery v0.28.2
@@ -115,12 +116,12 @@ require (
 	go.uber.org/goleak v1.2.1 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/arch v0.3.0 // indirect
-	golang.org/x/net v0.26.0 // indirect
+	golang.org/x/net v0.36.0 // indirect
 	golang.org/x/oauth2 v0.13.0 // indirect
-	golang.org/x/sync v0.10.0 // indirect
-	golang.org/x/sys v0.28.0 // indirect
-	golang.org/x/term v0.27.0 // indirect
-	golang.org/x/text v0.21.0 // indirect
+	golang.org/x/sync v0.11.0 // indirect
+	golang.org/x/sys v0.30.0 // indirect
+	golang.org/x/term v0.29.0 // indirect
+	golang.org/x/text v0.22.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
 	golang.org/x/tools v0.22.1-0.20240628205440-9c895dd76b34 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
