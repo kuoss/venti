@@ -201,6 +201,8 @@ sidePanelStore.$subscribe((_, state) => {
 </template>
 
 <style scoped>
+@reference "tailwindcss";
+
 .highlight-base {
   @apply relative z-[1];
 }

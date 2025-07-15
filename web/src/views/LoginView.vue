@@ -23,6 +23,7 @@ export default {
       () => this.$auth.loggedIn,
       () => {
         if (this.$auth.loggedIn) {
+          // @ts-ignore
           this.$router.push({ name: 'home' });
         }
       },

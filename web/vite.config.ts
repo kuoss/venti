@@ -1,22 +1,24 @@
-import { fileURLToPath, URL } from "node:url";
+import { fileURLToPath, URL } from 'node:url';
 
-import { defineConfig } from "vite";
-import vue from "@vitejs/plugin-vue";
+import { defineConfig, loadEnv } from 'vite';
+import vue from '@vitejs/plugin-vue';
+import vueDevTools from 'vite-plugin-vue-devtools'
+import tailwindcss from '@tailwindcss/vite';
 
-// https://vitejs.dev/config/
 export default defineConfig({
   clearScreen: false,
-  plugins: [vue()],
+  plugins: [vue(), vueDevTools(), tailwindcss()],
   resolve: {
     alias: {
-      "@": fileURLToPath(new URL("./src", import.meta.url)),
+      '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
   server: {
     host: true,
     proxy: {
-      "/api": { target: "http://localhost:3030" },
-      "/auth": { target: "http://localhost:3030" },
+      // local
+      '/api': { target: 'http://localhost:3030' },
+      '/auth': { target: 'http://localhost:3030' },
     },
   },
 });

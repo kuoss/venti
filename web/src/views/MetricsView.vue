@@ -441,6 +441,8 @@ function onChangeDatasource(value) {
 </template>
 
 <style scope>
+@reference "tailwindcss";
+
 .headcol-before:before {
   content: 'Row ';
 }

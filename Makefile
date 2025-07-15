@@ -5,10 +5,7 @@ GOLANGCI_LINT_VER := v1.59.1
 MAKEFLAGS += -j2
 
 datasources:
-	hack/genernate-logs.sh
-	docker ps | grep lethe        || docker run -d -p6060:6060 --name lethe -v /tmp/log:/var/data/log ghcr.io/kuoss/lethe
-	docker ps | grep prometheus   || docker run -d -p9090:9090 --name prometheus   prom/prometheus
-	docker ps | grep alertmanager || docker run -d -p9093:9093 --name alertmanager prom/alertmanager
+	hack/datasources/datasources.sh
 
 install-dev:
 	hack/install-dev.sh

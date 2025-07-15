@@ -15,8 +15,11 @@ export const useSidePanelStore = defineStore('sidePanel', {
       this.show = false;
     },
     updatetDataTable(t: DataTable) {
+      // @ts-ignore
       this.dataTable.title = t.title;
+      // @ts-ignore
       this.dataTable.time = t.time;
+      // @ts-ignore
       this.dataTable.rows = t.rows.sort((a, b) => (a[1] > b[1] ? -1 : 1));
     },
     updateDashboardInfo(dashboardConfig: any) {

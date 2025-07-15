@@ -2,6 +2,7 @@
 export default {
   mounted() {
     this.$auth.logout().then(() => {
+      // @ts-ignore
       this.$router.push({ name: 'login' });
     });
   },

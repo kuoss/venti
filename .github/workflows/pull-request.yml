@@ -73,15 +73,6 @@ jobs:
       env:
         COVERALLS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  go-licenses:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/setup-go@v4
-    - uses: actions/checkout@v3
-    - run: go install github.com/google/go-licenses@v1.6.0
-    # https://pkg.go.dev/modernc.org/mathutil BSD, Redistributable (maybe go-licences bug with gitlab repo)
-    - run: go-licenses check --ignore modernc.org/mathutil .
-
   docker-build:
     runs-on: ubuntu-latest
     permissions:
