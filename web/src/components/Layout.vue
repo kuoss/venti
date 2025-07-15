@@ -66,6 +66,7 @@ fetchData();
     </aside>
     <main class="main flex flex-col flex-grow transition-all duration-150 ease-in">
       <div class="w-full flex flex-grow">
+        <!-- @vue-ignore -->
         <RouterView :key="$route.fullPath" />
       </div>
     </main>

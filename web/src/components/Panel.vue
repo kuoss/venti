@@ -83,6 +83,8 @@ function togglePanelInfo() {
 </template>
 
 <style scoped>
+@reference "tailwindcss";
+
 .node {
   @apply text-yellow-500;
 }

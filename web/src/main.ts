@@ -1,3 +1,5 @@
+import './assets/main.css'
+
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 
@@ -9,8 +11,6 @@ import axiosPlugin from './plugins/axiosPlugin';
 import clickOutsidePlugin from './plugins/clickOutsidePlugin';
 
 import { useThemeStore } from './stores/theme';
-
-import '@/assets/app.scss';
 
 const app = createApp(App)
 app.use(createPinia())

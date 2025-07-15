@@ -193,6 +193,8 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
+@import "tailwindcss";
+
 .table1 th,
 .table1 td {
   @apply px-2;

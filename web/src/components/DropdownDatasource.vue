@@ -17,6 +17,7 @@ const options = ref([]);
 
 async function fetchData() {
   const datasources = await dsStore.getDatasourcesByType(props.dsType)
+  // @ts-ignore
   options.value = datasources.map((x: Datasource) => x.name)
   onChange(options.value[0])
 }

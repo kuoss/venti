@@ -1,0 +1,31 @@
+services:
+  alertmanager:
+    image: prom/alertmanager:latest
+    container_name: alertmanager
+    ports:
+      - "9093:9093"
+
+  dummy-exporter:
+    image: ghcr.io/kuoss/dummy-exporter:latest
+    container_name: dummy-exporter
+    ports:
+      - "9100:9100"
+
+  lethe:
+    image: ghcr.io/kuoss/lethe:latest
+    container_name: lethe
+    ports:
+      - "6060:6060"
+    volumes:
+      - /tmp/log:/app/data/log
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'

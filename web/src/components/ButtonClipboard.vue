@@ -35,6 +35,7 @@ function onClick() {
   if (timerID) {
     clearTimeout(timerID);
   }
+  // @ts-ignore
   timerID = setTimeout(() => {
     copied.value = false;
   }, 2500);

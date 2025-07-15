@@ -197,6 +197,8 @@ export default {
 </template>
 
 <style>
+@reference "tailwindcss";
+
 .hideDP .dp__menu {
   @apply hidden;
 }

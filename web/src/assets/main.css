@@ -1,2 +1,3 @@
-@import '@/assets/base';
+@import "tailwindcss";
+@import './base.css';
 @import '@mdi/font/css/materialdesignicons.css';

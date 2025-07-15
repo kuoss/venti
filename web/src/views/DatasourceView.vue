@@ -17,12 +17,14 @@ async function fetchData() {
   const dss = await dsStore.getDatasources();
   datasources.value = dss;
   for (const i in dss) {
+    // @ts-ignore
     dss[i].health = await dsStore.getDatasourceHealthy(dss[i]);
   }
 }
 
 async function showTargets(ds: Datasource) {
   datasource.value = ds;
+  // @ts-ignore
   targets.value = await dsStore.getTargets(ds);
 }
 fetchData();

@@ -163,6 +163,8 @@ fetchAlertmanagers();
 </template>
 
 <style scoped>
+@import "tailwindcss";
+
 th {
   width: 30%;
 }
