@@ -1,4 +1,4 @@
-FROM golang:alpine AS base1
+FROM golang:1.23.12-alpine AS base1
 ARG VERSION
 WORKDIR /temp/
 RUN apk add --no-cache git npm make gcc musl-dev
