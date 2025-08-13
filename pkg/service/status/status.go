@@ -8,11 +8,12 @@ import (
 	"time"
 
 	"github.com/kuoss/venti/pkg/config"
+	"github.com/kuoss/venti/pkg/webapi"
 )
 
 type StatusService struct {
-	buildInfo   BuildInfo
-	runtimeInfo RuntimeInfo
+	buildInfo   webapi.BuildInfo
+	runtimeInfo webapi.RuntimeInfo
 }
 
 func New(cfg *config.Config) (*StatusService, error) {
@@ -21,7 +22,7 @@ func New(cfg *config.Config) (*StatusService, error) {
 		return nil, fmt.Errorf("getwd err: %w", err)
 	}
 	return &StatusService{
-		buildInfo: BuildInfo{
+		buildInfo: webapi.BuildInfo{
 			Version:   cfg.AppInfo.Version,
 			Revision:  "(TBD)",
 			Branch:    "(TBD)",
@@ -29,7 +30,7 @@ func New(cfg *config.Config) (*StatusService, error) {
 			BuildDate: "(TBD)",
 			GoVersion: runtime.Version(),
 		},
-		runtimeInfo: RuntimeInfo{
+		runtimeInfo: webapi.RuntimeInfo{
 			StartTime:           time.Now(),
 			CWD:                 cwd,
 			ReloadConfigSuccess: true,
@@ -45,11 +46,11 @@ func New(cfg *config.Config) (*StatusService, error) {
 	}, nil
 }
 
-func (s *StatusService) BuildInfo() BuildInfo {
+func (s *StatusService) BuildInfo() webapi.BuildInfo {
 	return s.buildInfo
 }
 
-func (s *StatusService) RuntimeInfo() RuntimeInfo {
+func (s *StatusService) RuntimeInfo() webapi.RuntimeInfo {
 	s.runtimeInfo.GOMEMLIMIT = debug.SetMemoryLimit(-1)
 	s.runtimeInfo.GoroutineCount = runtime.NumGoroutine()
 	return s.runtimeInfo

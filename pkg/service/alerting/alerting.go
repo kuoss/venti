@@ -12,13 +12,14 @@ import (
 	"time"
 
 	"github.com/kuoss/common/logger"
+	commonmodel "github.com/prometheus/common/model"
+	"github.com/valyala/fastjson"
+
 	"github.com/kuoss/venti/pkg/config"
 	"github.com/kuoss/venti/pkg/model"
 	datasourceservice "github.com/kuoss/venti/pkg/service/datasource"
 	"github.com/kuoss/venti/pkg/service/remote"
-	commonmodel "github.com/prometheus/common/model"
-	promWebAPI "github.com/prometheus/prometheus/web/api/v1"
-	"github.com/valyala/fastjson"
+	"github.com/kuoss/venti/pkg/webapi"
 )
 
 type IAlertingService interface {
@@ -83,18 +84,18 @@ func (s *AlertingService) GetAlertingRuleGroups() []AlertingRuleGroup {
 	return s.alertingRuleGroups
 }
 
-func (s *AlertingService) GetAlertmanagerDiscovery() promWebAPI.AlertmanagerDiscovery {
-	var alertmanagers []*promWebAPI.AlertmanagerTarget
+func (s *AlertingService) GetAlertmanagerDiscovery() webapi.AlertmanagerDiscovery {
+	var alertmanagers []*webapi.AlertmanagerTarget
 	for _, alertmanagerConfig := range s.alertmanagerConfigs {
 		for _, staticConfig := range alertmanagerConfig.StaticConfig {
 			for _, target := range staticConfig.Targets {
-				alertmanagers = append(alertmanagers, &promWebAPI.AlertmanagerTarget{URL: target})
+				alertmanagers = append(alertmanagers, &webapi.AlertmanagerTarget{URL: target})
 			}
 		}
 	}
-	return promWebAPI.AlertmanagerDiscovery{
+	return webapi.AlertmanagerDiscovery{
 		ActiveAlertmanagers:  alertmanagers,
-		DroppedAlertmanagers: []*promWebAPI.AlertmanagerTarget{},
+		DroppedAlertmanagers: []*webapi.AlertmanagerTarget{},
 	}
 }
 
