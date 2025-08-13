@@ -7,41 +7,6 @@ permissions:
   pull-requests: write
 
 jobs:
-  go-fmt:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v3
-    - uses: Jerome1337/gofmt-action@v1.0.5
-      with:
-        gofmt-path: '.'
-        gofmt-flags: '-l -d'
-
-  misspell:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v3
-    - run: make misspell
-
-  gocyclo:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v3
-    - uses: actions/setup-go@v4
-    - run: make gocyclo
-
-  goimports:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v3
-    - uses: Jerome1337/goimports-action@v1.0.3
-
-  go-vet:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/setup-go@v4
-    - uses: actions/checkout@v3
-    - run: go vet ./...
-
   golangci-lint:
     runs-on: ubuntu-latest
     steps:

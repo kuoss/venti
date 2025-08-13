@@ -26,7 +26,7 @@ func TestRun_NewServicesError_DBOpenError(t *testing.T) {
 	defer cleanup()
 
 	err := new(App).Run("1.0.0")
-	assert.EqualError(t, err, "failed to initialize services: NewUserService err: DB open err: unable to open database file: out of memory (14)")
+	assert.EqualError(t, err, "failed to initialize services: NewUserService err: DB open err: unable to open database file: no such file or directory")
 }
 
 func TestRun_NewServicesError_Alert(t *testing.T) {

@@ -8,15 +8,16 @@ import (
 
 	"github.com/kuoss/venti/pkg/config"
 	"github.com/kuoss/venti/pkg/model"
+	"github.com/kuoss/venti/pkg/webapi"
 	"github.com/stretchr/testify/require"
 )
 
 var (
 	service1     *StatusService
-	goVersion1   string      = runtime.Version()
-	buildInfo1   BuildInfo   = BuildInfo{Version: "", Revision: "(TBD)", Branch: "(TBD)", BuildUser: "(TBD)", BuildDate: "(TBD)", GoVersion: goVersion1}
-	gomaxprocs1  int         = runtime.GOMAXPROCS(0)
-	runtimeInfo1 RuntimeInfo = RuntimeInfo{StartTime: time.Time{}, CWD: "", ReloadConfigSuccess: true, LastConfigTime: time.Time{}, CorruptionCount: -1, GoroutineCount: -1, GOMAXPROCS: gomaxprocs1, GOMEMLIMIT: -1, GOGC: "", GODEBUG: "", StorageRetention: "N/A"}
+	goVersion1   string             = runtime.Version()
+	buildInfo1   webapi.BuildInfo   = webapi.BuildInfo{Version: "", Revision: "(TBD)", Branch: "(TBD)", BuildUser: "(TBD)", BuildDate: "(TBD)", GoVersion: goVersion1}
+	gomaxprocs1  int                = runtime.GOMAXPROCS(0)
+	runtimeInfo1 webapi.RuntimeInfo = webapi.RuntimeInfo{StartTime: time.Time{}, CWD: "", ReloadConfigSuccess: true, LastConfigTime: time.Time{}, CorruptionCount: -1, GoroutineCount: -1, GOMAXPROCS: gomaxprocs1, GOMEMLIMIT: -1, GOGC: "", GODEBUG: "", StorageRetention: "N/A"}
 )
 
 func init() {

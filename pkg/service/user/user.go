@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/glebarez/sqlite"
 	"github.com/kuoss/common/logger"
 	"github.com/kuoss/venti/pkg/model"
+	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
 
